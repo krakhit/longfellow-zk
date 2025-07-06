@@ -1,0 +1,42 @@
+Unable to determine clock rate from sysctl: hw.cpufrequency: No such file or directory
+This does not affect benchmark measurements, only the metadata output.
+***WARNING*** Failed to set thread affinity. Estimated CPU frequency may be incorrect.
+2025-07-06T11:44:03+03:00
+Running ./algebra/fft_test
+Run on (8 X 24 MHz CPU s)
+CPU Caches:
+  L1 Data 64 KiB
+  L1 Instruction 128 KiB
+  L2 Unified 4096 KiB (x8)
+Load Average: 1.97, 4.80, 5.28
+---------------------------------------------------------------
+Benchmark                     Time             CPU   Iterations
+---------------------------------------------------------------
+BM_FFTFp2/1024           289489 ns       272470 ns         2615
+BM_FFTFp2/4096          1328752 ns      1325011 ns          528
+BM_FFTFp2/16384         6364744 ns      6343800 ns          110
+BM_FFTFp2/65536        29775887 ns     29685833 ns           24
+BM_FFTFp2/262144      140101867 ns    139655800 ns            5
+BM_FFTFp2/1048576     771238500 ns    769049000 ns            1
+BM_FFTFp2/4194304    3758788833 ns   3694829000 ns            1
+BM_FFT_Fp128/1024         34676 ns        34559 ns        20322
+BM_FFT_Fp128/4096        165009 ns       164300 ns         4277
+BM_FFT_Fp128/16384       790737 ns       788073 ns          889
+BM_FFT_Fp128/65536      3800277 ns      3790847 ns          183
+BM_FFT_Fp128/262144    17859879 ns     17809974 ns           39
+BM_FFT_Fp128/1048576   94773427 ns     94367750 ns            8
+BM_FFT_Fp128/4194304  739584125 ns    736443000 ns            1
+BM_FFT_F64_2/1024         32047 ns        31908 ns        22038
+BM_FFT_F64_2/4096        149659 ns       149215 ns         4680
+BM_FFT_F64_2/16384       720649 ns       717300 ns          969
+BM_FFT_F64_2/65536      3415653 ns      3405578 ns          204
+BM_FFT_F64_2/262144    16053427 ns     15997023 ns           44
+BM_FFT_F64_2/1048576   78970801 ns     78774778 ns            9
+BM_FFT_F64_2/4194304  693269375 ns    637297000 ns            1
+BM_FFT_F64/1024           11849 ns        11792 ns        59724
+BM_FFT_F64/4096           53143 ns        52982 ns        13220
+BM_FFT_F64/16384         244260 ns       243602 ns         2862
+BM_FFT_F64/65536        1253736 ns      1249742 ns          562
+BM_FFT_F64/262144       5826219 ns      5809450 ns          120
+BM_FFT_F64/1048576     28758067 ns     28608040 ns           25
+BM_FFT_F64/4194304    273628097 ns    257198000 ns            3

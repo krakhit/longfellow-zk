@@ -1,0 +1,25 @@
+# Ignore C++ build files and directories
+/build/
+/build-*/
+/clang-build*/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+*.o
+*.obj
+*.so
+*.a
+*.out
+*.exe
+*.dll
+*.dylib
+*.log
+Testing/
+CTestTestfile.cmake
+*.user
+*.swp
+*.swo
+*.tmp
+*.bak
+# End C++ build ignores

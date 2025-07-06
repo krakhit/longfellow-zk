@@ -1,0 +1,381 @@
+Test project /Users/karthik/Documents/GitHub/longfellow-zk/clang-build-release
+        Start 167: MdocZKTest.one_claim
+        Start 172: MdocZKTest.bad_proofs
+        Start 168: MdocZKTest.two_claims
+        Start 169: MdocZKTest.wrong_witness
+        Start 171: MdocZKTest.attr_mismatch
+        Start 170: MdocZKTest.bad_arguments
+        Start 128: ECDSA.VerifyExternalP256
+        Start 166: mdoc.mdoc_hash_test_fp128_2
+        Start 165: mdoc.mdoc_hash_test_fp128
+        Start  99: ZKTest.short_proofs_fail
+        Start 157: Routing.Simple
+        Start 153: Memcmp.Simple
+        Start 150: Logic.GF2PolynomialMultiplier
+        Start 111: CBOR.VerifyParseSize
+        Start 131: jwt.JwtZk
+        Start  51: circuit_io.SHA
+  1/188 Test  #51: circuit_io.SHA ..............................   Passed    6.33 sec
+        Start 104: mdoc.mdoc_small_test
+  2/188 Test #131: jwt.JwtZk ...................................   Passed    6.80 sec
+        Start 115: MSO.Example2Real
+  3/188 Test #111: CBOR.VerifyParseSize ........................   Passed   11.84 sec
+        Start 152: Logic.Bitvec
+  4/188 Test  #99: ZKTest.short_proofs_fail ....................   Passed   12.06 sec
+        Start 176: FlatSHA256_Circuit.assert_message_prefix
+  5/188 Test #150: Logic.GF2PolynomialMultiplier ...............   Passed   13.15 sec
+        Start 164: mdoc.mdoc_signature_test_with_issuer_list
+  6/188 Test #104: mdoc.mdoc_small_test ........................   Passed    6.81 sec
+        Start 162: mdoc.mdoc_signature_test
+  7/188 Test #115: MSO.Example2Real ............................   Passed    6.68 sec
+        Start 137: Logic_Circuit.Multiplier
+  8/188 Test #153: Memcmp.Simple ...............................   Passed   13.59 sec
+        Start 159: Routing.BitCircuitSize
+  9/188 Test #176: FlatSHA256_Circuit.assert_message_prefix ....   Passed    2.26 sec
+        Start 186: SHA3_Circuit.Keccak_F_1600_Copies
+ 10/188 Test #137: Logic_Circuit.Multiplier ....................   Passed    1.45 sec
+        Start 145: Logic.Scan
+ 11/188 Test #159: Routing.BitCircuitSize ......................   Passed    1.45 sec
+        Start 135: Logic_Circuit.AddSub
+ 12/188 Test #162: mdoc.mdoc_signature_test ....................   Passed    1.88 sec
+        Start 160: MAC.full_circuit_test_128
+ 13/188 Test #164: mdoc.mdoc_signature_test_with_issuer_list ...   Passed    1.98 sec
+        Start 117: Scan.Add
+ 14/188 Test #186: SHA3_Circuit.Keccak_F_1600_Copies ...........   Passed    1.84 sec
+        Start 158: Routing.EltCircuitSize
+ 15/188 Test #117: Scan.Add ....................................   Passed    1.17 sec
+        Start 185: SHA3_Circuit.Keccak_F_1600
+ 16/188 Test #135: Logic_Circuit.AddSub ........................   Passed    1.49 sec
+        Start 124: Compiler.CanonicalizationMatMul
+ 17/188 Test #160: MAC.full_circuit_test_128 ...................   Passed    1.50 sec
+        Start  96: EllipticCurve.P256MultiExponentiation
+ 18/188 Test #145: Logic.Scan ..................................   Passed    1.80 sec
+        Start 147: Logic.Comparison
+ 19/188 Test #157: Routing.Simple ..............................   Passed   16.85 sec
+        Start 180: FlatSHA256_Circuit.block_size_p256_4
+ 20/188 Test #152: Logic.Bitvec ................................   Passed    5.06 sec
+        Start  97: ZKTest.prover_verifier
+ 21/188 Test  #96: EllipticCurve.P256MultiExponentiation .......   Passed    0.48 sec
+        Start  79: GF2_128.Subfields
+ 22/188 Test #124: Compiler.CanonicalizationMatMul .............   Passed    0.74 sec
+        Start  46: MerkleTree.VerifyCompressedProofFailure
+ 23/188 Test  #79: GF2_128.Subfields ...........................   Passed    0.29 sec
+        Start 179: FlatSHA256_Circuit.block_size_p256_3
+ 24/188 Test  #97: ZKTest.prover_verifier ......................   Passed    0.46 sec
+        Start  50: circuit_io.ecdsa
+ 25/188 Test #147: Logic.Comparison ............................   Passed    0.66 sec
+        Start  65: Sumcheck.RandomCircuit
+ 26/188 Test  #46: MerkleTree.VerifyCompressedProofFailure .....   Passed    0.18 sec
+        Start 136: Logic_Circuit.AddSubSize
+ 27/188 Test  #50: circuit_io.ecdsa ............................   Passed    0.17 sec
+        Start  98: ZKTest.failing_test
+ 28/188 Test #158: Routing.EltCircuitSize ......................   Passed    1.41 sec
+        Start 184: FlatSHA256_Circuit.block_size_gf2_128_4
+ 29/188 Test #185: SHA3_Circuit.Keccak_F_1600 ..................   Passed    1.26 sec
+        Start 100: ZKTest.random_proofs_fail
+ 30/188 Test  #65: Sumcheck.RandomCircuit ......................   Passed    0.18 sec
+        Start  60: Quad.BindH
+ 31/188 Test  #60: Quad.BindH ..................................   Passed    0.08 sec
+        Start  12: FFT.Inverse
+ 32/188 Test #100: ZKTest.random_proofs_fail ...................   Passed    0.17 sec
+        Start 178: FlatSHA256_Circuit.block_size_p256_2
+ 33/188 Test #180: FlatSHA256_Circuit.block_size_p256_4 ........   Passed    0.98 sec
+        Start 101: ZKTest.elt_out_of_range
+ 34/188 Test #136: Logic_Circuit.AddSubSize ....................   Passed    0.42 sec
+        Start 127: ECDSA.prover_verifier3_p256
+ 35/188 Test  #98: ZKTest.failing_test .........................   Passed    0.36 sec
+        Start 183: FlatSHA256_Circuit.block_size_gf2_128_3
+ 36/188 Test #101: ZKTest.elt_out_of_range .....................   Passed    0.12 sec
+        Start 177: FlatSHA256_Circuit.block_size_p256
+ 37/188 Test  #12: FFT.Inverse .................................   Passed    0.29 sec
+        Start  83: LCH14.WHat
+ 38/188 Test  #83: LCH14.WHat ..................................   Passed    0.07 sec
+        Start 182: FlatSHA256_Circuit.block_size_gf2_128_2
+ 39/188 Test #179: FlatSHA256_Circuit.block_size_p256_3 ........   Passed    0.75 sec
+        Start  39: Affine.Canonicalize
+ 40/188 Test  #39: Affine.Canonicalize .........................   Passed    0.09 sec
+        Start  20: Fp2.All
+ 41/188 Test #127: ECDSA.prover_verifier3_p256 .................   Passed    0.32 sec
+        Start  38: Affine.SparseBind
+ 42/188 Test #184: FlatSHA256_Circuit.block_size_gf2_128_4 .....   Passed    0.66 sec
+        Start   3: Morton.AddSub
+ 43/188 Test  #38: Affine.SparseBind ...........................   Passed    0.10 sec
+        Start 181: FlatSHA256_Circuit.block_size_gf2_128_1
+ 44/188 Test   #3: Morton.AddSub ...............................   Passed    0.09 sec
+        Start 132: BitAdder.Fields
+ 45/188 Test #183: FlatSHA256_Circuit.block_size_gf2_128_3 .....   Passed    0.42 sec
+        Start  84: LCH14.Twiddle
+ 46/188 Test  #20: Fp2.All .....................................   Passed    0.21 sec
+        Start 114: MSO.MapLookup
+ 47/188 Test  #84: LCH14.Twiddle ...............................   Passed    0.06 sec
+        Start 139: Logic_Circuit.GF2k_PolymultSize_p256
+ 48/188 Test #177: FlatSHA256_Circuit.block_size_p256 ..........   Passed    0.46 sec
+        Start  80: LCH14.ReedSolomon
+ 49/188 Test #178: FlatSHA256_Circuit.block_size_p256_2 ........   Passed    0.69 sec
+        Start  86: LCH14.BidirectionalFFT
+ 50/188 Test #132: BitAdder.Fields .............................   Passed    0.12 sec
+        Start  37: Affine.Bind
+ 51/188 Test #114: MSO.MapLookup ...............................   Passed    0.06 sec
+        Start  14: FFT.Impulse
+ 52/188 Test #182: FlatSHA256_Circuit.block_size_gf2_128_2 .....   Passed    0.40 sec
+        Start  13: FFT.Linear
+ 53/188 Test  #86: LCH14.BidirectionalFFT ......................   Passed    0.05 sec
+        Start  16: FFT.Shift
+ 54/188 Test  #80: LCH14.ReedSolomon ...........................   Passed    0.06 sec
+        Start 129: jwt.EvalJWT
+ 55/188 Test  #14: FFT.Impulse .................................   Passed    0.05 sec
+        Start  29: Fp.AllSizes
+ 56/188 Test  #37: Affine.Bind .................................   Passed    0.07 sec
+ 57/188 Test  #13: FFT.Linear ..................................   Passed    0.06 sec
+        Start  94: EllipticCurve.addEGeneral
+        Start 148: Logic.Multiplier
+ 58/188 Test #139: Logic_Circuit.GF2k_PolymultSize_p256 ........   Passed    0.13 sec
+        Start 141: Logic_Circuit.GF2k_ModmulSize_p256
+ 59/188 Test  #29: Fp.AllSizes .................................   Passed    0.05 sec
+        Start  15: FFT.RootOfUnity
+ 60/188 Test  #94: EllipticCurve.addEGeneral ...................   Passed    0.04 sec
+        Start 143: Logic.Assert0
+ 61/188 Test  #16: FFT.Shift ...................................   Passed    0.07 sec
+        Start  17: Limb.Scalar
+ 62/188 Test #129: jwt.EvalJWT .................................   Passed    0.07 sec
+        Start  18: Limb.Array
+ 63/188 Test  #15: FFT.RootOfUnity .............................   Passed    0.01 sec
+        Start  19: RFFTTest.Simple
+ 64/188 Test  #17: Limb.Scalar .................................   Passed    0.01 sec
+ 65/188 Test  #18: Limb.Array ..................................   Passed    0.01 sec
+        Start 138: Logic_Circuit.Comparison
+        Start  41: Eqs.RFC
+ 66/188 Test  #19: RFFTTest.Simple .............................   Passed    0.01 sec
+        Start  42: MerkleTree.BuildTree
+ 67/188 Test #181: FlatSHA256_Circuit.block_size_gf2_128_1 .....   Passed    0.26 sec
+        Start  22: Nat.InvModB64
+ 68/188 Test  #41: Eqs.RFC .....................................   Passed    0.01 sec
+        Start  43: MerkleTree.GenProof
+ 69/188 Test  #42: MerkleTree.BuildTree ........................   Passed    0.01 sec
+        Start 146: Logic.AddSub
+ 70/188 Test  #43: MerkleTree.GenProof .........................   Passed    0.01 sec
+        Start  58: Random.SecureRandomEngine
+ 71/188 Test #148: Logic.Multiplier ............................   Passed    0.08 sec
+ 72/188 Test #143: Logic.Assert0 ...............................   Passed    0.04 sec
+        Start 112: MSO.Example2
+        Start  21: Nat.Lt
+ 73/188 Test  #22: Nat.InvModB64 ...............................   Passed    0.03 sec
+ 74/188 Test  #58: Random.SecureRandomEngine ...................   Passed    0.02 sec
+        Start  25: Nat.BadStrings
+        Start  23: Nat.InvModB32
+ 75/188 Test #141: Logic_Circuit.GF2k_ModmulSize_p256 ..........   Passed    0.07 sec
+ 76/188 Test #138: Logic_Circuit.Comparison ....................   Passed    0.05 sec
+ 77/188 Test  #21: Nat.Lt ......................................   Passed    0.01 sec
+        Start  44: MerkleTree.VerifyProof
+        Start  24: Nat.Parsing
+        Start  45: MerkleTree.VerifyCompressedProof
+ 78/188 Test  #25: Nat.BadStrings ..............................   Passed    0.01 sec
+        Start 188: Sha3Reference.OneMillionAs
+ 79/188 Test  #24: Nat.Parsing .................................   Passed    0.01 sec
+        Start 113: MSO.Various
+ 80/188 Test  #45: MerkleTree.VerifyCompressedProof ............   Passed    0.01 sec
+        Start  59: Quad.BindG
+ 81/188 Test #146: Logic.AddSub ................................   Passed    0.06 sec
+ 82/188 Test  #23: Nat.InvModB32 ...............................   Passed    0.03 sec
+ 83/188 Test  #44: MerkleTree.VerifyProof ......................   Passed    0.03 sec
+        Start 126: ecdsa.p256_failure
+        Start  26: Nat.BadDigits
+        Start  53: Transcript.TwoBlocks
+ 84/188 Test #113: MSO.Various .................................   Passed    0.02 sec
+        Start  54: Transcript.Associative
+ 85/188 Test  #26: Nat.BadDigits ...............................   Passed    0.01 sec
+        Start 149: Logic.AssertSum
+ 86/188 Test #188: Sha3Reference.OneMillionAs ..................   Passed    0.03 sec
+        Start 116: MSO.Example
+ 87/188 Test  #53: Transcript.TwoBlocks ........................   Passed    0.01 sec
+        Start  78: GF2_128.Bytes
+ 88/188 Test  #59: Quad.BindG ..................................   Passed    0.01 sec
+        Start 140: Logic_Circuit.GF2k_PolymultSizeSize
+ 89/188 Test  #54: Transcript.Associative ......................   Passed    0.01 sec
+        Start  52: Transcript.Write
+ 90/188 Test #112: MSO.Example2 ................................   Passed    0.07 sec
+        Start  32: Fp.InverseSecp256k1
+ 91/188 Test #126: ecdsa.p256_failure ..........................   Passed    0.03 sec
+        Start  33: Fp.castable
+ 92/188 Test  #78: GF2_128.Bytes ...............................   Passed    0.02 sec
+ 93/188 Test  #52: Transcript.Write ............................   Passed    0.01 sec
+        Start  47: MerkleTree.ZeroLengthProof
+        Start  81: LCH14.WAdditivity
+ 94/188 Test #116: MSO.Example .................................   Passed    0.03 sec
+ 95/188 Test  #33: Fp.castable .................................   Passed    0.01 sec
+        Start  55: Transcript.GenArrayChallenge
+        Start 134: BitPlucker.PluckSize
+ 96/188 Test  #32: Fp.InverseSecp256k1 .........................   Passed    0.02 sec
+ 97/188 Test #149: Logic.AssertSum .............................   Passed    0.03 sec
+ 98/188 Test #140: Logic_Circuit.GF2k_PolymultSizeSize .........   Passed    0.03 sec
+ 99/188 Test  #47: MerkleTree.ZeroLengthProof ..................   Passed    0.01 sec
+        Start 125: ecdsa.verify3_p256
+        Start 142: Logic_Circuit.GF2k_ModmulSize
+        Start  56: Transcript.TestVec
+        Start  57: Random.FSPRF
+100/188 Test  #81: LCH14.WAdditivity ...........................   Passed    0.02 sec
+101/188 Test  #55: Transcript.GenArrayChallenge ................   Passed    0.02 sec
+        Start  49: MerkleTree.TestVectors
+        Start  34: Poly.All
+102/188 Test #134: BitPlucker.PluckSize ........................   Passed    0.02 sec
+103/188 Test  #56: Transcript.TestVec ..........................   Passed    0.01 sec
+104/188 Test  #57: Random.FSPRF ................................   Passed    0.01 sec
+        Start   2: Morton.Uneven
+        Start  76: GF2_128.OfScalar
+        Start   1: Morton.Even
+105/188 Test  #49: MerkleTree.TestVectors ......................   Passed    0.01 sec
+        Start  77: GF2_128.SubFieldSize
+106/188 Test   #2: Morton.Uneven ...............................   Passed    0.01 sec
+        Start   4: FFTInterpolation.Simple
+107/188 Test #125: ecdsa.verify3_p256 ..........................   Passed    0.03 sec
+108/188 Test #142: Logic_Circuit.GF2k_ModmulSize ...............   Passed    0.03 sec
+109/188 Test  #34: Poly.All ....................................   Passed    0.02 sec
+110/188 Test   #1: Morton.Even .................................   Passed    0.01 sec
+        Start  64: Sumcheck.SumcheckAddEOneCopy
+        Start   5: FFTInterpolation.Product
+        Start  35: Utility.BatchInverse
+        Start  27: Sysdep.mulhl64
+111/188 Test  #76: GF2_128.OfScalar ............................   Passed    0.02 sec
+        Start   6: Interpolation.Simple
+112/188 Test  #77: GF2_128.SubFieldSize ........................   Passed    0.02 sec
+        Start 105: Base64.DecodeSymbol
+113/188 Test  #64: Sumcheck.SumcheckAddEOneCopy ................   Passed    0.01 sec
+        Start  36: Utility.Factorial
+114/188 Test  #35: Utility.BatchInverse ........................   Passed    0.01 sec
+115/188 Test  #27: Sysdep.mulhl64 ..............................   Passed    0.01 sec
+        Start 173: FlatSHA256_Circuit.p256_assert_block
+        Start  63: Sumcheck.SumcheckAddE
+116/188 Test   #4: FFTInterpolation.Simple .....................   Passed    0.02 sec
+117/188 Test   #5: FFTInterpolation.Product ....................   Passed    0.01 sec
+118/188 Test   #6: Interpolation.Simple ........................   Passed    0.01 sec
+        Start  68: GF2_128.Invert1
+        Start  92: EllipticCurve.addEMinus3A
+        Start  28: Sysdep.mulhl32
+119/188 Test  #36: Utility.Factorial ...........................   Passed    0.00 sec
+        Start   8: ReedSolomonTest.SlowConvolutionFactory
+120/188 Test  #63: Sumcheck.SumcheckAddE .......................   Passed    0.01 sec
+121/188 Test  #68: GF2_128.Invert1 .............................   Passed    0.01 sec
+        Start   9: ReedSolomonTest.LowDegreePolynomial
+        Start   7: ReedSolomonTest.ReedSolomon
+122/188 Test  #92: EllipticCurve.addEMinus3A ...................   Passed    0.01 sec
+123/188 Test  #28: Sysdep.mulhl32 ..............................   Passed    0.01 sec
+        Start  91: EllipticCurve.doubleEZeroA
+        Start  10: ReedSolomonTest.FieldExtension
+124/188 Test #105: Base64.DecodeSymbol .........................   Passed    0.02 sec
+125/188 Test #173: FlatSHA256_Circuit.p256_assert_block ........   Passed    0.02 sec
+126/188 Test   #8: ReedSolomonTest.SlowConvolutionFactory ......   Passed    0.01 sec
+127/188 Test   #9: ReedSolomonTest.LowDegreePolynomial .........   Passed    0.01 sec
+        Start 161: MAC.full_circuit_GF2_128
+        Start  73: GF2_128.Extend
+        Start  61: Quad.equality
+        Start 130: jwt.EvalFailureJWT
+128/188 Test   #7: ReedSolomonTest.ReedSolomon .................   Passed    0.01 sec
+129/188 Test  #91: EllipticCurve.doubleEZeroA ..................   Passed    0.01 sec
+130/188 Test  #10: ReedSolomonTest.FieldExtension ..............   Passed    0.01 sec
+        Start  85: LCH14.Interpolation
+        Start 120: Compiler.AliasOfLinearAndCopyWire
+        Start  48: MerkleTree.BatchVerifyProofTooShort
+131/188 Test  #73: GF2_128.Extend ..............................   Passed    0.01 sec
+132/188 Test  #61: Quad.equality ...............................   Passed    0.01 sec
+        Start  11: Reed_Solomon.Product
+        Start  31: Fp.RootOfUnity
+133/188 Test #161: MAC.full_circuit_GF2_128 ....................   Passed    0.01 sec
+134/188 Test #130: jwt.EvalFailureJWT ..........................   Passed    0.01 sec
+        Start  74: GF2_128.X
+        Start  30: Fp.SmallField
+135/188 Test  #48: MerkleTree.BatchVerifyProofTooShort .........   Passed    0.01 sec
+136/188 Test  #85: LCH14.Interpolation .........................   Passed    0.01 sec
+137/188 Test #120: Compiler.AliasOfLinearAndCopyWire ...........   Passed    0.01 sec
+138/188 Test  #11: Reed_Solomon.Product ........................   Passed    0.01 sec
+139/188 Test  #31: Fp.RootOfUnity ..............................   Passed    0.01 sec
+        Start  66: GF2_128.Constants
+        Start  88: HostDecoderTest.Lookup
+        Start  70: GF2_128.Mul
+        Start 175: FlatSHA256_Circuit.assert_message
+        Start 174: FlatSHA256_Circuit.assert_block_packed
+140/188 Test  #74: GF2_128.X ...................................   Passed    0.01 sec
+141/188 Test  #30: Fp.SmallField ...............................   Passed    0.01 sec
+        Start 121: Compiler.Assert0
+        Start 102: ZK.test_circuit_io
+142/188 Test  #66: GF2_128.Constants ...........................   Passed    0.01 sec
+143/188 Test  #88: HostDecoderTest.Lookup ......................   Passed    0.01 sec
+        Start  62: Sumcheck.EvalCircuit
+        Start 106: Base64.DecodeBase64
+144/188 Test  #70: GF2_128.Mul .................................   Passed    0.01 sec
+145/188 Test #175: FlatSHA256_Circuit.assert_message ...........   Passed    0.01 sec
+146/188 Test #174: FlatSHA256_Circuit.assert_block_packed ......   Passed    0.01 sec
+147/188 Test #121: Compiler.Assert0 ............................   Passed    0.01 sec
+        Start  40: Eqs.All
+        Start  67: GF2_128.Invert0
+        Start 123: Compiler.CanonicalizationSimple
+        Start  82: LCH14.WRecursion
+148/188 Test #102: ZK.test_circuit_io ..........................   Passed    0.02 sec
+149/188 Test  #62: Sumcheck.EvalCircuit ........................   Passed    0.01 sec
+        Start 163: mdoc.mdoc_issuer_list_valid
+        Start 155: Memcmp.size
+150/188 Test #106: Base64.DecodeBase64 .........................   Passed    0.01 sec
+151/188 Test  #40: Eqs.All .....................................   Passed    0.01 sec
+152/188 Test #123: Compiler.CanonicalizationSimple .............   Passed    0.01 sec
+        Start 154: Memcmp.Date
+        Start 187: Sha3Reference.TestVec
+        Start  95: EllipticCurve.doubleEGeneral
+153/188 Test  #67: GF2_128.Invert0 .............................   Passed    0.01 sec
+154/188 Test  #82: LCH14.WRecursion ............................   Passed    0.01 sec
+155/188 Test #163: mdoc.mdoc_issuer_list_valid .................   Passed    0.01 sec
+        Start  71: GF2_128.PolyEvaluationPoint
+        Start  75: GF2_128.Beta
+        Start 103: ZK.Rfc_testvector1
+156/188 Test #154: Memcmp.Date .................................   Passed    0.01 sec
+157/188 Test #187: Sha3Reference.TestVec .......................   Passed    0.00 sec
+        Start 119: Compiler.OutputAnInput
+        Start  89: EllipticCurve.isOnCurve
+158/188 Test #155: Memcmp.size .................................   Passed    0.01 sec
+159/188 Test  #95: EllipticCurve.doubleEGeneral ................   Passed    0.01 sec
+        Start  69: GF2_128.Cmp
+        Start  90: EllipticCurve.addEZeroA
+160/188 Test  #71: GF2_128.PolyEvaluationPoint .................   Passed    0.01 sec
+161/188 Test  #75: GF2_128.Beta ................................   Passed    0.01 sec
+162/188 Test #119: Compiler.OutputAnInput ......................   Passed    0.01 sec
+        Start  87: HostDecoderTest.DecodeHost
+        Start  72: GF2_128.EvalLagrange
+        Start 107: Base64.Circuit
+163/188 Test  #89: EllipticCurve.isOnCurve .....................   Passed    0.01 sec
+164/188 Test  #69: GF2_128.Cmp .................................   Passed    0.01 sec
+        Start 122: Compiler.Output0
+        Start 110: CBOR.VerifyDecode
+165/188 Test #103: ZK.Rfc_testvector1 ..........................   Passed    0.01 sec
+166/188 Test  #90: EllipticCurve.addEZeroA .....................   Passed    0.01 sec
+167/188 Test  #87: HostDecoderTest.DecodeHost ..................   Passed    0.01 sec
+168/188 Test  #72: GF2_128.EvalLagrange ........................   Passed    0.01 sec
+        Start 151: Logic.GF2_128Multiplier
+        Start  93: EllipticCurve.doubleEMinus3A
+        Start 108: CborPluck.Pluck
+        Start 156: Polynomial.Eval
+169/188 Test #107: Base64.Circuit ..............................   Passed    0.01 sec
+170/188 Test #122: Compiler.Output0 ............................   Passed    0.01 sec
+        Start 109: CBOR.DecodeOneV8
+        Start 118: Scan.UnsegmentedAdd
+171/188 Test #110: CBOR.VerifyDecode ...........................   Passed    0.01 sec
+        Start 144: Logic.Simple
+172/188 Test  #93: EllipticCurve.doubleEMinus3A ................   Passed    0.01 sec
+        Start 133: BitPlucker.Pluck
+173/188 Test #151: Logic.GF2_128Multiplier .....................   Passed    0.01 sec
+174/188 Test #108: CborPluck.Pluck .............................   Passed    0.01 sec
+175/188 Test #109: CBOR.DecodeOneV8 ............................   Passed    0.01 sec
+176/188 Test #118: Scan.UnsegmentedAdd .........................   Passed    0.01 sec
+177/188 Test #156: Polynomial.Eval .............................   Passed    0.01 sec
+178/188 Test #133: BitPlucker.Pluck ............................   Passed    0.00 sec
+179/188 Test #144: Logic.Simple ................................   Passed    0.01 sec
+180/188 Test #165: mdoc.mdoc_hash_test_fp128 ...................   Passed   26.11 sec
+181/188 Test #166: mdoc.mdoc_hash_test_fp128_2 .................   Passed   27.39 sec
+182/188 Test #128: ECDSA.VerifyExternalP256 ....................   Passed   30.05 sec
+183/188 Test #170: MdocZKTest.bad_arguments ....................   Passed   34.48 sec
+184/188 Test #171: MdocZKTest.attr_mismatch ....................   Passed   36.66 sec
+185/188 Test #168: MdocZKTest.two_claims .......................   Passed   36.82 sec
+186/188 Test #169: MdocZKTest.wrong_witness ....................   Passed   36.88 sec
+187/188 Test #172: MdocZKTest.bad_proofs .......................   Passed   41.90 sec
+188/188 Test #167: MdocZKTest.one_claim ........................   Passed   42.92 sec
+
+100% tests passed, 0 tests failed out of 188
+
+Total Test time (real) =  42.94 sec

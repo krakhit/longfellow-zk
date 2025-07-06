@@ -1,0 +1,36 @@
+Unable to determine clock rate from sysctl: hw.cpufrequency: No such file or directory
+This does not affect benchmark measurements, only the metadata output.
+***WARNING*** Failed to set thread affinity. Estimated CPU frequency may be incorrect.
+2025-07-06T11:43:07+03:00
+Running ./circuits/jwt/jwt_test
+Run on (8 X 24 MHz CPU s)
+CPU Caches:
+  L1 Data 64 KiB
+  L1 Instruction 128 KiB
+  L2 Unified 4096 KiB (x8)
+Load Average: 1.98, 5.42, 5.53
+[INFO][+ 3323.247 ms] Compiled circuit: mdoc revocation list
+[INFO][+    0.039 ms]  depth: 26 wires: 717611 in: 16006 out:64 use:589859 ovh:127752 t:2149994 cse:982759 notn:1841510
+[INFO][+   78.616 ms] Fill done
+[INFO][+    0.139 ms] ZK Commit start
+[INFO][+   71.118 ms] ZK Commitment done
+[INFO][+  377.583 ms] ZK sumcheck done
+[INFO][+    1.614 ms] ZK constraints done
+[INFO][+   25.675 ms] Prover Done: flag
+[INFO][+ 2300.618 ms] Compiled circuit: mdoc revocation list
+[INFO][+    0.046 ms]  depth: 26 wires: 717611 in: 16006 out:64 use:589859 ovh:127752 t:2149994 cse:982759 notn:1841510
+[INFO][+   76.817 ms] Fill done
+[INFO][+    0.115 ms] ZK Commit start
+[INFO][+   63.705 ms] ZK Commitment done
+[INFO][+  325.552 ms] ZK sumcheck done
+[INFO][+    1.712 ms] ZK constraints done
+[INFO][+   24.600 ms] Prover Done: flag
+[INFO][+    1.208 ms] ZK Commit start
+[INFO][+   63.845 ms] ZK Commitment done
+[INFO][+  323.400 ms] ZK sumcheck done
+[INFO][+    1.821 ms] ZK constraints done
+[INFO][+   24.384 ms] Prover Done: flag
+---------------------------------------------------------
+Benchmark               Time             CPU   Iterations
+---------------------------------------------------------
+BM_JwtZKProver  415521729 ns    414390000 ns            2

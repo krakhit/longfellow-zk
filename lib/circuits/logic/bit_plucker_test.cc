@@ -19,26 +19,22 @@
 #include "algebra/fp.h"
 #include "circuits/compiler/circuit_dump.h"
 #include "circuits/compiler/compiler.h"
+#include "circuits/logic/bit_plucker_constants.h"
 #include "circuits/logic/bit_plucker_encoder.h"
 #include "circuits/logic/compiler_backend.h"
 #include "circuits/logic/evaluation_backend.h"
 #include "circuits/logic/logic.h"
+#include "gf2k/gf2_128.h"
 #include "gtest/gtest.h"
 
 namespace proofs {
 namespace {
 
-using Field = Fp<1>;
-using Elt = typename Field::Elt;
-using CompilerBackend = CompilerBackend<Field>;
-using LogicCircuit = Logic<Field, CompilerBackend>;
-using EltWC = LogicCircuit::EltW;
-using EvalBackend = EvaluationBackend<Field>;
-using Logic = Logic<Field, EvalBackend>;
-using EltW = Logic::EltW;
+template <class Field>
+void test_plucker(const Field &F) {
+  using EvalBackend = EvaluationBackend<Field>;
+  using Logic = Logic<Field, EvalBackend>;
 
-TEST(BitPlucker, Pluck) {
-  const Field F("18446744073709551557");
   const EvalBackend ebk(F);
   const Logic L(&ebk, F);
   constexpr size_t LOGN = 5;
@@ -55,9 +51,19 @@ TEST(BitPlucker, Pluck) {
   }
 }
 
-template <size_t LOGN>
-static void pluck_size() {
-  const Field F("18446744073709551557");
+TEST(BitPlucker, PluckPrimeField) {
+  test_plucker(Fp<1>("18446744073709551557"));
+}
+
+TEST(BitPlucker, PluckBinaryField) { test_plucker(GF2_128<>()); }
+
+template <size_t LOGN, class Field>
+void pluck_size(const char *name, const Field &F) {
+  using CompilerBackend = CompilerBackend<Field>;
+  using LogicCircuit = Logic<Field, CompilerBackend>;
+  using EvalBackend = EvaluationBackend<Field>;
+  using Logic = Logic<Field, EvalBackend>;
+
   const EvalBackend ebk(F);
   const Logic L(&ebk, F);
   QuadCircuit<Field> Q(F);
@@ -71,20 +77,105 @@ static void pluck_size() {
     Q.output(LC.eval(r[k]), k);
   }
   auto CIRCUIT = Q.mkcircuit(/*nc=*/1);
-  dump_info("pluck", LOGN, Q);
+  dump_info(name, LOGN, Q);
 }
 
-TEST(BitPlucker, PluckSize) {
-  pluck_size<1>();
-  pluck_size<2>();
-  pluck_size<3>();
-  pluck_size<4>();
-  pluck_size<5>();
-  pluck_size<6>();
-  pluck_size<7>();
-  pluck_size<8>();
+TEST(BitPlucker, PluckSizePrimeField) {
+  using Field = Fp<1>;
+  const Field F("18446744073709551557");
+  const char *name = "pluck<FP<1>>";
+  pluck_size<1>(name, F);
+  pluck_size<2>(name, F);
+  pluck_size<3>(name, F);
+  pluck_size<4>(name, F);
+  pluck_size<5>(name, F);
+  pluck_size<6>(name, F);
+  pluck_size<7>(name, F);
+  pluck_size<8>(name, F);
+}
+
+TEST(BitPlucker, PluckSizeBinaryField) {
+  using Field = GF2_128<>;
+  const Field F;
+  const char *name = "pluck<GF2_128<>>";
+  pluck_size<1>(name, F);
+  pluck_size<2>(name, F);
+  pluck_size<3>(name, F);
+  pluck_size<4>(name, F);
+  pluck_size<5>(name, F);
+  pluck_size<6>(name, F);
+  pluck_size<7>(name, F);
+  pluck_size<8>(name, F);
+}
+
+TEST(BitPlucker, EltMuxer) {
+  using Field = Fp<1>;
+  using EvalBackend = EvaluationBackend<Field>;
+  using Logic = Logic<Field, EvalBackend>;
+  using EltW = Logic::EltW;
+
+  const Field F("257");
+  const EvalBackend ebk(F);
+  const Logic L(&ebk, F);
+  const EltW zero = L.konst(0);
+  const EltW one = L.konst(1);
+
+  EltW arr_z[] = {zero, one, one, one, one, one, one, one};
+  EltW arr_e[] = {zero, one, zero, one, zero, one, zero, one};
+  EltW arr_r[] = {zero, zero, one, one, zero, zero, one, one};
+  EltW arr_s[] = {zero, zero, zero, zero, one, one, one, one};
+
+  const EltMuxer<Logic, 8> em_z(L, arr_z);
+  const EltMuxer<Logic, 8> em_e(L, arr_e);
+  const EltMuxer<Logic, 8> em_r(L, arr_r);
+  const EltMuxer<Logic, 8> em_s(L, arr_s);
+
+  for (size_t i = 0; i < 8; ++i) {
+    auto enc = bit_plucker_point<Field, 8>()(i, F);
+
+    EltW range = em_z.mux(L.konst(enc));
+    L.assert_eq(&range, arr_z[i]);
+
+    range = em_e.mux(L.konst(enc));
+    L.assert_eq(&range, arr_e[i]);
+
+    range = em_r.mux(L.konst(enc));
+    L.assert_eq(&range, arr_r[i]);
+
+    range = em_s.mux(L.konst(enc));
+    L.assert_eq(&range, arr_s[i]);
+  }
+}
+
+// Test use of the EltMuxer machinery to test whether a smaller muxer input
+// is in range. In this case, we want to test whether the muxed input is in
+// {0,1,2,3,4,5,6,7}. We want to ensure that there are no false positives and
+// thus the test iterates over the entire field.
+TEST(BitPlucker, EltMuxer9) {
+  using Field = Fp<1>;
+  using EvalBackend = EvaluationBackend<Field>;
+  using Logic = Logic<Field, EvalBackend>;
+  using EltW = Logic::EltW;
+
+  const Field F("257");
+  const EvalBackend ebk(F);
+  const Logic L(&ebk, F);
+  const EltW zero = L.konst(0);
+  const EltW one = L.konst(1);
+
+  EltW arr_v[] = {zero, zero, zero, zero, zero, zero, zero, zero, one};
+  const EltMuxer<Logic, 9, 8> em2(L, arr_v);
+  for (size_t i = 0; i < 128 + /*intentional extra element*/ 1; ++i) {
+    auto enc = bit_plucker_point<Field, 8>()(i, F);
+    EltW range = em2.mux(L.konst(enc));
+    if (i < 9) {
+      L.assert_eq(&range, arr_v[i]);
+    } else {
+      auto ee = range.elt();
+      EXPECT_NE(ee, F.zero());
+    }
+  }
 }
 
 }  // namespace
 }  // namespace proofs
-

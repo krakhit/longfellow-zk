@@ -19,7 +19,6 @@
 namespace proofs {
 
 static constexpr size_t kSHAJWTPluckerBits = 4u;
-static constexpr size_t kMaxJWTSHABlocks = 7;
 static constexpr size_t kJWTIndexBits = 10; /* #bits to index into payload */
 
 }  // namespace proofs

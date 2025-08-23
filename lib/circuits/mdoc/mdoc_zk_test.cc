@@ -131,11 +131,52 @@ TEST_F(MdocZKTest, one_claim) {
       // Website explainer example.
       {"age_over_18-website-mdoc[5]", {test::age_over_18}, &mdoc_tests[5]},
       // Large mdoc from 2025-06-10.
-      {"not_over_18-large-mdoc[6]", {test::not_over_18}, &mdoc_tests[6]}};
+      {"not_over_18-large-mdoc[6]", {test::not_over_18}, &mdoc_tests[6]},
+      // Integer field.
+      {"age_birth_year-mdoc[8]", {test::age_birth_year}, &mdoc_tests[8]}};
 
   for (size_t i = 0; i < sizeof(tests) / sizeof(tests[0]); ++i) {
     run_test(tests[i].test_name, 1, tests[i].claims, tests[i].mdoc);
   }
+}
+
+TEST_F(MdocZKTest, long_attribute) {
+  uint8_t *zkproof;
+  size_t proof_len;
+  RequestedAttribute attrs[1] = {test::age_over_18};
+  auto test = &mdoc_tests[0];
+  {
+    log(INFO, "starting prover");
+    MdocProverErrorCode ret = run_mdoc_prover(
+        circuit1_, circuit_len1_, test->mdoc, test->mdoc_size,
+        test->pkx.as_pointer, test->pky.as_pointer, test->transcript,
+        test->transcript_size, attrs, 1, (const char *)test->now, &zkproof,
+        &proof_len, &kZkSpecs[0]);
+    EXPECT_EQ(ret, MDOC_PROVER_SUCCESS);
+  }
+
+  // Attr is too long.
+  RequestedAttribute long_attr[1] = {
+      {.namespace_id = {'o', 'r', 'g', '.', 'i', 's', 'o', '.', '1', '8', '0',
+                        '1', '3', '.', '5', '.', '1'},
+       .id = {'a', 'g', 'e', '_', 'o', 'v', 'e', 'r', '_', '1', '8',
+              '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0',
+              '0', '0', '0', '0', '0', '0', '0', '0', '0', '0'},
+       .cbor_value = {0xf5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                      0,    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                      0,    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                      0,    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+       .namespace_len = 17,
+       .id_len = 32,
+       .cbor_value_len = 64}};
+
+  MdocVerifierErrorCode ret = run_mdoc_verifier(
+      circuit1_, circuit_len1_, test->pkx.as_pointer, test->pky.as_pointer,
+      test->transcript, test->transcript_size, long_attr, 1,
+      (const char *)test->now, zkproof, proof_len, test->doc_type,
+      &kZkSpecs[0]);
+  EXPECT_EQ(ret, MDOC_VERIFIER_GENERAL_FAILURE);
+  free(zkproof);
 }
 
 TEST_F(MdocZKTest, two_claims) {
@@ -164,6 +205,14 @@ TEST_F(MdocZKTest, two_claims) {
           },
           &mdoc_tests[3],
       },
+      {
+          "birthdate_1968_04_27,issue_date_2025-07-21T04:00:00Z-mdoc[8]",
+          {
+              test::birthdate_1968_04_27,
+              test::issue_date_2025_07_21,
+          },
+          &mdoc_tests[7],
+      },
   };
 
   for (size_t i = 0; i < sizeof(two_tests) / sizeof(two_tests[0]); ++i) {
@@ -178,30 +227,41 @@ TEST_F(MdocZKTest, wrong_witness) {
       {"fail-not_over_18-mdoc[2]", {test::not_over_18}, &mdoc_tests[2]},
       {
           "fail-birthdate_1971_09_01-mdoc[3]",
-          {{{'b', 'i', 'r', 't', 'h', '_', 'd', 'a', 't', 'e'},
-            {'0', '9', '7', '1', '-', '0', '9', '-', '0', '1'},
-            10,
-            10,
-            kDate}},
+          {RequestedAttribute(
+              {.namespace_id = {'o', 'r', 'g', '.', 'i', 's', 'o', '.', '1',
+                                '8', '0', '1', '3', '.', '5', '.', '1'},
+               .id = {'b', 'i', 'r', 't', 'h', '_', 'd', 'a', 't', 'e'},
+               .cbor_value = {0xD9, 0x03, 0xEC, 0x6A, '0', '9', '7', '1', '-',
+                              '0', '9', '-', '0', '1'},
+               .namespace_len = 17,
+               .id_len = 10,
+               .cbor_value_len = 14})},
           &mdoc_tests[3],
       },
       {
           "fail-birthdate_1871_09_01-mdoc[3]",
-          {{{'b', 'i', 'r', 't', 'h', '_', 'd', 'a', 't', 'e'},
-            {'1', '8', '7', '1', '-', '0', '9', '-', '0', '1'},
-            10,
-            10,
-            kDate}},
+          {RequestedAttribute(
+              {.namespace_id = {'o', 'r', 'g', '.', 'i', 's', 'o', '.', '1',
+                                '8', '0', '1', '3', '.', '5', '.', '1'},
+               .id = {'b', 'i', 'r', 't', 'h', '_', 'd', 'a', 't', 'e'},
+               .cbor_value = {0xD9, 0x03, 0xEC, 0x6A, '1', '8', '7', '1', '-',
+                              '0', '9', '-', '0', '1'},
+               .namespace_len = 17,
+               .id_len = 10,
+               .cbor_value_len = 14})},
           &mdoc_tests[3],
       },
       {
           "fail-birthdate_1971_09_01-mdoc[3]",
-          {{{'b', 'i', 'r', 't', 'h', '_', 'd', 'a', 't', 'e'},
-            {0xD9, 0x03, 0xEC, 0x6A, '1', '9', '7', '1', '-', '0', '9', '-',
-             '0', '1', '0'},
-            10,
-            15,
-            kDate}},
+          {RequestedAttribute(
+              {.namespace_id = {'o', 'r', 'g', '.', 'i', 's', 'o', '.', '1',
+                                '8', '0', '1', '3', '.', '5', '.', '1'},
+               .id = {'b', 'i', 'r', 't', 'h', '_', 'd', 'a', 't', 'e'},
+               .cbor_value = {0xD9, 0x03, 0xEC, 0x6A, '1', '9', '7', '1', '-',
+                              '0', '9', '-', '0', '1', '0'},
+               .namespace_len = 17,
+               .id_len = 10,
+               .cbor_value_len = 15})},
           &mdoc_tests[3],
       },
   };
@@ -219,7 +279,7 @@ TEST_F(MdocZKTest, bad_arguments) {
       test::age_over_18,
   };
   uint8_t tr[100] = {0};
-  uint8_t zkproof[30000]= {0};
+  uint8_t zkproof[30000] = {0};
   uint8_t circuit[60000] = {0};
   uint8_t mdoc[60000] = {0};
   const char *pk = "0x15";
@@ -345,6 +405,7 @@ TEST_F(MdocZKTest, bad_arguments) {
                               attrs, 0, now, zkproof, sizeof(zkproof),
                               kDefaultDocType, &zk_spec_1),
             MDOC_VERIFIER_ARGUMENTS_TOO_SMALL);
+
   // Broken now.
   EXPECT_EQ(run_mdoc_verifier(circuit, sizeof(circuit), pk, pk, tr, sizeof(tr),
                               attrs, num_attrs, nullptr, zkproof,
@@ -415,6 +476,35 @@ TEST_F(MdocZKTest, bad_proofs) {
         &zk_spec_1);
     EXPECT_NE(ret, MDOC_VERIFIER_SUCCESS);
   }
+}
+
+TEST(CircuitGenerationTest, attempt_to_generate_old_circuit) {
+  set_log_level(ERROR);
+  constexpr int num_attrs = 1;
+
+  // Find the smallest version of the circuit for the given number of
+  // attributes.
+  const ZkSpecStruct *old_zk_spec = nullptr;
+  int num_circuits = 0;
+  for (int i = 0; i < kNumZkSpecs; ++i) {
+    if (kZkSpecs[i].num_attributes == num_attrs) {
+      num_circuits++;
+      if (old_zk_spec == nullptr ||
+          kZkSpecs[i].version < old_zk_spec->version) {
+        old_zk_spec = &kZkSpecs[i];
+      }
+    }
+  }
+
+  EXPECT_GE(num_circuits, 1);
+  if (num_circuits == 1) {
+    return;  // No old circuit to test against, it's OK to skip this test.
+  }
+
+  static uint8_t *circuit = nullptr;
+  static size_t circuit_len;
+  EXPECT_EQ(generate_circuit(old_zk_spec, &circuit, &circuit_len),
+            CIRCUIT_GENERATION_INVALID_ZK_SPEC_VERSION);
 }
 
 static const Claims benchmark_claim = {

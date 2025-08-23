@@ -30,15 +30,14 @@ extern "C" {
 // for example age_over_18. The circuit generation can be run once, and the
 // result cached for subsequent use in the prover and verifier.
 
-enum CborAttributeType { kPrimitive, kString, kBytes, kDate, kInt };
-
 /* This struct allows a verifier to express which attribute and value the prover
- * must claim. */
+ * must claim.  The value should be passed as the raw bytes of the CBOR value.
+ */
 typedef struct {
+  uint8_t namespace_id[64];
   uint8_t id[32];
-  uint8_t value[64];
-  size_t id_len, value_len;
-  CborAttributeType type;
+  uint8_t cbor_value[64];
+  size_t namespace_len, id_len, cbor_value_len;
 } RequestedAttribute;
 
 // Return codes for the run_mdoc2_prover method.
@@ -98,6 +97,11 @@ typedef struct {
 
 static const char kDefaultDocType[] = "org.iso.18013.5.1.mDL";
 
+// An upper-bound on the decompressed circuit size. It is better to make this
+// bound tight to avoid memory failure in the resource restricted Android
+// gmscore environment.
+static constexpr size_t kCircuitSizeMax = 150000000;
+
 // The run_mdoc2_prover method takes byte-oriented inputs that describe a
 // circuit, mdoc, the public key of the issuer for the mdoc, a transcript
 // for the mdoc request operation, an array of RequestedAttribute that
@@ -137,7 +141,9 @@ MdocVerifierErrorCode run_mdoc_verifier(
     const ZkSpecStruct* zk_spec_version);
 
 // Produces a compressed version of the circuit bytes for the specified number
-// of attributes.
+// of attributes. The generator only supports the latest version of the ZKSpec
+// for a number of attributes. Attempt to generate older circuits will result in
+// an error.
 CircuitGenerationErrorCode generate_circuit(const ZkSpecStruct* zk_spec_version,
                                             uint8_t** cb, size_t* clen);
 
@@ -149,7 +155,7 @@ CircuitGenerationErrorCode generate_circuit(const ZkSpecStruct* zk_spec_version,
 int circuit_id(uint8_t id[/*kSHA256DigestSize*/], const uint8_t* bcp,
                size_t bcsz, const ZkSpecStruct* zk_spec);
 
-enum { kNumZkSpecs = 12 };
+enum { kNumZkSpecs = 8 };
 // This is a hardcoded list of all the ZK specifications supported by this
 // library. Every time a new breaking change is introduced in either the circuit
 // format or its interpretation, a new version must be added here.

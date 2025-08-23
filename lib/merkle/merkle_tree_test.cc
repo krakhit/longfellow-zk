@@ -18,6 +18,7 @@
 #include <stdint.h>
 #include <stdio.h>
 
+#include <algorithm>
 #include <vector>
 
 #include "benchmark/benchmark.h"
@@ -42,54 +43,6 @@ TEST(MerkleTree, BuildTree) {
                                 Digest::hash2(leaves[2], leaves[3])));
 }
 
-TEST(MerkleTree, GenProof) {
-  MerkleTree mt(4);
-  Digest leaves[4] = {Digest{100}, Digest{101}, Digest{102}, Digest{103}};
-  for (size_t i = 0; i < 4; i++) {
-    mt.set_leaf(i, leaves[i]);
-  }
-  Digest proof[3];
-  mt.build_tree();
-
-  mt.generate_proof(proof, 3);
-  EXPECT_EQ(proof[0], leaves[3]);
-  EXPECT_EQ(proof[1], leaves[2]);
-  EXPECT_EQ(proof[2], mt.layers_[2]);
-}
-
-TEST(MerkleTree, VerifyProof) {
-  for (size_t n = 1; n <= 64; ++n) {
-    MerkleTree prover(n);
-    uint8_t data = 1;
-    for (size_t i = 0; i < n; i++) {
-      prover.set_leaf(i, Digest{data});
-      data += 1;
-    }
-    Digest root = prover.build_tree();
-
-    MerkleTreeVerifier verifier(n, root);
-    const size_t nproof = 7;  // 1 + ceil(lg n)
-    EXPECT_LE(n, 1u << (nproof - 1));
-    Digest proof[nproof];
-    for (size_t pos = 0; pos < n; pos++) {
-      size_t proof_size = prover.generate_proof(proof, pos);
-      EXPECT_LE(proof_size, nproof);
-      EXPECT_GE(proof_size, 1u);
-      EXPECT_EQ(0u, n >> proof_size);
-      if (pos + 1 == n) {
-        EXPECT_EQ(merkle_tree_len(n), proof_size);
-      }
-      for (Digest* q = proof; q < proof + proof_size; ++q) {
-        // flip bit
-        proof[proof_size - 1].data[0] ^= 1;
-        EXPECT_EQ(false, verifier.verify_proof(proof, pos));
-        // restore bit
-        proof[proof_size - 1].data[0] ^= 1;
-        EXPECT_EQ(true, verifier.verify_proof(proof, pos));
-      }
-    }
-  }
-}
 
 MerkleTree setupBatch(size_t n, size_t batch_size, std::vector<Digest>& leaves,
                       std::vector<size_t>& idx) {
@@ -100,10 +53,15 @@ MerkleTree setupBatch(size_t n, size_t batch_size, std::vector<Digest>& leaves,
     data += 1;
   }
 
-  // Pick a random set leaf indices.
+  // Pick a random set of leaf indices with no repeats.
   for (size_t i = 0; i < batch_size; ++i) {
-    idx.push_back(random() % n);
-    leaves.push_back(prover.layers_[idx[i] + n]);
+    size_t j = random() % n;
+    // Rejection sampling is OK for small batch sizes.
+    while (std::find(idx.begin(), idx.end(), j) != idx.end()) {
+      j = random() % n;
+    }
+    idx.push_back(j);
+    leaves.push_back(prover.layers_[j + n]);
   }
   return prover;
 }
@@ -168,6 +126,23 @@ TEST(MerkleTree, ZeroLengthProof) {
   // The valid case for a zero-length proof is when all the leaves are given.
   EXPECT_TRUE(
       verifier.verify_compressed_proof(empty_proof.data(), 0, leaves, ids, 4));
+}
+
+TEST(MerkleTree, UniqueLeaves) {
+  Digest leaves[4] = {Digest{100}, Digest{101}, Digest{102}, Digest{103}};
+  MerkleTree mt(4);
+  for (size_t i = 0; i < 4; i++) {
+    mt.set_leaf(i, leaves[i]);
+  }
+  Digest root = mt.build_tree();
+  size_t ids[] = {1, 1};
+  std::vector<Digest> ll = {leaves[1], leaves[1]};
+  MerkleTreeVerifier verifier(4, root);
+  std::vector<Digest> proof = {Digest::hash2(leaves[1], leaves[1])};
+
+  EXPECT_DEATH(
+      verifier.verify_compressed_proof(proof.data(), 1, leaves, ids, 2),
+      "duplicate position in merkle tree requested");
 }
 
 TEST(MerkleTree, BatchVerifyProofTooShort) {

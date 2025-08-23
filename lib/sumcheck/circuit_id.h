@@ -12,14 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef PRIVACY_PROOFS_ZK_LIB_CIRCUITS_COMPILER_CIRCUIT_ID_H_
-#define PRIVACY_PROOFS_ZK_LIB_CIRCUITS_COMPILER_CIRCUIT_ID_H_
+#ifndef PRIVACY_PROOFS_ZK_LIB_SUMCHECK_CIRCUIT_ID_H_
+#define PRIVACY_PROOFS_ZK_LIB_SUMCHECK_CIRCUIT_ID_H_
 
 #include <stddef.h>
 
 #include <cstdint>
 
-#include "circuits/compiler/circuit_id.h"
 #include "sumcheck/circuit.h"
 #include "util/crypto.h"
 
@@ -69,4 +68,4 @@ void circuit_id(uint8_t id[/*32*/], const Circuit<Field>& c, const Field& F) {
 
 }  // namespace proofs
 
-#endif  // PRIVACY_PROOFS_ZK_LIB_CIRCUITS_COMPILER_CIRCUIT_ID_H_
+#endif  // PRIVACY_PROOFS_ZK_LIB_SUMCHECK_CIRCUIT_ID_H_

@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use circuits_analog_adder::FieldWrappingSum;
-use circuits_bitvec::{Bitvec, BitvecLogic, V256, V32, V64, V8};
-use circuits_boolean::Boolean;
-use circuits_sha256::{Derived as Sha256Derived, Sha256};
-use compile_logic::Logic;
+use crate::circuits::analog_adder::FieldWrappingSum;
+use crate::circuits::bitvec::{Bitvec, BitvecLogic, V256, V32, V64, V8};
+use crate::circuits::boolean::Boolean;
+use crate::circuits::sha256::{Derived as Sha256Derived, Sha256};
+use crate::compile::logic::Logic;
 
 pub struct Given<L: Logic, const S: usize> {
     pub padded_preimage: Vec<V8<L>>,
@@ -31,8 +31,8 @@ pub struct Sha256Msg<'a, L: Logic, const MAX_BLOCKS: usize>
 where L::F: FieldWrappingSum
 {
     logic: &'a L,
-    pub(crate) sha: Sha256<'a, L>,
-    pub(crate) bv: BitvecLogic<'a, L>,
+    pub(in crate::circuits::sha256msg) sha: Sha256<'a, L>,
+    pub(in crate::circuits::sha256msg) bv: BitvecLogic<'a, L>,
     boolean: Boolean<'a, L>,
 }
 
@@ -83,7 +83,7 @@ where L::F: FieldWrappingSum
                     V32::new(word_bits)
                 });
 
-                let block_given = circuits_sha256::Given {
+                let block_given = crate::circuits::sha256::Given {
                     input_block: tmp,
                     h0: h.clone(),
                 };

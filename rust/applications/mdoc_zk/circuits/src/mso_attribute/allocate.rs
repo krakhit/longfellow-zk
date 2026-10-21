@@ -12,16 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use circuits_bitvec::BitvecLogic;
-use compile_logic::LogicIO;
+use crate::circuits::bitvec::BitvecLogic;
+use crate::compile::logic::LogicIO;
 
-use crate::mso_attribute::{
+use crate::mdoc::circuits::mso_attribute::{
     circuit::{AttrSlice, Derived, DisclosedAttribute, FieldLocator, Given},
     constants::K_ATTR_INDEX_BITS,
 };
 
 pub fn allocate_given<L: LogicIO>(bv: &BitvecLogic<L>, pos: &mut usize) -> Given<L> {
-    let bitvec_io = circuits_bitvec::BitvecIO::new(bv);
+    let bitvec_io = crate::circuits::bitvec::BitvecIO::new(bv);
     let attribute_preimage = AttrSlice {
         data: std::array::from_fn(|_| bitvec_io.next::<8>(pos)),
         len: bitvec_io.next::<K_ATTR_INDEX_BITS>(pos),
@@ -55,5 +55,5 @@ pub fn allocate_given<L: LogicIO>(bv: &BitvecLogic<L>, pos: &mut usize) -> Given
 }
 
 pub fn allocate_derived<L: LogicIO>(bv: &BitvecLogic<L>, pos: &mut usize) -> Derived<L> {
-    circuits_sha256msg::allocate_derived::<_, 2>(bv, pos)
+    crate::circuits::sha256msg::allocate_derived::<_, 2>(bv, pos)
 }

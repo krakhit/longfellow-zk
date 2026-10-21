@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use circuits_boolean::{Bitw, Boolean};
-use circuits_lookup::{Lookup, Table};
-use compile_logic::{Eltw, Logic};
-use core_algebra::ElementOf;
+use crate::circuits::boolean::{Bitw, Boolean};
+use crate::circuits::lookup::{Lookup, Table};
+use crate::compile::logic::{Eltw, Logic};
+use crate::core::algebra::ElementOf;
 
-use crate::proto;
+use crate::circuits::analog_decoder::proto;
 
 pub struct AnalogDecoder<'a, L: Logic> {
     logic: &'a L,

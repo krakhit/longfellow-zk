@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use core_algebra::{ElementOf, Nat};
+use crate::core::algebra::{ElementOf, Nat};
 use num_bigint::BigUint;
 
-use crate::{
+use crate::compile::algebra::{
     field::{CompilePrimeField, SupportsNatConversions},
     Curve,
 };
@@ -24,7 +24,7 @@ pub struct Secp256r1<F: CompilePrimeField + SupportsNatConversions<4>> {
     a: ElementOf<F>,
     b: ElementOf<F>,
     g: (ElementOf<F>, ElementOf<F>),
-    order: crate::CompileNat<4>,
+    order: crate::compile::algebra::CompileNat<4>,
 }
 
 impl<F: CompilePrimeField + SupportsNatConversions<4>> std::fmt::Debug for Secp256r1<F> {
@@ -66,7 +66,7 @@ impl<F: CompilePrimeField + SupportsNatConversions<4>> Secp256r1<F> {
             0xffffffffffffffff,
             0xffffffff00000000,
         ];
-        let order = crate::CompileNat::from_limbs(&order_limbs);
+        let order = crate::compile::algebra::CompileNat::from_limbs(&order_limbs);
 
         // Convert big uints to limbs
         let mut limbs_a = [0u64; 4];
@@ -128,7 +128,7 @@ impl<F: CompilePrimeField + SupportsNatConversions<4>> Secp256r1<F> {
 
 impl<F: CompilePrimeField + SupportsNatConversions<4>> Curve<4> for Secp256r1<F> {
     type F = F;
-    type N = crate::CompileNat<4>;
+    type N = crate::compile::algebra::CompileNat<4>;
 
     fn order(&self) -> Self::N {
         self.order.clone()

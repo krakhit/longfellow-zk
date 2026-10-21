@@ -12,23 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use circuits_mac_gf128::{circuit::MAC, concrete::given};
-use compile_algebra::{field::CompileField, gf2_128::Gf2_128Field};
-use core_algebra::SerializableField;
+use crate::circuits::mac_gf128::{circuit::MAC, concrete::given};
+use crate::compile::algebra::{field::CompileField, gf2_128::Gf2_128Field};
+use crate::core::algebra::SerializableField;
 
 fn test_compile_mac_gf128_for_field<FC: CompileField + SerializableField>(fc: &FC, name: &str) {
-    let (circuit, stats, _symbols) = compile_compiler::compile(fc, |iologic| {
-        let mut pos = compile_logic::K_FIRST_WIRE_POSITION;
+    let (circuit, stats, _symbols) = crate::compile::compiler::compile(fc, |iologic| {
+        let mut pos = crate::compile::logic::K_FIRST_WIRE_POSITION;
 
         let mac_circuit = MAC::new(&iologic);
-        let given = circuits_mac_gf128::allocate_given(&iologic, &mac_circuit.bv, &mut pos);
+        let given = crate::circuits::mac_gf128::allocate_given(&iologic, &mac_circuit.bv, &mut pos);
 
         let assertion = mac_circuit.assert_mac(&given);
 
         (assertion, 1, 0)
     });
 
-    compile_compiler::dump_stats(name, &circuit, &stats);
+    crate::compile::compiler::dump_stats(name, &circuit, &stats);
 }
 
 #[test]
@@ -37,8 +37,8 @@ fn test_compile_mac_gf128() {
     test_compile_mac_gf128_for_field(&fc_bin, "mac_gf128");
 }
 
-use circuits_bitvec::BitvecLogic;
-use compile_logic::eval::EvalLogic;
+use crate::circuits::bitvec::BitvecLogic;
+use crate::compile::logic::eval::EvalLogic;
 
 #[test]
 fn test_direct_eval_mac_gf128() {
@@ -50,13 +50,13 @@ fn test_direct_eval_mac_gf128() {
 
     let concrete_given = given(test_msg, av_val, [ap0_val, ap1_val]);
 
-    let tracker = compile_logic::scope::AssertionScope::new();
+    let tracker = crate::compile::logic::scope::AssertionScope::new();
     type L<'a, FC> = EvalLogic<'a, FC>;
     let lp = L::new(&fc, &tracker);
     let bv = BitvecLogic::new(&lp);
     let mac_circuit = MAC::new(&lp);
 
-    let boolean = circuits_boolean::Boolean::new(&lp);
+    let boolean = crate::circuits::boolean::Boolean::new(&lp);
     let wire_msg = bv.from_fn::<256, _>(|idx| {
         let byte = test_msg[idx / 8];
         let bit_val = ((byte >> (idx % 8)) & 1) == 1;
@@ -84,7 +84,7 @@ fn test_direct_eval_mac_gf128() {
         boolean.konst(bit_val)
     }));
 
-    let wire_given = circuits_mac_gf128::Given {
+    let wire_given = crate::circuits::mac_gf128::Given {
         message: wire_msg,
         mac_av: wire_av,
         mac_ap: [wire_ap0, wire_ap1],

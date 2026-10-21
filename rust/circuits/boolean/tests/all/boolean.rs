@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use circuits_boolean::Boolean;
-use compile_algebra::{field::SupportsU64Conversions, p256::P256Field};
-use compile_logic::LogicIO;
+use crate::circuits::boolean::Boolean;
+use crate::compile::algebra::{field::SupportsU64Conversions, p256::P256Field};
+use crate::compile::logic::LogicIO;
 
 #[test]
 fn test_compile_boolean() {
     let f = P256Field::new();
-    let (circuit, stats, _symbols) = compile_compiler::compile(&f, |iologic| {
+    let (circuit, stats, _symbols) = crate::compile::compiler::compile(&f, |iologic| {
         let boolean = Boolean::new(&iologic);
 
         let a = iologic.input(1);
@@ -32,12 +32,12 @@ fn test_compile_boolean() {
         (boolean.assert_true("assert_x", &x), 1, 0)
     });
 
-    compile_compiler::dump_stats("boolean_xor_compile", &circuit, &stats);
+    crate::compile::compiler::dump_stats("boolean_xor_compile", &circuit, &stats);
 }
 
-use circuits_boolean::Bitw;
-use compile_algebra::{field::CompileField, gf2_128::Gf2_128Field};
-use compile_logic::{eval::EvalLogic, Eltw, Logic};
+use crate::circuits::boolean::Bitw;
+use crate::compile::algebra::{field::CompileField, gf2_128::Gf2_128Field};
+use crate::compile::logic::{eval::EvalLogic, Eltw, Logic};
 use test_helpers::{compare_bool as compare, new_f65537_field, LPrime};
 
 use super::test_helpers;
@@ -153,11 +153,11 @@ fn test_boolean_for_logic<F: CompileField>(logic: &EvalLogic<'_, F>) {
 #[test]
 fn test_boolean() {
     let field = new_f65537_field();
-    let tracker = compile_logic::scope::AssertionScope::new();
+    let tracker = crate::compile::logic::scope::AssertionScope::new();
     let l_prime = LPrime::new(&field, &tracker);
     test_boolean_for_logic(&l_prime);
     let field_bin = Gf2_128Field::new();
-    let tracker_bin = compile_logic::scope::AssertionScope::new();
+    let tracker_bin = crate::compile::logic::scope::AssertionScope::new();
     let l_bin = LBinary::new(&field_bin, &tracker_bin);
     test_boolean_for_logic(&l_bin);
 }
@@ -165,7 +165,7 @@ fn test_boolean() {
 #[test]
 fn test_muxe_binary() {
     let field = Gf2_128Field::new();
-    let tracker = compile_logic::scope::AssertionScope::new();
+    let tracker = crate::compile::logic::scope::AssertionScope::new();
     let l = LBinary::new(&field, &tracker);
     run_test_muxe(&l);
 }
@@ -186,7 +186,7 @@ fn run_test_muxe<F: CompileField + SupportsU64Conversions>(logic: &EvalLogic<'_,
 #[test]
 fn test_muxe() {
     let field = new_f65537_field();
-    let tracker = compile_logic::scope::AssertionScope::new();
+    let tracker = crate::compile::logic::scope::AssertionScope::new();
     let l = LPrime::new(&field, &tracker);
     run_test_muxe(&l);
 }
@@ -203,7 +203,7 @@ fn run_test_of_eltw<F: CompileField + SupportsU64Conversions>(logic: &EvalLogic<
         .as_eltw(&bit_zero)
         .assertions
         .values()
-        .all(|s| matches!(s, compile_logic::scope::AssertionStatus::Passed)));
+        .all(|s| matches!(s, crate::compile::logic::scope::AssertionStatus::Passed)));
 
     // Value 1: should pass
     let one = logic.konst(&field.one());
@@ -213,7 +213,7 @@ fn run_test_of_eltw<F: CompileField + SupportsU64Conversions>(logic: &EvalLogic<
         .as_eltw(&bit_one)
         .assertions
         .values()
-        .all(|s| matches!(s, compile_logic::scope::AssertionStatus::Passed)));
+        .all(|s| matches!(s, crate::compile::logic::scope::AssertionStatus::Passed)));
 
     // Value 2: should record an error on evaluation
     let two = logic.konst(&field.u64_to_element(2_u64));
@@ -222,13 +222,13 @@ fn run_test_of_eltw<F: CompileField + SupportsU64Conversions>(logic: &EvalLogic<
         .as_eltw(&bit_two)
         .assertions
         .values()
-        .any(|s| matches!(s, compile_logic::scope::AssertionStatus::Failed(_))));
+        .any(|s| matches!(s, crate::compile::logic::scope::AssertionStatus::Failed(_))));
 }
 
 #[test]
 fn test_of_eltw() {
     let field = new_f65537_field();
-    let tracker = compile_logic::scope::AssertionScope::new();
+    let tracker = crate::compile::logic::scope::AssertionScope::new();
     let l = LPrime::new(&field, &tracker);
     run_test_of_eltw(&l);
 }
@@ -270,7 +270,7 @@ fn run_test_one_hot_muxes<F: CompileField + SupportsU64Conversions>(logic: &Eval
 #[test]
 fn test_one_hot_muxes() {
     let field = new_f65537_field();
-    let tracker = compile_logic::scope::AssertionScope::new();
+    let tracker = crate::compile::logic::scope::AssertionScope::new();
     let l = LPrime::new(&field, &tracker);
     run_test_one_hot_muxes(&l);
 }
@@ -278,7 +278,7 @@ fn test_one_hot_muxes() {
 #[test]
 fn test_precious() {
     let field = new_f65537_field();
-    let tracker = compile_logic::scope::AssertionScope::new();
+    let tracker = crate::compile::logic::scope::AssertionScope::new();
     let l = LPrime::new(&field, &tracker);
     let boolean = Boolean::new(&l);
 
@@ -292,7 +292,7 @@ fn test_precious() {
 #[test]
 fn test_assertions() {
     let field = new_f65537_field();
-    let tracker = compile_logic::scope::AssertionScope::new();
+    let tracker = crate::compile::logic::scope::AssertionScope::new();
     let l = LPrime::new(&field, &tracker);
     let boolean = Boolean::new(&l);
 

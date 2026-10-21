@@ -12,15 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use compile_algebra::field::CompileField;
+use crate::compile::algebra::field::CompileField;
 
-use crate::{
+use crate::compile::compiler::{
     ir::{Expr, ExprNode},
     node::Node,
 };
 
 pub struct CompilerArena<'a, F: CompileField> {
-    pub(crate) bump: bumpalo::Bump,
+    pub(in crate::compile::compiler) bump: bumpalo::Bump,
     next_node_id: std::cell::Cell<usize>,
     _marker: std::marker::PhantomData<&'a F>,
 }

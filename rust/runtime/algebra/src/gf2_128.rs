@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-pub use crate::arch::{
+pub use crate::runtime::algebra::arch::{
     gf2_128_accum_reduce as arch_accum_reduce, gf2_128_mac as arch_mac, gf2_128_mul as arch_mul,
     Gf2_128, Gf2_128Accum,
 };
-use crate::field::{AlgebraicField, RuntimeBinaryField, RuntimeField};
+use crate::runtime::algebra::field::{AlgebraicField, RuntimeBinaryField, RuntimeField};
 
 impl Gf2_128 {
     #[inline(always)]
@@ -35,7 +35,7 @@ impl Gf2_128 {
     }
 
     #[inline(always)]
-    pub(crate) fn add(&mut self, other: &Self) {
+    pub(in crate::runtime::algebra) fn add(&mut self, other: &Self) {
         self.xor_in_place(other);
     }
 }
@@ -94,12 +94,12 @@ pub struct Gf2_128Field {
 
 impl Gf2_128Field {
     pub fn new() -> Self {
-        let cantor_basis = core_algebra::CANTOR_BASIS_U128.map(Gf2_128::from);
+        let cantor_basis = crate::core::algebra::CANTOR_BASIS_U128.map(Gf2_128::from);
 
         let mut poly_evaluation_points = [Gf2_128::default(); 6];
         for (pt, raw) in poly_evaluation_points
             .iter_mut()
-            .zip(core_algebra::proto::POLY_EVALUATION_POINTS)
+            .zip(crate::core::algebra::proto::POLY_EVALUATION_POINTS)
         {
             *pt = Gf2_128::from(raw);
         }
@@ -126,11 +126,11 @@ impl Default for Gf2_128Field {
     }
 }
 
-impl core_algebra::BareField for Gf2_128Field {
+impl crate::core::algebra::BareField for Gf2_128Field {
     type E = Gf2_128;
 }
 
-impl core_algebra::AlgebraicField for Gf2_128Field {
+impl crate::core::algebra::AlgebraicField for Gf2_128Field {
     #[inline(always)]
     fn zero(&self) -> Self::E {
         Gf2_128::default()
@@ -208,7 +208,7 @@ impl RuntimeField<2> for Gf2_128Field {
     }
 }
 
-impl crate::field::SupportsSampling<2> for Gf2_128Field {
+impl crate::runtime::algebra::field::SupportsSampling<2> for Gf2_128Field {
     fn sample<R: FnMut(usize) -> Vec<u8>>(&self, mut rng: R) -> Self::E {
         let buf = rng(16);
         assert_eq!(
@@ -223,7 +223,7 @@ impl crate::field::SupportsSampling<2> for Gf2_128Field {
 
 impl RuntimeBinaryField<2> for Gf2_128Field {}
 
-impl crate::poly::InterpolationField<2> for Gf2_128Field {
+impl crate::runtime::algebra::poly::InterpolationField<2> for Gf2_128Field {
     #[inline(always)]
     fn poly_evaluation_point(&self, i: usize) -> Self::E {
         self.poly_evaluation_points[i]
@@ -235,7 +235,7 @@ impl crate::poly::InterpolationField<2> for Gf2_128Field {
     }
 }
 
-impl core_algebra::SerializableField for Gf2_128Field {
+impl crate::core::algebra::SerializableField for Gf2_128Field {
     fn is_binary(&self) -> bool {
         true
     }
@@ -269,7 +269,7 @@ impl core_algebra::SerializableField for Gf2_128Field {
     }
 }
 
-impl crate::field::RuntimeSerializableField<2> for Gf2_128Field {
+impl crate::runtime::algebra::field::RuntimeSerializableField<2> for Gf2_128Field {
     #[inline(always)]
     fn to_words64(&self, e: &Self::E) -> [u64; 2] {
         let val = e.to_u128();
@@ -284,8 +284,8 @@ impl crate::field::RuntimeSerializableField<2> for Gf2_128Field {
     }
 }
 
-impl core_algebra::SupportsNatConversions<2> for Gf2_128Field {
-    type N = crate::RuntimeNat<2>;
+impl crate::core::algebra::SupportsNatConversions<2> for Gf2_128Field {
+    type N = crate::runtime::algebra::RuntimeNat<2>;
 
     #[inline(always)]
     fn reduce_nat(&self, n: &Self::N) -> Self::E {
@@ -296,11 +296,11 @@ impl core_algebra::SupportsNatConversions<2> for Gf2_128Field {
     #[inline(always)]
     fn to_nat(&self, e: &Self::E) -> Self::N {
         let val = e.to_u128();
-        crate::RuntimeNat::from_limbs([val as u64, (val >> 64) as u64])
+        crate::runtime::algebra::RuntimeNat::from_limbs([val as u64, (val >> 64) as u64])
     }
 }
 
-impl core_algebra::HasLookupPoints for Gf2_128Field {
+impl crate::core::algebra::HasLookupPoints for Gf2_128Field {
     fn lookup_point(&self, _n: usize, i: usize) -> Self::E {
         let mut pt = Gf2_128::default();
         for j in 0..(usize::BITS as usize) {
@@ -312,7 +312,7 @@ impl core_algebra::HasLookupPoints for Gf2_128Field {
     }
 }
 
-impl core_algebra::SupportsU128Conversions for Gf2_128Field {
+impl crate::core::algebra::SupportsU128Conversions for Gf2_128Field {
     #[inline(always)]
     fn u128_to_element(&self, n: u128) -> Self::E {
         Gf2_128::from(n)

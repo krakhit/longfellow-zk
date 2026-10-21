@@ -135,7 +135,7 @@
 // The merging steps are also implemented in-place.
 // ------------------------------------------------------------
 
-use crate::{
+use crate::runtime::algebra::{
     field::{AlgebraicField, SupportsQuadraticExtension},
     fp2::{Fp2Element, Fp2Field},
 };
@@ -170,7 +170,7 @@ impl<const W: usize, F: SupportsQuadraticExtension<W>> Twiddle<W, F> {
         mut r: u64,
         field_ext: &Fp2Field<'_, W, F>,
     ) -> Fp2Element<W, F> {
-        crate::fft::assert_valid_orders(r, n);
+        crate::runtime::algebra::fft::assert_valid_orders(r, n);
         let mut omega_r = omega_n.clone();
         while r < n {
             let tmp = omega_r.clone();
@@ -585,7 +585,7 @@ pub fn r2hc<const W: usize, F: SupportsQuadraticExtension<W>>(
     c: &Fp2Field<'_, W, F>,
 ) {
     let n = a.len();
-    crate::fft::assert_valid_orders(n as u64, omega_order);
+    crate::runtime::algebra::fft::assert_valid_orders(n as u64, omega_order);
     let r = c.base_field();
     #[cfg(debug_assertions)]
     validate_root(omega, c);
@@ -657,7 +657,7 @@ pub fn hc2r<const W: usize, F: SupportsQuadraticExtension<W>>(
     c: &Fp2Field<'_, W, F>,
 ) {
     let n = a.len();
-    crate::fft::assert_valid_orders(n as u64, omega_order);
+    crate::runtime::algebra::fft::assert_valid_orders(n as u64, omega_order);
     let r = c.base_field();
     #[cfg(debug_assertions)]
     validate_root(omega, c);

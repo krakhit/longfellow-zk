@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use compile_algebra::field::CompileField;
-use util::memoize::Memoizer;
+use crate::compile::algebra::field::CompileField;
+use crate::util::memoize::Memoizer;
 
-use crate::{
+use crate::compile::compiler::{
     arena::CompilerArena,
     cse::Cse,
     ir::{Assertions, Expr, ExprNode, RewriteT},
@@ -136,16 +136,16 @@ where NEXT: RewriteT<'a, F>
 impl<'a, F: CompileField, NEXT> RewriteT<'a, F> for CopyRewriter<'a, F, NEXT>
 where NEXT: RewriteT<'a, F>
 {
-    fn ok(&self) -> crate::ir::RawAssertions<'a, F> {
+    fn ok(&self) -> crate::compile::compiler::ir::RawAssertions<'a, F> {
         self.next.ok()
     }
-    fn assert0(&self, x: &ExprNode<'a, F>) -> crate::ir::RawAssertions<'a, F> {
+    fn assert0(&self, x: &ExprNode<'a, F>) -> crate::compile::compiler::ir::RawAssertions<'a, F> {
         self.next.assert0(x)
     }
     fn assertions(
         &self,
-        assertions: &[crate::ir::RawAssertions<'a, F>],
-    ) -> crate::ir::RawAssertions<'a, F> {
+        assertions: &[crate::compile::compiler::ir::RawAssertions<'a, F>],
+    ) -> crate::compile::compiler::ir::RawAssertions<'a, F> {
         self.next.assertions(assertions)
     }
     fn input(&self, position_in_input_array: usize) -> ExprNode<'a, F> {
@@ -188,7 +188,7 @@ where NEXT: RewriteT<'a, F>
     }
     fn with_assertions(
         &self,
-        _assertions: &crate::ir::Assertions<'a, F>,
+        _assertions: &crate::compile::compiler::ir::Assertions<'a, F>,
         _x: &ExprNode<'a, F>,
     ) -> ExprNode<'a, F> {
         panic!("UnexpectedWithAssertion")
@@ -204,5 +204,5 @@ pub fn rewrite<'a, 'b, F: CompileField>(
 ) -> Assertions<'b, F> {
     let cse = Cse::new(arena);
     let copy_rewriter = CopyRewriter::new(f, cse);
-    crate::ir::walk(arena, x, &copy_rewriter)
+    crate::compile::compiler::ir::walk(arena, x, &copy_rewriter)
 }

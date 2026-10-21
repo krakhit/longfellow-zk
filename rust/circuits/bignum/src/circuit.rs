@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use circuits_boolean::{Bitw, Boolean};
-use compile_algebra::field::{CompileField, SupportsNatConversions};
-use compile_logic::Logic;
-use util::array::init;
+use crate::circuits::boolean::{Bitw, Boolean};
+use crate::compile::algebra::field::{CompileField, SupportsNatConversions};
+use crate::compile::logic::Logic;
+use crate::util::array::init;
 
 pub struct Bignum<'a, L: Logic> {
     boolean: Boolean<'a, L>,
@@ -36,7 +36,7 @@ impl<'a, L: Logic> Bignum<'a, L> {
     where
         L: Logic<F = F>,
     {
-        use core_algebra::Nat;
+        use crate::core::algebra::Nat;
         assert!(W * 64 <= n, "of_nat: Nat does not fit");
         init(n, |i| {
             let bit_val = z.bit(i);

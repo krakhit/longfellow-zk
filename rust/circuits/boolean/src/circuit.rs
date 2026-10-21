@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use compile_algebra::field::CompileField;
-use compile_logic::{Eltw, Logic, LogicIO};
-use core_algebra::ElementOf;
+use crate::compile::algebra::field::CompileField;
+use crate::compile::logic::{Eltw, Logic, LogicIO};
+use crate::core::algebra::ElementOf;
 
 mod imp {
     use super::{CompileField, ElementOf, Eltw, Logic};
 
-    pub(crate) enum Inner<L: Logic> {
+    pub(in crate::circuits::boolean) enum Inner<L: Logic> {
         True,
         False,
         P(Eltw<L>),
@@ -332,7 +332,7 @@ mod imp {
             if a.is_empty() {
                 self.falseb()
             } else {
-                util::array::tree_fold(
+                crate::util::array::tree_fold(
                     a,
                     &|x: Bitw<L>, y: Bitw<L>| self.tree_xorb(&x, &y),
                     &|x: &Bitw<L>| x.clone(),

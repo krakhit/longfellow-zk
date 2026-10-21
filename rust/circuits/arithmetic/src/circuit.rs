@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use circuits_boolean::{Bitw, Boolean};
-use compile_algebra::field::CompileField;
-use compile_logic::{Eltw, Logic};
-use util::array::{init, map, map2, map3, tree_fold, tree_fold2};
+use crate::circuits::boolean::{Bitw, Boolean};
+use crate::compile::algebra::field::CompileField;
+use crate::compile::logic::{Eltw, Logic};
+use crate::util::array::{init, map, map2, map3, tree_fold, tree_fold2};
 
 type PrefixOp<'a, L> = dyn Fn(&(Bitw<L>, Bitw<L>), &(Bitw<L>, Bitw<L>)) -> (Bitw<L>, Bitw<L>) + 'a;
 

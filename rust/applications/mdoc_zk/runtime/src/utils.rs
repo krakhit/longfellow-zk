@@ -12,10 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use core_algebra::{Nat, SerializableField};
-use runtime_algebra::p256::P256Field;
-
-use crate::attribute::RequestedAttribute;
+use crate::{
+    core::algebra::{Nat, SerializableField},
+    mdoc::runtime::attribute::RequestedAttribute,
+    runtime::algebra::p256::P256Field,
+};
 
 pub fn req_attr(
     namespace: impl AsRef<[u8]>,
@@ -77,30 +78,30 @@ pub fn parse_hex_nat<const W: usize, N: Nat<W>>(s: &str) -> Result<N, String> {
 pub fn parse_pk_coordinate(
     s: &str,
     field: &P256Field,
-) -> Result<runtime_algebra::p256::P256Element, String> {
-    let nat = parse_hex_nat::<4, runtime_algebra::RuntimeNat<4>>(s)?;
+) -> Result<crate::runtime::algebra::p256::P256Element, String> {
+    let nat = parse_hex_nat::<4, crate::runtime::algebra::RuntimeNat<4>>(s)?;
     field.bytes_to_element(&nat.to_bytes_le())
 }
 
 #[must_use]
 pub fn circuit_supports(data: &[u8]) -> bool {
-    let mut parser = mdoc_zk_circuits::cbor::parse::CborParser::new(data);
+    let mut parser = crate::mdoc::circuits::cbor::parse::CborParser::new(data);
     let Ok(el) = parser.parse_exact() else {
         return false;
     };
     match &el.value {
-        mdoc_zk_circuits::cbor::parse::CborValue::Text(_)
-        | mdoc_zk_circuits::cbor::parse::CborValue::Bytes(_)
-        | mdoc_zk_circuits::cbor::parse::CborValue::Integer(_) => true,
-        mdoc_zk_circuits::cbor::parse::CborValue::Simple(info) => *info == 20 || *info == 21,
-        mdoc_zk_circuits::cbor::parse::CborValue::Tag(tag, inner) => match tag {
+        crate::mdoc::circuits::cbor::parse::CborValue::Text(_)
+        | crate::mdoc::circuits::cbor::parse::CborValue::Bytes(_)
+        | crate::mdoc::circuits::cbor::parse::CborValue::Integer(_) => true,
+        crate::mdoc::circuits::cbor::parse::CborValue::Simple(info) => *info == 20 || *info == 21,
+        crate::mdoc::circuits::cbor::parse::CborValue::Tag(tag, inner) => match tag {
             1004 => {
                 if data.len() != 14 {
                     return false;
                 }
                 matches!(
                     inner.value,
-                    mdoc_zk_circuits::cbor::parse::CborValue::Text(_)
+                    crate::mdoc::circuits::cbor::parse::CborValue::Text(_)
                 )
             }
             0 => {
@@ -109,7 +110,7 @@ pub fn circuit_supports(data: &[u8]) -> bool {
                 }
                 matches!(
                     inner.value,
-                    mdoc_zk_circuits::cbor::parse::CborValue::Text(_)
+                    crate::mdoc::circuits::cbor::parse::CborValue::Text(_)
                 )
             }
             _ => false,

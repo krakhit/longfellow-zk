@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::{
+use crate::runtime::algebra::{
     field::{RuntimeSerializableField, SupportsFFT, SupportsQuadraticExtension},
     fp_generic::{FpGenericAccum, FpGenericElement, FpGenericField},
     Subfield,
@@ -24,17 +24,17 @@ pub struct P256Tag;
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Default)]
 pub struct P256Strategy;
 
-pub type P256Element = FpGenericElement<{ 4 * crate::LIMBS_PER_U64 }, P256Tag>;
+pub type P256Element = FpGenericElement<{ 4 * crate::runtime::algebra::LIMBS_PER_U64 }, P256Tag>;
 pub type P256Field = FpGenericField<
     4,
-    { 4 * crate::LIMBS_PER_U64 },
-    { 9 * crate::LIMBS_PER_U64 },
+    { 4 * crate::runtime::algebra::LIMBS_PER_U64 },
+    { 9 * crate::runtime::algebra::LIMBS_PER_U64 },
     P256Tag,
     P256Strategy,
 >;
-pub type P256Accum = FpGenericAccum<{ 9 * crate::LIMBS_PER_U64 }>;
+pub type P256Accum = FpGenericAccum<{ 9 * crate::runtime::algebra::LIMBS_PER_U64 }>;
 
-pub(crate) const P256_MODULUS: [u64; 4] = [
+pub(in crate::runtime::algebra) const P256_MODULUS: [u64; 4] = [
     0xffffffffffffffff,
     0x00000000ffffffff,
     0x0000000000000000,
@@ -43,7 +43,7 @@ pub(crate) const P256_MODULUS: [u64; 4] = [
 
 #[cfg(any(target_pointer_width = "32", feature = "force-32bit-limbs"))]
 #[allow(dead_code)]
-pub(crate) const NEG_P256_MODULUS_32: [u32; 8] =
+pub(in crate::runtime::algebra) const NEG_P256_MODULUS_32: [u32; 8] =
     [1, 0, 0, 0xffffffff, 0xffffffff, 0xffffffff, 0xfffffffe, 0];
 
 #[cfg(all(target_pointer_width = "64", not(feature = "force-32bit-limbs")))]
@@ -88,9 +88,9 @@ const P256_ROOT_OF_UNITY_IM: [u64; 4] = [
     0xb9e81e42bc97cc4d,
 ];
 
-impl SupportsFFT<4> for crate::fp2::Fp2Field<'_, 4, P256Field> {
+impl SupportsFFT<4> for crate::runtime::algebra::fp2::Fp2Field<'_, 4, P256Field> {
     fn omega(&self) -> Self::E {
-        crate::fp2::Fp2Element {
+        crate::runtime::algebra::fp2::Fp2Element {
             re: self
                 .base_field()
                 .words64_to_element(&P256_ROOT_OF_UNITY_RE)
@@ -130,7 +130,7 @@ impl Subfield for P256Subfield<'_> {
             dst.len(),
             self.serialized_size_bytes()
         );
-        core_algebra::SerializableField::to_bytes_into(self.field, e, dst);
+        crate::core::algebra::SerializableField::to_bytes_into(self.field, e, dst);
     }
 
     fn contains(&self, _e: &Self::E) -> bool {
@@ -138,14 +138,14 @@ impl Subfield for P256Subfield<'_> {
     }
 
     fn serialized_size_bytes(&self) -> usize {
-        core_algebra::SerializableField::serialized_size_bytes(self.field)
+        crate::core::algebra::SerializableField::serialized_size_bytes(self.field)
     }
 
     fn bytes_to_element(&self, bytes: &[u8]) -> Result<Self::E, String> {
-        core_algebra::SerializableField::bytes_to_element(self.field, bytes)
+        crate::core::algebra::SerializableField::bytes_to_element(self.field, bytes)
     }
 
     fn sample<R: FnMut(usize) -> Vec<u8>>(&self, rng: R) -> Self::E {
-        crate::field::SupportsSampling::sample(self.field, rng)
+        crate::runtime::algebra::field::SupportsSampling::sample(self.field, rng)
     }
 }

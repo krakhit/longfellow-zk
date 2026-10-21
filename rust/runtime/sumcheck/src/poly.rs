@@ -12,10 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use core_algebra::SerializableField;
-use runtime_algebra::field::RuntimeField;
-pub use runtime_algebra::poly::{LagrangeBasis, Poly};
-use runtime_proto::RoundPoly;
+pub use crate::runtime::algebra::poly::{LagrangeBasis, Poly};
+use crate::{
+    core::algebra::SerializableField,
+    runtime::{algebra::field::RuntimeField, proto::RoundPoly},
+};
 
 /// Extension trait for converting a 3-evaluation mathematical polynomial (`Poly<3, W, F>`)
 /// into the 2-evaluation wire format (`RoundPoly<W, F>`).

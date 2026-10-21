@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::gf2_128::Gf2_128;
+use crate::runtime::algebra::gf2_128::Gf2_128;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct BinarySubfield {

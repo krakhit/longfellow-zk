@@ -14,7 +14,7 @@
 
 use std::io::BufRead;
 
-use crate::{
+use crate::core::proto::{
     archive::{compute_combined_id, read_utf8_string, ArchiveEntry, CircuitArchive, LFA_VERSION},
     uleb::read_uleb128,
 };

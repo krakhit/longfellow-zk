@@ -14,3 +14,7 @@
 
 pub mod ecmul;
 pub mod sha3;
+
+#[cfg(test)]
+#[path = "../tests/all/mod.rs"]
+mod tests_all;

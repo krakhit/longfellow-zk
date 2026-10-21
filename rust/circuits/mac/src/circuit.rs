@@ -12,25 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use circuits_bitvec::{BitvecLogic, V128};
-use circuits_gf2_128::Gf2_128Mul;
+use crate::circuits::bitvec::{BitvecLogic, V128};
+use crate::circuits::gf2_128::Gf2_128Mul;
 
 pub type MacElt128<L> = V128<L>;
 
-pub struct Given<L: compile_logic::Logic> {
-    pub message: circuits_bitvec::Bitvec<L, 256>,
+pub struct Given<L: crate::compile::logic::Logic> {
+    pub message: crate::circuits::bitvec::Bitvec<L, 256>,
     pub mac_av: MacElt128<L>,
     pub mac_ap: [MacElt128<L>; 2],
     pub tag: [MacElt128<L>; 2],
 }
 
 /// MAC verification circuit.
-pub struct MAC<'a, L: compile_logic::Logic> {
+pub struct MAC<'a, L: crate::compile::logic::Logic> {
     pub logic: &'a L,
     pub bv: BitvecLogic<'a, L>,
 }
 
-impl<'a, L: compile_logic::Logic> MAC<'a, L> {
+impl<'a, L: crate::compile::logic::Logic> MAC<'a, L> {
     pub fn new(logic: &'a L) -> Self {
         Self {
             logic,

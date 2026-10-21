@@ -12,11 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use core_algebra::{AlgebraicField, SupportsU64Conversions};
 use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
-use runtime_algebra::{
-    fp2::Fp2Field, interpolator::InterpolatorFactory, p256::P256Field,
-    reed_solomon::FftInterpolatorFactory, Interpolator, SupportsFFT,
+use longfellow_zk::{
+    core::algebra::{AlgebraicField, SupportsU64Conversions},
+    runtime::algebra::{
+        fp2::Fp2Field, interpolator::InterpolatorFactory, p256::P256Field,
+        reed_solomon::FftInterpolatorFactory, Interpolator, SupportsFFT,
+    },
 };
 
 fn bench_reed_solomon_p256(c: &mut Criterion) {

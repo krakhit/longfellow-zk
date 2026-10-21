@@ -12,8 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use circuits_analog_decoder::binary_point;
-use core_algebra::{AlgebraicField, ElementOf, HasLookupPoints};
+use crate::{
+    circuits::analog_decoder::binary_point,
+    core::algebra::{AlgebraicField, ElementOf, HasLookupPoints},
+};
 
 pub fn encoding_point<F: AlgebraicField + HasLookupPoints, const LOGN: usize>(
     field: &F,

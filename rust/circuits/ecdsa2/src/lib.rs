@@ -12,15 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-pub mod allocate;
-pub mod circuit;
-pub use allocate::{allocate_derived_wires, allocate_given_wires};
-pub use circuit::{Derived, EcdsaCircuit, Given, Slicing};
-#[cfg(feature = "testonly")]
-pub mod evaluate;
-#[cfg(feature = "testonly")]
-pub use evaluate::{evaluate_derived, evaluate_given};
 pub mod concrete;
-pub mod traits;
 pub use concrete::{derived, given, ConcreteDerived, ConcreteGiven};
-pub use traits::EcdsaCompileField;
+
+cfg_compiler! {
+    pub mod allocate;
+    pub mod circuit;
+    pub mod traits;
+
+    pub use self::{
+        allocate::{allocate_derived_wires, allocate_given_wires},
+        circuit::{Derived, EcdsaCircuit, Given, Slicing},
+        traits::EcdsaCompileField,
+    };
+}
+
+
+cfg_testonly! {
+    pub mod evaluate;
+    pub use evaluate::{evaluate_derived, evaluate_given};
+}
+
+#[cfg(test)]
+#[path = "../tests/all/mod.rs"]
+mod tests_all;

@@ -12,17 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use circuits_boolean::Boolean;
-use compile_algebra::p256::P256Field;
-use compile_eval::SerializableField;
-use compile_logic::LogicIO;
-use core_proto::{reader::CircuitReader, writer::CircuitWriter, FieldID};
+use crate::{
+    circuits::boolean::Boolean,
+    compile::{algebra::p256::P256Field, eval::SerializableField, logic::LogicIO},
+    core::proto::{reader::CircuitReader, writer::CircuitWriter, FieldID},
+};
 
 #[test]
 fn test_circuit_serialization_lfc2_roundtrip() {
     let f = P256Field::new();
     let rf = P256Field::new();
-    let (circuit, _, _) = compile_compiler::compile(&f, |iologic| {
+    let (circuit, _, _) = crate::compile::compiler::compile(&f, |iologic| {
         let boolean = Boolean::new(&iologic);
         let a = iologic.input(1);
         let b = iologic.input(2);
@@ -46,7 +46,7 @@ fn test_circuit_serialization_lfc2_roundtrip() {
     let (deserialized, remaining) = deserialized_res.unwrap();
     assert_eq!(remaining.len(), 0);
 
-    let computed_id = compile_eval::compute_id(&rf, &deserialized.raw);
+    let computed_id = crate::compile::eval::compute_id(&rf, &deserialized.raw);
     assert_eq!(deserialized.raw.ninput, circuit.raw.ninput);
     assert_eq!(deserialized.raw.npublic_input, circuit.raw.npublic_input);
     assert_eq!(deserialized.raw.noutput, circuit.raw.noutput);
@@ -80,7 +80,7 @@ fn test_circuit_serialization_lfc2_roundtrip() {
 fn test_circuit_serialization_lfc1_roundtrip() {
     let f = P256Field::new();
     let rf = P256Field::new();
-    let (circuit, _, _) = compile_compiler::compile(&f, |iologic| {
+    let (circuit, _, _) = crate::compile::compiler::compile(&f, |iologic| {
         let boolean = Boolean::new(&iologic);
         let a = iologic.input(1);
         let b = iologic.input(2);
@@ -103,7 +103,7 @@ fn test_circuit_serialization_lfc1_roundtrip() {
     let (deserialized, remaining) = deserialized_res.unwrap();
     assert_eq!(remaining.len(), 0);
 
-    let computed_id = compile_eval::compute_id(&rf, &deserialized.raw);
+    let computed_id = crate::compile::eval::compute_id(&rf, &deserialized.raw);
     assert_eq!(deserialized.id, circuit.id);
     assert_eq!(computed_id, circuit.id);
 }
@@ -112,7 +112,7 @@ fn test_circuit_serialization_lfc1_roundtrip() {
 fn test_circuit_serialization_compatibility() {
     let f = P256Field::new();
     let rf = P256Field::new();
-    let (circuit, _, _) = compile_compiler::compile(&f, |iologic| {
+    let (circuit, _, _) = crate::compile::compiler::compile(&f, |iologic| {
         let boolean = Boolean::new(&iologic);
         let a = iologic.input(1);
         let b = iologic.input(2);
@@ -143,7 +143,7 @@ fn test_circuit_serialization_compatibility() {
 fn test_circuit_reader_rejects_public_input_exceeding_inputs_lfc2() {
     let f = P256Field::new();
     let rf = P256Field::new();
-    let (circuit, _, _) = compile_compiler::compile(&f, |iologic| {
+    let (circuit, _, _) = crate::compile::compiler::compile(&f, |iologic| {
         let boolean = Boolean::new(&iologic);
         let a = iologic.input(1);
         let b = iologic.input(2);

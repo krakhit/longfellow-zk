@@ -17,9 +17,10 @@
 //! This module defines the binary representation of a Sumcheck proof, designed
 //! for compatibility with the C++ verifier.
 
-use core_algebra::{ElementOf, SerializableField};
-
-use crate::util::{read_elt_field, write_elt_field};
+use crate::{
+    core::algebra::{ElementOf, SerializableField},
+    runtime::proto::util::{read_elt_field, write_elt_field},
+};
 
 #[derive(Debug, Eq, PartialEq)]
 pub struct RoundPoly<const W: usize, F: SerializableField> {
@@ -34,7 +35,7 @@ impl<const W: usize, F: SerializableField> Clone for RoundPoly<W, F> {
     }
 }
 
-pub use core_proto::{sane_logw, MAX_LOGW};
+pub use crate::core::proto::{sane_logw, MAX_LOGW};
 
 /// The proof of a single layer inside the circuit.
 #[derive(Clone, Debug, PartialEq, Eq)]

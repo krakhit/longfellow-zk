@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use runtime_algebra::{
+use crate::runtime::algebra::{
     field::RuntimeField,
     fp2::{Fp2Element, Fp2Field},
     middle_product::{FFTExtMiddleProduct, FFTMiddleProduct, MiddleProduct},
@@ -32,7 +32,7 @@ fn get_test_field_and_omega(
         172, 62, 164, 96, 79, 23, 244, 219, 198, 50, 210, 116, 100, 138, 115, 132, 64, 227, 6, 1,
         226, 194, 79, 160, 77, 204, 151, 188, 66, 30, 232, 185,
     ];
-    use core_algebra::SerializableField;
+    use crate::core::algebra::SerializableField;
     let omega = Fp2Element {
         re: p256.bytes_to_element(&re_bytes).unwrap(),
         im: p256.bytes_to_element(&im_bytes).unwrap(),
@@ -48,7 +48,7 @@ impl SimplePrg {
     fn new() -> Self {
         Self { state: 42 }
     }
-    fn next<const W: usize, F: RuntimeField<W> + core_algebra::SupportsU64Conversions>(
+    fn next<const W: usize, F: RuntimeField<W> + crate::core::algebra::SupportsU64Conversions>(
         &mut self,
         f: &F,
     ) -> F::E {
@@ -109,7 +109,7 @@ fn test_fft_ext_middle_product() {
         226, 194, 79, 160, 77, 204, 151, 188, 66, 30, 232, 185,
     ];
 
-    use core_algebra::SerializableField;
+    use crate::core::algebra::SerializableField;
     let omega = Fp2Element {
         re: p256.bytes_to_element(&re_bytes).unwrap(),
         im: p256.bytes_to_element(&im_bytes).unwrap(),

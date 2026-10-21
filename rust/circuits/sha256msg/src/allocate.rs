@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use circuits_bitvec::BitvecLogic;
-use compile_logic::LogicIO;
+use crate::circuits::bitvec::BitvecLogic;
+use crate::compile::logic::LogicIO;
 
 use super::circuit::{Derived, Given};
 
@@ -21,7 +21,7 @@ pub fn allocate_given<L: LogicIO, const MAX_BLOCKS: usize>(
     bv: &BitvecLogic<L>,
     pos: &mut usize,
 ) -> Given<L, MAX_BLOCKS> {
-    let bitvec_io = circuits_bitvec::BitvecIO::new(bv);
+    let bitvec_io = crate::circuits::bitvec::BitvecIO::new(bv);
 
     let nblocks = bitvec_io.next(pos);
     let length_bytes = bitvec_io.next(pos);
@@ -47,7 +47,7 @@ pub fn allocate_derived<L: LogicIO, const MAX_BLOCKS: usize>(
 ) -> Derived<L> {
     let mut all_args = Vec::with_capacity(MAX_BLOCKS);
     for _ in 0..MAX_BLOCKS {
-        all_args.push(circuits_sha256::allocate_derived(bv, pos));
+        all_args.push(crate::circuits::sha256::allocate_derived(bv, pos));
     }
     all_args
 }

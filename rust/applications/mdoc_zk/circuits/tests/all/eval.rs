@@ -12,19 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use compile_algebra::{
-    gf2_128::Gf2_128Field, p256::P256Field, q256::Q256Field, secp256r1::Secp256r1, CompileNat,
-};
-use compile_logic::eval::EvalLogic;
-use mdoc_zk_circuits::{
-    hash::{
-        derived as hash_gen_derived, given as hash_given, hash_input_of_parsed_mdoc, HashInput,
-        HashMac, MdocHash,
+use crate::{
+    compile::{
+        algebra::{
+            gf2_128::Gf2_128Field, p256::P256Field, q256::Q256Field, secp256r1::Secp256r1,
+            CompileNat,
+        },
+        logic::eval::EvalLogic,
     },
-    parse_test_data,
-    signature::{
-        derived as sig_gen_derived, given as sig_given, signature_input_of_parsed_mdoc,
-        MdocSignature, SignatureInput, SignatureMac,
+    mdoc::circuits::{
+        hash::{
+            derived as hash_gen_derived, given as hash_given, hash_input_of_parsed_mdoc, HashInput,
+            HashMac, MdocHash,
+        },
+        parse_test_data,
+        signature::{
+            derived as sig_gen_derived, given as sig_given, signature_input_of_parsed_mdoc,
+            MdocSignature, SignatureInput, SignatureMac,
+        },
     },
 };
 
@@ -37,7 +42,7 @@ fn run_two_circuit_setup_generic<'a>(
     l128: &EvalLogic<'a, Gf2_128Field>,
     mdoc_sig_circuit: &MdocSignature<'a, 4, Secp256r1<P256Field>, EvalLogic<'a, P256Field>>,
     mdoc_hashes: &[MdocHash<'a, EvalLogic<'a, Gf2_128Field>>; 4],
-    test_data: (HashInput, SignatureInput),
+    test_data: (HashInput<CompileNat<4>>, SignatureInput<CompileNat<4>>),
 ) {
     let (hash_input_data, sig_input_data) = super::test_support::prepare_mock_signatures::<
         4,
@@ -59,14 +64,14 @@ fn run_two_circuit_setup_generic<'a>(
     let hash_derived = hash_gen_derived::<4, _>(&hash_given);
     let nattrs = hash_given.hash_input.attrs.len();
     let mdoc_hash = &mdoc_hashes[nattrs.saturating_sub(1).min(3)];
-    let wire_hash_given = mdoc_zk_circuits::hash::evaluate::evaluate_given(
+    let wire_hash_given = crate::mdoc::circuits::hash::evaluate::evaluate_given(
         l128,
-        &circuits_bitvec::BitvecLogic::new(l128),
+        &crate::circuits::bitvec::BitvecLogic::new(l128),
         &hash_given,
     );
-    let wire_hash_derived = mdoc_zk_circuits::hash::evaluate::evaluate_derived(
+    let wire_hash_derived = crate::mdoc::circuits::hash::evaluate::evaluate_derived(
         l128,
-        &circuits_bitvec::BitvecLogic::new(l128),
+        &crate::circuits::bitvec::BitvecLogic::new(l128),
         &hash_derived,
     );
 
@@ -83,16 +88,17 @@ fn run_two_circuit_setup_generic<'a>(
         sig_given::<4, P256Field, _, _>(sig_input_data, sig_mac_input, f, fn_field, curve);
     let sig_derived = sig_gen_derived::<4, _, _, _>(f, fn_field, curve, &sig_given).unwrap();
 
-    let wire_sig_given = mdoc_zk_circuits::signature::evaluate::evaluate_given::<Secp256r1<_>, _, _>(
-        lp256,
-        &circuits_bitvec::BitvecLogic::new(lp256),
-        &sig_given,
-        f,
-    );
-    let wire_sig_derived =
-        mdoc_zk_circuits::signature::evaluate::evaluate_derived::<Secp256r1<_>, _, _>(
+    let wire_sig_given =
+        crate::mdoc::circuits::signature::evaluate::evaluate_given::<Secp256r1<_>, _, _>(
             lp256,
-            &circuits_bitvec::BitvecLogic::new(lp256),
+            &crate::circuits::bitvec::BitvecLogic::new(lp256),
+            &sig_given,
+            f,
+        );
+    let wire_sig_derived =
+        crate::mdoc::circuits::signature::evaluate::evaluate_derived::<Secp256r1<_>, _, _>(
+            lp256,
+            &crate::circuits::bitvec::BitvecLogic::new(lp256),
             &sig_derived,
         );
 
@@ -107,9 +113,9 @@ fn test_all_two_circuit_setups() {
     let fn_field = Q256Field::new();
     let f128_compile = Gf2_128Field::new();
     let curve = Secp256r1::new(&p256);
-    let p256_tracker = compile_logic::tracker::AssertionTracker::new();
+    let p256_tracker = crate::compile::logic::tracker::AssertionTracker::new();
     let lp256 = EvalLogic::new_with_tracker(&p256, &p256_tracker);
-    let f128_tracker = compile_logic::tracker::AssertionTracker::new();
+    let f128_tracker = crate::compile::logic::tracker::AssertionTracker::new();
     let l128 = EvalLogic::new_with_tracker(&f128_compile, &f128_tracker);
     let mdoc_sig_circuit = MdocSignature::new(&lp256, &curve);
     let mdoc_hashes = [
@@ -119,7 +125,7 @@ fn test_all_two_circuit_setups() {
         MdocHash::new(&l128, 4),
     ];
 
-    for case in mdoc_zk_testcases::vectors::ALL_TEST_CASES {
+    for case in crate::mdoc::testcases::vectors::ALL_TEST_CASES {
         let filename = case.name;
         if filename.starts_with("fail-") {
             continue;

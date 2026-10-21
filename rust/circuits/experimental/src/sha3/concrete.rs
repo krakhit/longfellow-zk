@@ -88,21 +88,24 @@ pub fn derived(given: &ConcreteGiven) -> ConcreteDerived {
 }
 
 impl ConcreteGiven {
-    #[cfg(feature = "testonly")]
-    pub fn push_wires<const W: usize, FR: runtime_algebra::field::RuntimeField<W>>(
+    pub fn push_wires<const W: usize, FR: crate::runtime::algebra::field::RuntimeField<W>>(
         &self,
         fr: &FR,
         dest: &mut Vec<FR::E>,
     ) {
         for x in 0..5 {
             for y in 0..5 {
-                circuits_bitvec::concrete::push_bitvec_u64(fr, self.initial_state[x][y], 64, dest);
+                crate::circuits::bitvec::concrete::push_bitvec_u64(
+                    fr,
+                    self.initial_state[x][y],
+                    64,
+                    dest,
+                );
             }
         }
     }
 
-    #[cfg(feature = "testonly")]
-    pub fn push_elements<const W: usize, FR: runtime_algebra::field::RuntimeField<W>>(
+    pub fn push_elements<const W: usize, FR: crate::runtime::algebra::field::RuntimeField<W>>(
         &self,
         fr: &FR,
         mut push: impl FnMut(FR::E),
@@ -116,8 +119,7 @@ impl ConcreteGiven {
 }
 
 impl ConcreteDerived {
-    #[cfg(feature = "testonly")]
-    pub fn push_wires<const W: usize, FR: runtime_algebra::field::RuntimeField<W>>(
+    pub fn push_wires<const W: usize, FR: crate::runtime::algebra::field::RuntimeField<W>>(
         &self,
         fr: &FR,
         dest: &mut Vec<FR::E>,
@@ -125,14 +127,13 @@ impl ConcreteDerived {
         for state in &self.intermediate_states {
             for row in state {
                 for &val in row {
-                    circuits_bitvec::concrete::push_bitvec_u64(fr, val, 64, dest);
+                    crate::circuits::bitvec::concrete::push_bitvec_u64(fr, val, 64, dest);
                 }
             }
         }
     }
 
-    #[cfg(feature = "testonly")]
-    pub fn push_elements<const W: usize, FR: runtime_algebra::field::RuntimeField<W>>(
+    pub fn push_elements<const W: usize, FR: crate::runtime::algebra::field::RuntimeField<W>>(
         &self,
         fr: &FR,
         mut push: impl FnMut(FR::E),
@@ -144,3 +145,4 @@ impl ConcreteDerived {
         }
     }
 }
+

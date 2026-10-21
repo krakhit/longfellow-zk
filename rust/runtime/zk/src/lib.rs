@@ -12,13 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-pub(crate) mod circuit_pad;
+pub mod circuit_pad;
 pub mod common;
-pub(crate) mod expression;
-pub mod prover;
+pub(in crate::runtime::zk) mod expression;
 pub mod symbolic_sumcheck_verifier;
-pub mod verifier;
 
-pub use prover::ZkProver;
-pub use runtime_proto::ZkProof;
-pub use verifier::ZkVerifier;
+pub use crate::runtime::proto::ZkProof;
+
+cfg_prover! {
+    pub mod prover;
+    pub use prover::ZkProver;
+}
+
+cfg_verifier! {
+    pub mod verifier;
+    pub use verifier::ZkVerifier;
+}
+
+#[cfg(test)]
+#[path = "../tests/zk.rs"]
+mod tests_zk;

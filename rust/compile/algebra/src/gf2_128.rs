@@ -14,7 +14,7 @@
 
 use num_bigint::BigUint;
 
-use crate::field::{AlgebraicField, CompileField};
+use crate::compile::algebra::field::{AlgebraicField, CompileField};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Gf2_128(u128);
@@ -64,7 +64,7 @@ fn clmul64(x: u64, y: u64) -> (u64, u64) {
 fn clmul64_aarch64(x: u64, y: u64) -> (u64, u64) {
     unsafe {
         use std::arch::aarch64::*;
-        let res: u128 = std::mem::transmute(vmull_p64(x, y));
+        let res: u128 = vmull_p64(x, y);
         (res as u64, (res >> 64) as u64)
     }
 }
@@ -208,22 +208,22 @@ impl Default for Gf2_128Field {
 impl Gf2_128Field {
     pub fn new() -> Self {
         Self {
-            cantor_basis: core_algebra::CANTOR_BASIS_U128.map(Gf2_128),
+            cantor_basis: crate::core::algebra::CANTOR_BASIS_U128.map(Gf2_128),
         }
     }
 }
 
-impl core_algebra::BareField for Gf2_128Field {
+impl crate::core::algebra::BareField for Gf2_128Field {
     type E = Gf2_128;
 }
 
-impl core_algebra::Comparable for Gf2_128Field {
+impl crate::core::algebra::Comparable for Gf2_128Field {
     fn compare(&self, a: &Self::E, b: &Self::E) -> std::cmp::Ordering {
         a.0.cmp(&b.0)
     }
 }
 
-impl core_algebra::AlgebraicField for Gf2_128Field {
+impl crate::core::algebra::AlgebraicField for Gf2_128Field {
     fn zero(&self) -> Self::E {
         Gf2_128(0)
     }
@@ -267,7 +267,7 @@ impl CompileField for Gf2_128Field {
     }
 }
 
-impl core_algebra::SerializableField for Gf2_128Field {
+impl crate::core::algebra::SerializableField for Gf2_128Field {
     fn is_binary(&self) -> bool {
         true
     }
@@ -301,7 +301,7 @@ impl core_algebra::SerializableField for Gf2_128Field {
     }
 }
 
-impl core_algebra::HasLookupPoints for Gf2_128Field {
+impl crate::core::algebra::HasLookupPoints for Gf2_128Field {
     fn lookup_point(&self, _n: usize, i: usize) -> Self::E {
         let mut pt = Gf2_128(0);
         for j in 0..(usize::BITS as usize) {
@@ -313,19 +313,19 @@ impl core_algebra::HasLookupPoints for Gf2_128Field {
     }
 }
 
-impl core_algebra::SupportsU64Conversions for Gf2_128Field {
+impl crate::core::algebra::SupportsU64Conversions for Gf2_128Field {
     fn u64_to_element(&self, n: u64) -> Self::E {
         Gf2_128(u128::from(n))
     }
 }
 
-impl core_algebra::SupportsU128Conversions for Gf2_128Field {
+impl crate::core::algebra::SupportsU128Conversions for Gf2_128Field {
     fn u128_to_element(&self, n: u128) -> Self::E {
         Gf2_128(n)
     }
 }
 
-impl crate::field::CompileBinaryField for Gf2_128Field {
+impl crate::compile::algebra::field::CompileBinaryField for Gf2_128Field {
     fn generator(&self) -> Self::E {
         Gf2_128(2)
     }

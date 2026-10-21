@@ -23,7 +23,7 @@
 //! `m`-element output buffer. Entries below `n - 1` are unspecified because
 //! they may contain cyclic wraparound.
 
-use crate::{
+use crate::runtime::algebra::{
     fft,
     field::{RuntimeField, SupportsQuadraticExtension},
     rfft,
@@ -54,7 +54,7 @@ pub trait MiddleProduct<const W: usize, F: RuntimeField<W>> {
 pub struct FFTMiddleProduct<
     'a,
     const W: usize,
-    F: RuntimeField<W> + core_algebra::SupportsU64Conversions,
+    F: RuntimeField<W> + crate::core::algebra::SupportsU64Conversions,
 > {
     f: &'a F,
     omega: F::E,
@@ -65,7 +65,7 @@ pub struct FFTMiddleProduct<
     y_fft: Vec<F::E>,
 }
 
-impl<'a, const W: usize, F: RuntimeField<W> + core_algebra::SupportsU64Conversions>
+impl<'a, const W: usize, F: RuntimeField<W> + crate::core::algebra::SupportsU64Conversions>
     FFTMiddleProduct<'a, W, F>
 {
     pub fn new(n: usize, m: usize, omega: &F::E, omega_order: u64, y: &[F::E], f: &'a F) -> Self {
@@ -93,8 +93,8 @@ impl<'a, const W: usize, F: RuntimeField<W> + core_algebra::SupportsU64Conversio
     }
 }
 
-impl<const W: usize, F: RuntimeField<W> + core_algebra::SupportsU64Conversions> MiddleProduct<W, F>
-    for FFTMiddleProduct<'_, W, F>
+impl<const W: usize, F: RuntimeField<W> + crate::core::algebra::SupportsU64Conversions>
+    MiddleProduct<W, F> for FFTMiddleProduct<'_, W, F>
 {
     // Computes the middle product of x with y in z[n-1..m]. Note that y has
     // already been FFT'd and divided by padding_ in the constructor.
@@ -120,11 +120,11 @@ impl<const W: usize, F: RuntimeField<W> + core_algebra::SupportsU64Conversions> 
 pub struct FFTExtMiddleProduct<
     'a,
     const W: usize,
-    F: SupportsQuadraticExtension<W> + core_algebra::SupportsU64Conversions,
+    F: SupportsQuadraticExtension<W> + crate::core::algebra::SupportsU64Conversions,
 > {
     f: &'a F,
-    f_ext: &'a crate::fp2::Fp2Field<'a, W, F>,
-    omega: crate::fp2::Fp2Element<W, F>,
+    f_ext: &'a crate::runtime::algebra::fp2::Fp2Field<'a, W, F>,
+    omega: crate::runtime::algebra::fp2::Fp2Element<W, F>,
     omega_order: u64,
     n: usize,
     m: usize,
@@ -135,17 +135,17 @@ pub struct FFTExtMiddleProduct<
 impl<
         'a,
         const W: usize,
-        F: SupportsQuadraticExtension<W> + core_algebra::SupportsU64Conversions,
+        F: SupportsQuadraticExtension<W> + crate::core::algebra::SupportsU64Conversions,
     > FFTExtMiddleProduct<'a, W, F>
 {
     pub fn new(
         n: usize,
         m: usize,
-        omega: &crate::fp2::Fp2Element<W, F>,
+        omega: &crate::runtime::algebra::fp2::Fp2Element<W, F>,
         omega_order: u64,
         y: &[F::E],
         f: &'a F,
-        f_ext: &'a crate::fp2::Fp2Field<'a, W, F>,
+        f_ext: &'a crate::runtime::algebra::fp2::Fp2Field<'a, W, F>,
     ) -> Self {
         assert_valid_dimensions(n, m, y.len());
         assert!(m >= 2, "real FFT middle product requires m >= 2");
@@ -173,8 +173,10 @@ impl<
     }
 }
 
-impl<const W: usize, F: SupportsQuadraticExtension<W> + core_algebra::SupportsU64Conversions>
-    MiddleProduct<W, F> for FFTExtMiddleProduct<'_, W, F>
+impl<
+        const W: usize,
+        F: SupportsQuadraticExtension<W> + crate::core::algebra::SupportsU64Conversions,
+    > MiddleProduct<W, F> for FFTExtMiddleProduct<'_, W, F>
 {
     // Computes the middle product of x with y in z[n-1..m]. Note that y has
     // already been FFT'd and divided by padding_ in the constructor.

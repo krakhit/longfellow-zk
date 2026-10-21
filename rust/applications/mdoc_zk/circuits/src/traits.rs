@@ -12,81 +12,79 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use compile_algebra::field::CompileField;
-
-/// Bundles all compile-time circuit generation requirements for `MdocHash`.
-pub trait MdocHashCompileField:
-    Sized + CompileField + circuits_analog_adder::FieldWrappingSum + core_algebra::SerializableField
-{
-}
-
-impl<F> MdocHashCompileField for F where F: Sized
-        + CompileField
-        + circuits_analog_adder::FieldWrappingSum
-        + core_algebra::SerializableField
-{
-}
-
-/// Bundles all compile-time circuit generation requirements for `MdocSignature`.
-pub trait MdocSigCompileField:
-    Sized
-    + compile_algebra::field::CompilePrimeField
-    + compile_algebra::field::SupportsNatConversions<4, N = compile_algebra::CompileNat<4>>
-    + core_algebra::SupportsU64Conversions
-    + core_algebra::SerializableField
-{
-}
-
-impl<F> MdocSigCompileField for F where F: Sized
-        + compile_algebra::field::CompilePrimeField
-        + compile_algebra::field::SupportsNatConversions<4, N = compile_algebra::CompileNat<4>>
-        + core_algebra::SupportsU64Conversions
-        + core_algebra::SerializableField
-{
-}
-
 /// Bundles all runtime derived value derivation and evaluation requirements for `MdocHash`.
-#[cfg(feature = "testonly")]
 pub trait MdocHashRuntimeField:
     Sized
-    + runtime_algebra::field::RuntimeField<2>
-    + core_algebra::SerializableField
-    + core_algebra::HasLookupPoints
-    + core_algebra::SupportsU128Conversions
+    + crate::runtime::algebra::field::RuntimeField<2>
+    + crate::core::algebra::SerializableField
+    + crate::core::algebra::HasLookupPoints
+    + crate::core::algebra::SupportsU128Conversions
 {
 }
 
-#[cfg(feature = "testonly")]
 impl<F> MdocHashRuntimeField for F where F: Sized
-        + runtime_algebra::field::RuntimeField<2>
-        + core_algebra::SerializableField
-        + core_algebra::HasLookupPoints
-        + core_algebra::SupportsU128Conversions
+        + crate::runtime::algebra::field::RuntimeField<2>
+        + crate::core::algebra::SerializableField
+        + crate::core::algebra::HasLookupPoints
+        + crate::core::algebra::SupportsU128Conversions
 {
 }
 
 /// Bundles all runtime derived value derivation requirements for `MdocSignature` field arithmetic.
-#[cfg(feature = "testonly")]
 pub trait MdocSigRuntimeField:
     Sized
-    + core_algebra::BareField
-    + runtime_algebra::field::RuntimeField<4>
-    + core_algebra::SupportsNatConversions<4>
-    + core_algebra::SupportsU64Conversions
-    + core_algebra::HasLookupPoints
-where <Self as core_algebra::SupportsNatConversions<4>>::N: core_algebra::Nat<4>
+    + crate::core::algebra::BareField
+    + crate::runtime::algebra::field::RuntimeField<4>
+    + crate::core::algebra::SupportsNatConversions<4>
+    + crate::core::algebra::SupportsU64Conversions
+    + crate::core::algebra::HasLookupPoints
+where <Self as crate::core::algebra::SupportsNatConversions<4>>::N: crate::core::algebra::Nat<4>
 {
 }
 
-#[cfg(feature = "testonly")]
 impl<F> MdocSigRuntimeField for F
 where
     F: Sized
-        + core_algebra::BareField
-        + runtime_algebra::field::RuntimeField<4>
-        + core_algebra::SupportsNatConversions<4>
-        + core_algebra::SupportsU64Conversions
-        + core_algebra::HasLookupPoints,
-    <F as core_algebra::SupportsNatConversions<4>>::N: core_algebra::Nat<4>,
+        + crate::core::algebra::BareField
+        + crate::runtime::algebra::field::RuntimeField<4>
+        + crate::core::algebra::SupportsNatConversions<4>
+        + crate::core::algebra::SupportsU64Conversions
+        + crate::core::algebra::HasLookupPoints,
+    <F as crate::core::algebra::SupportsNatConversions<4>>::N: crate::core::algebra::Nat<4>,
 {
+}
+
+cfg_compiler! {
+    use crate::compile::algebra::field::CompileField;
+
+    /// Bundles all compile-time circuit generation requirements for `MdocHash`.
+    pub trait MdocHashCompileField:
+        Sized + CompileField + crate::circuits::analog_adder::FieldWrappingSum + crate::core::algebra::SerializableField
+    {
+    }
+
+    impl<F> MdocHashCompileField for F where F: Sized
+            + CompileField
+            + crate::circuits::analog_adder::FieldWrappingSum
+            + crate::core::algebra::SerializableField
+    {
+    }
+
+    /// Bundles all compile-time circuit generation requirements for `MdocSignature`.
+    pub trait MdocSigCompileField:
+        Sized
+        + crate::compile::algebra::field::CompilePrimeField
+        + crate::compile::algebra::field::SupportsNatConversions<4, N = crate::compile::algebra::CompileNat<4>>
+        + crate::core::algebra::SupportsU64Conversions
+        + crate::core::algebra::SerializableField
+    {
+    }
+
+    impl<F> MdocSigCompileField for F where F: Sized
+            + crate::compile::algebra::field::CompilePrimeField
+            + crate::compile::algebra::field::SupportsNatConversions<4, N = crate::compile::algebra::CompileNat<4>>
+            + crate::core::algebra::SupportsU64Conversions
+            + crate::core::algebra::SerializableField
+    {
+    }
 }

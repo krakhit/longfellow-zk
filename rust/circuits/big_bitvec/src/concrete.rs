@@ -12,13 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use core_algebra::Nat;
-use runtime_algebra::field::RuntimeField;
+use crate::core::algebra::Nat;
+use crate::runtime::algebra::field::RuntimeField;
 
-#[cfg(feature = "testonly")]
 pub fn push_bitvec_nat<
     const W: usize,
-    FR: RuntimeField<W> + core_algebra::SupportsNatConversions<W>,
+    FR: RuntimeField<W> + crate::core::algebra::SupportsNatConversions<W>,
 >(
     fr: &FR,
     val: &FR::N,
@@ -29,3 +28,4 @@ pub fn push_bitvec_nat<
         dest.push(if val.bit(i) { fr.one() } else { fr.zero() });
     }
 }
+

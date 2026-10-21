@@ -12,17 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-pub use core_algebra::AlgebraicField;
+pub use crate::core::algebra::AlgebraicField;
 use num_bigint::BigUint;
 
 /// Trait for fields used at circuit compile-time. Inherits from
-/// [`core_algebra::AlgebraicField`] to define its associated
-/// [`core_algebra::BareField::E`] type and algebraic operations.
+/// [`crate::core::algebra::AlgebraicField`] to define its associated
+/// [`crate::core::algebra::BareField::E`] type and algebraic operations.
 pub trait CompileField:
-    core_algebra::AlgebraicField
-    + core_algebra::SerializableField
-    + core_algebra::Comparable
-    + core_algebra::HasLookupPoints
+    crate::core::algebra::AlgebraicField
+    + crate::core::algebra::SerializableField
+    + crate::core::algebra::Comparable
+    + crate::core::algebra::HasLookupPoints
 {
     /// The field characteristic: the smallest positive integer `p` such that
     /// `p` times the multiplicative identity `1` equals `0`.
@@ -60,8 +60,8 @@ pub trait CompileField:
 /// to and from arbitrary-precision non-negative integers (`BigUint`).
 /// Typically used by prime fields and elliptic curve coordinates where elements
 /// are manipulated as standard large integers.
-pub use core_algebra::SupportsNatConversions;
-pub use core_algebra::{SupportsU128Conversions, SupportsU64Conversions};
+pub use crate::core::algebra::SupportsNatConversions;
+pub use crate::core::algebra::{SupportsU128Conversions, SupportsU64Conversions};
 
 pub trait CompilePrimeField: CompileField {}
 

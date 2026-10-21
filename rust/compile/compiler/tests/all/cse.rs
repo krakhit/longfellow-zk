@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use compile_algebra::{
+use crate::compile::algebra::{
     field::{CompileField, SupportsNatConversions},
     p256::P256Field,
 };
-use compile_compiler::{
+use crate::compile::compiler::{
     arena::CompilerArena,
     cse::Cse,
     ir::{AssertionItem, RewriteT},
@@ -57,7 +57,7 @@ fn test_cse() {
 }
 
 fn run_test_cse_assertions<const W: usize, F: CompileField + SupportsNatConversions<W>>(f: &F) {
-    let tracker = compile_logic::scope::AssertionScope::new();
+    let tracker = crate::compile::logic::scope::AssertionScope::new();
     let aid1 = tracker.new_leaf("assert_input");
     let _aid2 = tracker.new_leaf("assert_one");
     let arena = CompilerArena::<F>::new();

@@ -15,25 +15,32 @@
 pub mod common;
 pub mod geometry;
 pub mod param;
-pub mod prover;
-pub mod tableau;
 pub mod transcript;
-pub mod verifier;
 
 use std::fmt;
 
 pub use common::{inner_product_vector, layout_aext_into};
 pub use geometry::{estimate_proof_size, optimize_geometry};
 pub use param::{LigeroConfig, LigeroLinearConstraint, LigeroParam, LigeroQuadraticConstraint};
-pub use prover::LigeroProver;
-pub use runtime_proto::{LigeroCommitment, LigeroProof};
 pub use transcript::TranscriptLigero;
-pub use verifier::LigeroVerifier;
+
+pub use crate::runtime::proto::{LigeroCommitment, LigeroProof};
+
+cfg_prover! {
+    pub mod prover;
+    pub mod tableau;
+    pub use prover::LigeroProver;
+}
+
+cfg_verifier! {
+    pub mod verifier;
+    pub use verifier::LigeroVerifier;
+}
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum LigeroError {
     InvalidProof(String),
-    MerkleCheckFailed(runtime_merkle::MerkleError),
+    MerkleCheckFailed(crate::runtime::merkle::MerkleError),
     LowDegreeCheckFailed,
     DotCheckFailed,
     LinearInnerProductMismatch,
@@ -58,3 +65,7 @@ impl fmt::Display for LigeroError {
 }
 
 impl std::error::Error for LigeroError {}
+
+#[cfg(test)]
+#[path = "../tests/ligero.rs"]
+mod tests_ligero;

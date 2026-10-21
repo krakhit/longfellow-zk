@@ -12,30 +12,30 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use runtime_algebra::{ElementOf, InterpolatorFactory, Subfield, ZkField};
-use runtime_ligero::{param::LigeroQuadraticConstraint, LigeroProver};
-use runtime_random::{RandomEngine, Transcript};
-use runtime_sumcheck::{prove_core as sumcheck_prove_core, SumcheckProof, TranscriptSumcheck};
+use crate::runtime::algebra::{ElementOf, InterpolatorFactory, Subfield, ZkField};
+use crate::runtime::ligero::{param::LigeroQuadraticConstraint, LigeroProver};
+use crate::runtime::random::{RandomEngine, Transcript};
+use crate::runtime::sumcheck::{prove_core as sumcheck_prove_core, SumcheckProof, TranscriptSumcheck};
 
-use crate::{common::ZkContext, ZkProof};
+use crate::runtime::zk::{common::ZkContext, ZkProof};
 
 /// The Zero-Knowledge Prover.
 pub struct ZkProver<const W: usize, F: ZkField<W>> {
-    pub circuit: core_proto::circuit::Circuit<F>,
-    pub config: runtime_ligero::param::LigeroConfig,
+    pub circuit: crate::core::proto::circuit::Circuit<F>,
+    pub config: crate::runtime::ligero::param::LigeroConfig,
 }
 
 pub struct ZkCommitResult<const W: usize, F: ZkField<W>> {
     pad: SumcheckProof<W, F>,
     lqc: Vec<LigeroQuadraticConstraint>,
     lp: LigeroProver<W, F>,
-    pub com: runtime_proto::ligero::LigeroCommitment,
+    pub com: crate::runtime::proto::ligero::LigeroCommitment,
 }
 
 impl<const W: usize, F: ZkField<W>> ZkProver<W, F> {
     pub fn new(
-        circuit: core_proto::circuit::Circuit<F>,
-        config: runtime_ligero::param::LigeroConfig,
+        circuit: crate::core::proto::circuit::Circuit<F>,
+        config: crate::runtime::ligero::param::LigeroConfig,
     ) -> Self {
         Self { circuit, config }
     }
@@ -52,7 +52,7 @@ impl<const W: usize, F: ZkField<W>> ZkProver<W, F> {
         ts: &mut Transcript,
         rng: &mut R,
         sf: &SF,
-    ) -> (ZkCommitResult<W, F>, runtime_proto::ZkProofGeometry) {
+    ) -> (ZkCommitResult<W, F>, crate::runtime::proto::ZkProofGeometry) {
         assert!(
             self.circuit.raw.ninput >= self.circuit.raw.npublic_input,
             "npublic_input ({}) exceeds ninput ({})",
@@ -74,16 +74,16 @@ impl<const W: usize, F: ZkField<W>> ZkProver<W, F> {
         let mut witness = witness_only.to_vec();
         witness.extend(pad_witness);
 
-        let lqc = crate::common::setup_lqc(n_witness, &self.circuit);
+        let lqc = crate::runtime::zk::common::setup_lqc(n_witness, &self.circuit);
 
-        let ligero_param = runtime_ligero::param::LigeroParam::new(
+        let ligero_param = crate::runtime::ligero::param::LigeroParam::new(
             witness.len(),
             self.circuit.raw.layers.len(),
             self.config,
             ctx.make_interpolator,
         );
 
-        let (lp, com) = runtime_ligero::prover::LigeroProver::commit(
+        let (lp, com) = crate::runtime::ligero::prover::LigeroProver::commit(
             subfield_boundary,
             &witness,
             ligero_param,
@@ -94,16 +94,16 @@ impl<const W: usize, F: ZkField<W>> ZkProver<W, F> {
             ctx.f,
             sf,
         );
-        let sc_geom = runtime_proto::sumcheck::SumcheckProofGeometry {
+        let sc_geom = crate::runtime::proto::sumcheck::SumcheckProofGeometry {
             logw_layers: self
                 .circuit
                 .raw
                 .layers
                 .iter()
-                .map(core_proto::Layer::logw)
+                .map(crate::core::proto::Layer::logw)
                 .collect(),
         };
-        let geom = runtime_proto::ZkProofGeometry {
+        let geom = crate::runtime::proto::ZkProofGeometry {
             com_geom: ligero_param.geom,
             sc_geom,
         };
@@ -149,7 +149,7 @@ impl<const W: usize, F: ZkField<W>> ZkProver<W, F> {
         // for the sumcheck prover.
         let mut ts_sumcheck_prover = tsp.clone();
 
-        let in_layers = runtime_sumcheck::eval_circuit(inputs_and_witnesses, &self.circuit, ctx.f)
+        let in_layers = crate::runtime::sumcheck::eval_circuit(inputs_and_witnesses, &self.circuit, ctx.f)
             .map_err(|e| format!("eval_circuit failed: {e}"))?;
 
         let (proof, aux) = sumcheck_prove_core(
@@ -162,7 +162,7 @@ impl<const W: usize, F: ZkField<W>> ZkProver<W, F> {
 
         // The prover does not need the RHS constants vector `b` and can discard it,
         // since it is public and computed by the verifier during verification.
-        let (a, b) = crate::symbolic_sumcheck_verifier::symbolic_sumcheck_verifier_core(
+        let (a, b) = crate::runtime::zk::symbolic_sumcheck_verifier::symbolic_sumcheck_verifier_core(
             n_witness,
             &public_inputs,
             &self.circuit,
@@ -172,7 +172,7 @@ impl<const W: usize, F: ZkField<W>> ZkProver<W, F> {
             ctx.f,
         );
 
-        let statement_hash = crate::common::DEFAULT_STATEMENT_HASH;
+        let statement_hash = crate::runtime::zk::common::DEFAULT_STATEMENT_HASH;
 
         let com_proof = commit_info.lp.prove(
             &b,
@@ -195,17 +195,20 @@ impl<const W: usize, F: ZkField<W>> ZkProver<W, F> {
 /// Generates a new random sumcheck proof pad for a given circuit.
 fn new_pad<
     const W: usize,
-    F: runtime_algebra::poly::InterpolationField<W>
-        + core_algebra::SerializableField
-        + runtime_algebra::SupportsSampling<W>,
+    F: crate::runtime::algebra::poly::InterpolationField<W>
+        + crate::core::algebra::SerializableField
+        + crate::runtime::algebra::SupportsSampling<W>,
     R: RandomEngine,
 >(
-    circuit: &core_proto::circuit::Circuit<F>,
+    circuit: &crate::core::proto::circuit::Circuit<F>,
     rng: &mut R,
     f: &F,
 ) -> (SumcheckProof<W, F>, Vec<ElementOf<F>>) {
-    let mut pad = SumcheckProof { layers: Vec::new() };
-    let mut witness = Vec::new();
+    let pad_sz = crate::runtime::zk::circuit_pad::CircuitPad::pad_size::<W, F>(circuit);
+    let mut pad = SumcheckProof {
+        layers: Vec::with_capacity(circuit.raw.layers.len()),
+    };
+    let mut witness = Vec::with_capacity(pad_sz);
 
     for ly in 0..circuit.raw.layers.len() {
         let clr = &circuit.raw.layers[ly];
@@ -221,7 +224,7 @@ fn new_pad<
                 let r2 = rng.elt_field(f);
                 witness.push(r0.clone());
                 witness.push(r2.clone());
-                hp_slot.push(runtime_proto::RoundPoly {
+                hp_slot.push(crate::runtime::proto::RoundPoly {
                     evaluations: [r0, r2],
                 });
             }
@@ -237,11 +240,12 @@ fn new_pad<
         let rr = f.mulf(&r0, &r1);
         witness.push(rr);
 
-        pad.layers.push(runtime_sumcheck::LayerProof {
+        pad.layers.push(crate::runtime::sumcheck::LayerProof {
             hp,
             claims: [r0, r1],
         });
     }
 
+    debug_assert_eq!(witness.len(), pad_sz);
     (pad, witness)
 }

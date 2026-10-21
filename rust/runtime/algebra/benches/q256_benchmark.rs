@@ -12,9 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use core_algebra::{AlgebraicField, SupportsU64Conversions};
 use criterion::{criterion_group, criterion_main, Criterion};
-use runtime_algebra::q256::Q256Field;
+use longfellow_zk::{
+    core::algebra::{AlgebraicField, SupportsU64Conversions},
+    runtime::algebra::q256::Q256Field,
+};
 
 fn bench_q256(c: &mut Criterion) {
     let q256 = Q256Field::new();

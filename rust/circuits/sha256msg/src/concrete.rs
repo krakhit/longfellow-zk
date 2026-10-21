@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use circuits_sha256::concrete::{
+use crate::circuits::sha256::concrete::{
     derived as sha256_generate_derived, ConcreteDerived as Sha256ConcreteDerived,
     ConcreteGiven as Sha256ConcreteGiven,
 };
@@ -125,68 +125,68 @@ pub fn derived(given: &ConcreteGiven, max_blocks: usize) -> ConcreteDerived {
     ConcreteDerived {
         sha_derived: sha256_msg_derived(
             &given.padded_preimage,
-            &circuits_sha256::constants::INITIAL,
+            &crate::circuits::sha256::constants::INITIAL,
             max_blocks,
         ),
     }
 }
 
-impl ConcreteGiven {
-    #[cfg(feature = "testonly")]
-    pub fn push_elements<const W: usize, FR: runtime_algebra::field::RuntimeField<W>>(
-        &self,
-        fr: &FR,
-        max_blocks: usize,
-        mut push: impl FnMut(FR::E),
-    ) {
-        // 1. nblocks as bitvec of length max_blocks
-        for i in 0..max_blocks {
-            let bit = (self.nblocks >> i) & 1 == 1;
-            push(if bit { fr.one() } else { fr.zero() });
-        }
-
-        // 2. length_bytes as V64
-        for i in 0..64 {
-            let bit = (self.length_bytes >> i) & 1 == 1;
-            push(if bit { fr.one() } else { fr.zero() });
-        }
-
-        // 3. padded_preimage (max_blocks * 64 bytes)
-        for &byte in &self.padded_preimage {
-            for i in 0..8 {
-                let bit = (byte >> i) & 1 == 1;
+cfg_testonly! {
+    impl ConcreteGiven {
+        pub fn push_elements<const W: usize, FR: crate::runtime::algebra::field::RuntimeField<W>>(
+            &self,
+            fr: &FR,
+            max_blocks: usize,
+            mut push: impl FnMut(FR::E),
+        ) {
+            // 1. nblocks as bitvec of length max_blocks
+            for i in 0..max_blocks {
+                let bit = (self.nblocks >> i) & 1 == 1;
                 push(if bit { fr.one() } else { fr.zero() });
+            }
+
+            // 2. length_bytes as V64
+            for i in 0..64 {
+                let bit = (self.length_bytes >> i) & 1 == 1;
+                push(if bit { fr.one() } else { fr.zero() });
+            }
+
+            // 3. padded_preimage (max_blocks * 64 bytes)
+            for &byte in &self.padded_preimage {
+                for i in 0..8 {
+                    let bit = (byte >> i) & 1 == 1;
+                    push(if bit { fr.one() } else { fr.zero() });
+                }
+            }
+
+            // 4. expected_hash (256 bits)
+            for &word in self.expected_hash.iter().rev() {
+                for i in 0..32 {
+                    let bit = (word >> i) & 1 == 1;
+                    push(if bit { fr.one() } else { fr.zero() });
+                }
+            }
+        }
+    }
+
+    impl ConcreteDerived {
+        pub fn push_derived<const W: usize, FR: crate::runtime::algebra::field::RuntimeField<W>>(
+            &self,
+            fr: &FR,
+            mut push: impl FnMut(FR::E),
+        ) {
+            for wit in &self.sha_derived {
+                wit.push_derived(fr, &mut push);
             }
         }
 
-        // 4. expected_hash (256 bits)
-        for &word in self.expected_hash.iter().rev() {
-            for i in 0..32 {
-                let bit = (word >> i) & 1 == 1;
-                push(if bit { fr.one() } else { fr.zero() });
-            }
+        pub fn push_elements<const W: usize, FR: crate::runtime::algebra::field::RuntimeField<W>>(
+            &self,
+            fr: &FR,
+            push: impl FnMut(FR::E),
+        ) {
+            self.push_derived(fr, push);
         }
     }
 }
 
-impl ConcreteDerived {
-    #[cfg(feature = "testonly")]
-    pub fn push_derived<const W: usize, FR: runtime_algebra::field::RuntimeField<W>>(
-        &self,
-        fr: &FR,
-        mut push: impl FnMut(FR::E),
-    ) {
-        for wit in &self.sha_derived {
-            wit.push_derived(fr, &mut push);
-        }
-    }
-
-    #[cfg(feature = "testonly")]
-    pub fn push_elements<const W: usize, FR: runtime_algebra::field::RuntimeField<W>>(
-        &self,
-        fr: &FR,
-        push: impl FnMut(FR::E),
-    ) {
-        self.push_derived(fr, push);
-    }
-}

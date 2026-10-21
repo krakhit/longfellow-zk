@@ -12,29 +12,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use circuits_bitvec::BitvecLogic;
-use circuits_boolean::Boolean;
-use compile_algebra::gf2_128::Gf2_128Field;
-use compile_logic::eval::EvalLogic;
+use crate::{
+    circuits::{bitvec::BitvecLogic, boolean::Boolean},
+    compile::{algebra::gf2_128::Gf2_128Field, logic::eval::EvalLogic},
+};
 
-fn compare_bool<L: compile_logic::Logic>(
+fn compare_bool<L: crate::compile::logic::Logic>(
     boolean: &Boolean<L>,
     want: bool,
-    got: &circuits_boolean::Bitw<L>,
+    got: &crate::circuits::boolean::Bitw<L>,
 ) where
-    compile_logic::Eltw<L>: PartialEq + std::fmt::Debug,
+    crate::compile::logic::Eltw<L>: PartialEq + std::fmt::Debug,
 {
     let got_val = boolean.as_eltw(got);
     let want_val = boolean.as_eltw(&boolean.konst(want));
     assert_eq!(got_val, want_val);
 }
 
-fn compare_bitvec<L: compile_logic::Logic, const N: usize>(
+fn compare_bitvec<L: crate::compile::logic::Logic, const N: usize>(
     boolean: &Boolean<L>,
     want: u64,
-    got: &circuits_bitvec::Bitvec<L, N>,
+    got: &crate::circuits::bitvec::Bitvec<L, N>,
 ) where
-    compile_logic::Eltw<L>: PartialEq + std::fmt::Debug,
+    crate::compile::logic::Eltw<L>: PartialEq + std::fmt::Debug,
 {
     for i in 0..N {
         let want_bit = ((want >> i) & 1) == 1;
@@ -42,14 +42,14 @@ fn compare_bitvec<L: compile_logic::Logic, const N: usize>(
     }
 }
 
-use mdoc_zk_circuits::cbor_decoder::{
+use crate::mdoc::circuits::cbor_decoder::{
     decode_one_v8, evaluate_given, CborByteDecoder, ConcreteGiven,
 };
 
 #[test]
 fn test_cbor_decoder_exhaustive() {
     let f = Gf2_128Field::new();
-    let tracker = compile_logic::tracker::AssertionTracker::new();
+    let tracker = crate::compile::logic::tracker::AssertionTracker::new();
     let l = EvalLogic::new_with_tracker(&f, &tracker);
     let bv = BitvecLogic::new(&l);
     let boolean = Boolean::new(&l);

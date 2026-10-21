@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use core_algebra::{ElementOf, HasLookupPoints};
+use crate::core::algebra::{ElementOf, HasLookupPoints};
 
 pub fn binary_point<F: HasLookupPoints>(field: &F, width: usize, i: usize) -> ElementOf<F> {
     let n = 1 << width;

@@ -12,19 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use circuits_experimental::ecmul::{
+use crate::circuits::experimental::ecmul::{
     derived,
     evaluate::{evaluate_derived, evaluate_given},
     ConcreteGiven, EcmulCircuit,
 };
-use compile_algebra::{
+use crate::compile::algebra::{
     field::{CompileField, SupportsNatConversions},
     p256::P256Field,
     secp256r1::Secp256r1,
     Curve,
 };
-use compile_logic::eval::EvalLogic;
-use core_algebra::Nat;
+use crate::compile::logic::eval::EvalLogic;
+use crate::core::algebra::Nat;
 
 use super::testvec;
 
@@ -51,7 +51,7 @@ fn run_ecmul_eval_tests<
     };
     let concrete_derived = derived(curve, n, &concrete_given, f);
 
-    let tracker = compile_logic::scope::AssertionScope::new();
+    let tracker = crate::compile::logic::scope::AssertionScope::new();
     type L<'a, F> = EvalLogic<'a, F>;
     let l = L::<F>::new(f, &tracker);
     let circuit = EcmulCircuit::new(&l, curve, n);

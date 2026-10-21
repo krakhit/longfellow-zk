@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use compile_algebra::field::CompileField;
+use crate::compile::algebra::field::CompileField;
 
-use crate::ir::{Expr, ExprNode, RewriteT};
+use crate::compile::compiler::ir::{Expr, ExprNode, RewriteT};
 
 /// Algebraic simplification rewriter
 pub struct AlgebraicRewriter<'a, F: CompileField, NEXT> {
@@ -122,11 +122,11 @@ where NEXT: RewriteT<'a, F>
 impl<'a, F: CompileField, NEXT> RewriteT<'a, F> for AlgebraicRewriter<'a, F, NEXT>
 where NEXT: RewriteT<'a, F>
 {
-    fn ok(&self) -> crate::ir::RawAssertions<'a, F> {
+    fn ok(&self) -> crate::compile::compiler::ir::RawAssertions<'a, F> {
         self.next.ok()
     }
 
-    fn assert0(&self, x: &ExprNode<'a, F>) -> crate::ir::RawAssertions<'a, F> {
+    fn assert0(&self, x: &ExprNode<'a, F>) -> crate::compile::compiler::ir::RawAssertions<'a, F> {
         let f = &self.f;
         match &x.v {
             Expr::Constant(e) if f.is_zero(e) => self.ok(),
@@ -142,14 +142,14 @@ where NEXT: RewriteT<'a, F>
 
     fn assertions(
         &self,
-        assertions: &[crate::ir::RawAssertions<'a, F>],
-    ) -> crate::ir::RawAssertions<'a, F> {
+        assertions: &[crate::compile::compiler::ir::RawAssertions<'a, F>],
+    ) -> crate::compile::compiler::ir::RawAssertions<'a, F> {
         self.next.assertions(assertions)
     }
 
     fn with_assertions(
         &self,
-        assertions: &crate::ir::Assertions<'a, F>,
+        assertions: &crate::compile::compiler::ir::Assertions<'a, F>,
         x: &ExprNode<'a, F>,
     ) -> ExprNode<'a, F> {
         if assertions.is_empty() {

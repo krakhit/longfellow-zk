@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::{AlgebraicField, ElementOf, Nat};
+use crate::core::algebra::{AlgebraicField, ElementOf, Nat};
 
 pub trait Curve<const W: usize> {
     type F: AlgebraicField;
-    type N: crate::Nat<W>;
+    type N: crate::core::algebra::Nat<W>;
 
     fn order(&self) -> Self::N;
 

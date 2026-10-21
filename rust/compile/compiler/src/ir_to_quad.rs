@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use compile_algebra::field::CompileField;
+use crate::compile::algebra::field::CompileField;
 
-use crate::{
+use crate::compile::compiler::{
     ir::{Assertions, Expr, ExprNode},
     quad::{QuadCircuit, Term, WExpr, Wire},
 };
@@ -113,12 +113,12 @@ fn compile_term<F: CompileField>(
     }
 }
 
-use compile_logic::scope::{AssertionId, AssertionScope};
+use crate::compile::logic::scope::{AssertionId, AssertionScope};
 
 /// Rewrite into a stylized Quad circuit with debug info mapping quad node index
 /// to assertion ID.
 pub fn rewrite<'src, 'dst, F: CompileField>(
-    _arena: &'dst crate::arena::CompilerArena<'dst, F>,
+    _arena: &'dst crate::compile::compiler::arena::CompilerArena<'dst, F>,
     f: &'dst F,
     x: Assertions<'src, F>,
     tracker: &AssertionScope,

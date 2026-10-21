@@ -12,17 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use compile_algebra::{
+use crate::compile::algebra::{
     field::{CompileField, SupportsNatConversions, SupportsU64Conversions},
     p256::P256Field,
 };
-use compile_compiler::{
+use crate::compile::compiler::{
     algsimp::AlgebraicRewriter,
     arena::CompilerArena,
     cse::Cse,
     ir::{AssertionItem, Expr, RewriteT},
 };
-use core_algebra::{AlgebraicField, Nat};
+use crate::core::algebra::{AlgebraicField, Nat};
 
 fn run_test<
     const W: usize,
@@ -56,7 +56,7 @@ fn test_rewrite_algebraic_simplification() {
 #[test]
 fn test_rewrite_coalesces_algebraically_equal_assertions() {
     let f = P256Field::new();
-    let tracker = compile_logic::scope::AssertionScope::new();
+    let tracker = crate::compile::logic::scope::AssertionScope::new();
     let aid1 = tracker.new_leaf("first");
     let aid2 = tracker.new_leaf("second");
     let source_arena = CompilerArena::new();
@@ -72,7 +72,7 @@ fn test_rewrite_coalesces_algebraically_equal_assertions() {
     ]);
 
     let target_arena = CompilerArena::new();
-    let rewritten = compile_compiler::assertion::rewrite(&target_arena, &f, assertions, &tracker);
+    let rewritten = crate::compile::compiler::assertion::rewrite(&target_arena, &f, assertions, &tracker);
     assert_eq!(rewritten.len(), 1);
     assert_eq!(rewritten[0].id, aid1);
 }

@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use circuits_bitvec::BitvecLogic;
-use circuits_sha256::evaluate::evaluate_derived as sha256_evaluate_derived;
-use compile_logic::Logic;
+use crate::circuits::bitvec::BitvecLogic;
+use crate::circuits::sha256::evaluate::evaluate_derived as sha256_evaluate_derived;
+use crate::compile::logic::Logic;
 
 use super::{
     circuit::Given as WireGiven,
@@ -29,7 +29,7 @@ pub fn evaluate_given<L: Logic, const S: usize>(
     let nblocks = bv.of_u64::<S>(given.nblocks as u64);
     let length_bytes = bv.of_u64_val(given.length_bytes);
 
-    let boolean = circuits_boolean::Boolean::new(bv.logic());
+    let boolean = crate::circuits::boolean::Boolean::new(bv.logic());
     let expected_hash = bv.from_fn::<256, _>(|idx| {
         let word_idx = 7 - (idx / 32);
         let bit_idx = idx % 32;
@@ -49,7 +49,7 @@ pub fn evaluate_given<L: Logic, const S: usize>(
 pub fn evaluate_derived<L: Logic>(
     derived: &ConcreteDerived,
     bv: &BitvecLogic<L>,
-) -> Vec<circuits_sha256::Derived<L>> {
+) -> Vec<crate::circuits::sha256::Derived<L>> {
     derived
         .sha_derived
         .iter()

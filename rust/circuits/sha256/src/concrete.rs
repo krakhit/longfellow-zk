@@ -152,28 +152,52 @@ impl ConcreteDerived {
             .chain(self.oute.iter().zip(&self.outa).flat_map(|(&e, &a)| [e, a]))
             .chain(self.h1.iter().copied())
     }
+}
 
-    #[cfg(feature = "testonly")]
-    pub fn push_derived<const W: usize, FR: runtime_algebra::field::RuntimeField<W>>(
-        &self,
-        fr: &FR,
-        mut push: impl FnMut(FR::E),
-    ) {
-        let mut dest = Vec::with_capacity(168 * 32);
-        for &val in &self.outw {
-            circuits_bitvec::concrete::push_bitvec_u64(fr, u64::from(val), 32, &mut dest);
-        }
-        for &val in &self.oute {
-            circuits_bitvec::concrete::push_bitvec_u64(fr, u64::from(val), 32, &mut dest);
-        }
-        for &val in &self.outa {
-            circuits_bitvec::concrete::push_bitvec_u64(fr, u64::from(val), 32, &mut dest);
-        }
-        for &val in &self.h1 {
-            circuits_bitvec::concrete::push_bitvec_u64(fr, u64::from(val), 32, &mut dest);
-        }
-        for e in dest {
-            push(e);
+cfg_testonly! {
+    impl ConcreteDerived {
+        pub fn push_derived<const W: usize, FR: crate::runtime::algebra::field::RuntimeField<W>>(
+            &self,
+            fr: &FR,
+            mut push: impl FnMut(FR::E),
+        ) {
+            let mut dest = Vec::with_capacity(168 * 32);
+            for &val in &self.outw {
+                crate::circuits::bitvec::concrete::push_bitvec_u64(
+                    fr,
+                    u64::from(val),
+                    32,
+                    &mut dest,
+                );
+            }
+            for &val in &self.oute {
+                crate::circuits::bitvec::concrete::push_bitvec_u64(
+                    fr,
+                    u64::from(val),
+                    32,
+                    &mut dest,
+                );
+            }
+            for &val in &self.outa {
+                crate::circuits::bitvec::concrete::push_bitvec_u64(
+                    fr,
+                    u64::from(val),
+                    32,
+                    &mut dest,
+                );
+            }
+            for &val in &self.h1 {
+                crate::circuits::bitvec::concrete::push_bitvec_u64(
+                    fr,
+                    u64::from(val),
+                    32,
+                    &mut dest,
+                );
+            }
+            for e in dest {
+                push(e);
+            }
         }
     }
 }
+

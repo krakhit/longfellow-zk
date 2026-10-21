@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::{
+use crate::mdoc::runtime::{
     error::MdocProverErrorCode,
     zk_spec::{ZkSpecStruct, CURRENT_VERSION, CURRENT_ZK_SPECS, ZK_SPECS},
 };
@@ -21,7 +21,7 @@ use crate::{
 pub struct ProvidedCircuit {
     pub name: String,
     pub spec: ZkSpecStruct,
-    pub archive: core_proto::archive::CircuitArchive,
+    pub archive: crate::core::proto::archive::CircuitArchive,
     pub compressed: Vec<u8>,
 }
 
@@ -36,11 +36,11 @@ pub fn materialize(
                 .find(|s| s.version == version && s.num_attributes == num_attributes)
                 .ok_or(MdocProverErrorCode::InvalidZkSpecVersion)?;
             let hash_hex = spec.combined_hash_hex();
-            let compressed = mdoc_zk_artifacts::load_circuit_lfa2(&hash_hex);
+            let compressed = crate::mdoc::artifacts::load_circuit_lfa2(&hash_hex);
             let zstd_decoder = zstd::stream::read::Decoder::new(&compressed[..])
                 .map_err(|_| MdocProverErrorCode::CircuitParsingFailure)?;
             let mut buf_stream = std::io::BufReader::new(zstd_decoder);
-            let archive = core_proto::archive::CircuitArchive::from_stream(&mut buf_stream)
+            let archive = crate::core::proto::archive::CircuitArchive::from_stream(&mut buf_stream)
                 .map_err(|_| MdocProverErrorCode::CircuitParsingFailure)?;
 
             Ok(ProvidedCircuit {
@@ -56,26 +56,26 @@ pub fn materialize(
                 .find(|s| s.num_attributes == num_attributes)
                 .ok_or(MdocProverErrorCode::InvalidZkSpecVersion)?;
 
-            let hash_profile = mdoc_zk_compile::LigeroProfile {
+            let hash_profile = crate::mdoc::compile::LigeroProfile {
                 rateinv: spec.ligero_hash.rateinv,
                 nreq: spec.ligero_hash.nreq,
             };
-            let sig_profile = mdoc_zk_compile::LigeroProfile {
+            let sig_profile = crate::mdoc::compile::LigeroProfile {
                 rateinv: spec.ligero_sig.rateinv,
                 nreq: spec.ligero_sig.nreq,
             };
             let (lfa_bytes, config_sig, config_hash) =
-                mdoc_zk_compile::generate_circuits(num_attributes, hash_profile, sig_profile)
+                crate::mdoc::compile::generate_circuits(num_attributes, hash_profile, sig_profile)
                     .map_err(|_| MdocProverErrorCode::GeneralFailure)?;
             if config_hash != spec.ligero_hash || config_sig != spec.ligero_sig {
                 return Err(MdocProverErrorCode::GeneralFailure);
             }
 
-            let archive = core_proto::archive::CircuitArchive::from_bytes(&lfa_bytes)
+            let archive = crate::core::proto::archive::CircuitArchive::from_bytes(&lfa_bytes)
                 .map_err(|_| MdocProverErrorCode::CircuitParsingFailure)?;
 
             let compressed =
-                zstd::encode_all(&lfa_bytes[..], mdoc_zk_circuits::config::K_ZSTD_LEVEL)
+                zstd::encode_all(&lfa_bytes[..], crate::mdoc::circuits::config::K_ZSTD_LEVEL)
                     .map_err(|_| MdocProverErrorCode::GeneralFailure)?;
 
             let name = spec.combined_hash_hex();

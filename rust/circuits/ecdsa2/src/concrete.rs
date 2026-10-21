@@ -12,12 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use circuits_ec::{
+use crate::circuits::ec::{
     concrete::{self as ec_concrete},
     Pt2, Pt3,
 };
-use compile_algebra::field::SupportsNatConversions;
-use core_algebra::{BareField, Curve, Nat, NatOf};
+use crate::core::algebra::{BareField, Curve, Nat, NatOf, SupportsNatConversions};
 
 #[derive(Clone, Debug)]
 pub struct ConcreteSlicing<F: BareField> {
@@ -47,8 +46,8 @@ pub struct ConcreteDerived<F: BareField> {
 
 pub fn given<
     const W: usize,
-    F: core_algebra::AlgebraicField + SupportsNatConversions<W> + core_algebra::HasLookupPoints,
-    Fn: core_algebra::AlgebraicField + SupportsNatConversions<W, N = F::N>,
+    F: crate::core::algebra::AlgebraicField + SupportsNatConversions<W> + crate::core::algebra::HasLookupPoints,
+    Fn: crate::core::algebra::AlgebraicField + SupportsNatConversions<W, N = F::N>,
     C: Curve<W, F = F, N = F::N>,
 >(
     curve: &C,
@@ -102,8 +101,8 @@ pub fn given<
 
 pub fn derived<
     const W: usize,
-    F: core_algebra::AlgebraicField + SupportsNatConversions<W> + core_algebra::HasLookupPoints,
-    Fn: core_algebra::AlgebraicField + SupportsNatConversions<W, N = F::N>,
+    F: crate::core::algebra::AlgebraicField + SupportsNatConversions<W> + crate::core::algebra::HasLookupPoints,
+    Fn: crate::core::algebra::AlgebraicField + SupportsNatConversions<W, N = F::N>,
     C: Curve<W, F = F, N = F::N>,
 >(
     curve: &C,

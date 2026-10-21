@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use circuits_arithmetic::Arithmetic;
-use circuits_boolean::{Bitw, Boolean, BooleanIO};
-use compile_algebra::field::CompileField;
-use compile_logic::{Eltw, Logic};
-use util::array::{init, map, map2, map3};
+use crate::circuits::arithmetic::Arithmetic;
+use crate::circuits::boolean::{Bitw, Boolean, BooleanIO};
+use crate::compile::algebra::field::CompileField;
+use crate::compile::logic::{Eltw, Logic};
+use crate::util::array::{init, map, map2, map3};
 
 pub struct Bitvec<L: Logic, const N: usize> {
     bits: Vec<Bitw<L>>,
@@ -584,11 +584,11 @@ impl<'a, Fld: CompileField, L: Logic<F = Fld>> BitvecLogic<'a, L> {
     }
 }
 
-pub struct BitvecIO<'a, L: compile_logic::LogicIO> {
+pub struct BitvecIO<'a, L: crate::compile::logic::LogicIO> {
     bools_io: BooleanIO<'a, L>,
 }
 
-impl<'a, L: compile_logic::LogicIO> BitvecIO<'a, L> {
+impl<'a, L: crate::compile::logic::LogicIO> BitvecIO<'a, L> {
     pub fn new(bv: &'a BitvecLogic<'a, L>) -> Self {
         Self {
             bools_io: BooleanIO::new(bv.logic),

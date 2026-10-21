@@ -12,12 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use util::ceil_log2;
-
 use super::CircuitReader;
 use crate::{
-    circuit::{Circuit, Layer, RawCircuit},
-    SerializableField,
+    core::proto::{
+        circuit::{Circuit, Layer, RawCircuit},
+        SerializableField,
+    },
+    util::ceil_log2,
 };
 
 fn read_num_stream<R: std::io::BufRead>(stream: &mut R) -> Result<usize, String> {
@@ -43,11 +44,11 @@ pub(super) fn from_stream_lfc1_inner<R: std::io::BufRead, F: SerializableField>(
         ));
     }
     let logv = ceil_log2(nv);
-    if !crate::sane_logw(logv) {
+    if !crate::core::proto::sane_logw(logv) {
         return Err(format!(
             "Circuit logv {} exceeds MAX_LOGW {} or usize bit width",
             logv,
-            crate::MAX_LOGW
+            crate::core::proto::MAX_LOGW
         ));
     }
     let nc = read_num_stream(stream)?; // ncopies
@@ -122,13 +123,13 @@ pub(super) fn from_stream_lfc1_inner<R: std::io::BufRead, F: SerializableField>(
     let mut total_terms = 0usize;
 
     for _ in 0..nl {
-        let mut db = crate::cache::ApproximateDeltaTableBuilder::new(65521);
+        let mut db = crate::core::proto::cache::ApproximateDeltaTableBuilder::new(65521);
         let logw = read_num_stream(stream)?;
-        if !crate::sane_logw(logw) {
+        if !crate::core::proto::sane_logw(logw) {
             return Err(format!(
                 "Layer logw {} exceeds MAX_LOGW {} or usize bit width",
                 logw,
-                crate::MAX_LOGW
+                crate::core::proto::MAX_LOGW
             ));
         }
         let nw = read_num_stream(stream)?;
@@ -206,7 +207,7 @@ pub(super) fn from_stream_lfc1_inner<R: std::io::BufRead, F: SerializableField>(
     super::validate_raw_circuit(&raw)?;
 
     if enforce_circuit_id {
-        let computed_id = crate::circuit::compute_id(reader.f, &raw);
+        let computed_id = crate::core::proto::circuit::compute_id(reader.f, &raw);
         if computed_id != id {
             return Err("Circuit ID verification failed".to_string());
         }

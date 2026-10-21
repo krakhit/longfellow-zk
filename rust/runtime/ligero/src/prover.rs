@@ -12,16 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use core_algebra::ElementOf;
-use runtime_algebra::{
+use crate::core::algebra::ElementOf;
+use crate::runtime::algebra::{
     blas, Interpolator, InterpolatorFactory, RuntimeField, Subfield, SupportsSampling,
 };
-use runtime_merkle::{commit, open, MerkleCommitment};
-use runtime_proto::LigeroProof;
-use runtime_random::{RandomEngine, Transcript};
+use crate::runtime::merkle::{commit, open, MerkleCommitment};
+use crate::runtime::proto::LigeroProof;
+use crate::runtime::random::{RandomEngine, Transcript};
 use sha2::digest::Update;
 
-use crate::{
+use crate::runtime::ligero::{
     common::{inner_product_vector, layout_aext_into},
     param::{LigeroCommitment, LigeroLinearConstraint, LigeroParam, LigeroQuadraticConstraint},
     tableau::Tableau,
@@ -36,7 +36,7 @@ pub struct LigeroProver<const W: usize, F: RuntimeField<W>> {
 
 impl<
         const W: usize,
-        F: RuntimeField<W> + core_algebra::SerializableField + SupportsSampling<W>,
+        F: RuntimeField<W> + crate::core::algebra::SerializableField + SupportsSampling<W>,
     > LigeroProver<W, F>
 {
     /// The `subfield_boundary` parameter is kind of a hack.
@@ -207,7 +207,7 @@ impl<
         linear_evals: &[ElementOf<F>],
         ts: &mut Transcript,
         linear_constraints: &[LigeroLinearConstraint<W, F>],
-        hash_of_ligero_statement: &runtime_merkle::Digest,
+        hash_of_ligero_statement: &crate::runtime::merkle::Digest,
         quadratic_constraints: &[LigeroQuadraticConstraint],
         make_interpolator: &IF,
         f: &F,

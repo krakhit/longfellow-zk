@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use circuits_bit_plucker::BitPlucker;
-use compile_compiler::CompilerLogic;
-use mdoc_zk_circuits::{
+use crate::circuits::bit_plucker::BitPlucker;
+use crate::compile::compiler::CompilerLogic;
+use crate::mdoc::circuits::{
     config::{K_HASH_V256_BIT_PLUCKER, K_HASH_V8_BIT_PLUCKER, K_SHA_BIT_PLUCKER},
     hash::{
         circuit::{
@@ -30,7 +30,7 @@ use mdoc_zk_circuits::{
     MdocHashCompileField,
 };
 
-use crate::allocator::WireAllocator;
+use crate::mdoc::compile::allocator::WireAllocator;
 
 pub fn allocate_disclosed_attribute<'b, FC: MdocHashCompileField, const PLUCKER_WIDTH: usize>(
     allocator: &mut WireAllocator<'_, 'b, FC>,
@@ -57,14 +57,14 @@ pub fn allocate_disclosed_attribute<'b, FC: MdocHashCompileField, const PLUCKER_
 pub fn sha256_block_wires<'a, 'b, FC: MdocHashCompileField, const PLUCKER_WIDTH: usize>(
     allocator: &mut WireAllocator<'a, 'b, FC>,
     plucker: &BitPlucker<'_, CompilerLogic<'b, FC>, PLUCKER_WIDTH>,
-) -> circuits_sha256::Derived<CompilerLogic<'b, FC>> {
+) -> crate::circuits::sha256::Derived<CompilerLogic<'b, FC>> {
     let next_plucked =
-        |alloc: &mut WireAllocator<'a, 'b, FC>| -> circuits_bitvec::V32<CompilerLogic<'b, FC>> {
+        |alloc: &mut WireAllocator<'a, 'b, FC>| -> crate::circuits::bitvec::V32<CompilerLogic<'b, FC>> {
             let (unpacked, _) = alloc.allocate_plucked_v32::<PLUCKER_WIDTH>(plucker);
             unpacked
         };
 
-    circuits_sha256::Derived {
+    crate::circuits::sha256::Derived {
         outw: std::array::from_fn(|_| next_plucked(allocator)),
         oute: std::array::from_fn(|_| next_plucked(allocator)),
         outa: std::array::from_fn(|_| next_plucked(allocator)),
@@ -76,7 +76,7 @@ pub fn allocate_sha_derived<'b, FC: MdocHashCompileField, const PLUCKER_WIDTH: u
     allocator: &mut WireAllocator<'_, 'b, FC>,
     plucker: &BitPlucker<'_, CompilerLogic<'b, FC>, PLUCKER_WIDTH>,
     max_blocks: usize,
-) -> Vec<circuits_sha256::Derived<CompilerLogic<'b, FC>>> {
+) -> Vec<crate::circuits::sha256::Derived<CompilerLogic<'b, FC>>> {
     (0..max_blocks)
         .map(|_| sha256_block_wires(allocator, plucker))
         .collect()
@@ -142,12 +142,12 @@ where
     let mac_device_pky = [allocator.allocate_wire(), allocator.allocate_wire()];
     let mac_av = allocator.allocate_wire();
 
-    let boolean_io = circuits_boolean::BooleanIO::new(allocator.iologic);
+    let boolean_io = crate::circuits::boolean::BooleanIO::new(allocator.iologic);
     let suppress_doc_type_check = boolean_io.next(&mut allocator.pos);
     let (expected_doc_type_bytes, _) =
         allocator.allocate_plucked_v8_array::<32, { K_HASH_V8_BIT_PLUCKER }>(plucker_v8);
     let expected_doc_type_len = allocator.allocate_bitvec::<{ K_ATTR_INDEX_BITS }>();
-    let expected_doc_type = mdoc_zk_circuits::mso_attribute::circuit::AttrSlice {
+    let expected_doc_type = crate::mdoc::circuits::mso_attribute::circuit::AttrSlice {
         data: expected_doc_type_bytes,
         len: expected_doc_type_len,
     };
@@ -192,7 +192,7 @@ where
 
     let mac_ap = std::array::from_fn(|_| [allocator.allocate_wire(), allocator.allocate_wire()]);
 
-    let given = mdoc_zk_circuits::hash::Given {
+    let given = crate::mdoc::circuits::hash::Given {
         disclosed_attributes,
         now,
         suppress_doc_type_check,

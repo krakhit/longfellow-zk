@@ -12,7 +12,39 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use util::morton::{cmp, even, uneven};
+use crate::util::morton::cmp;
+
+/// Extracts even bits from x.
+fn even(mut x: u64) -> u64 {
+    x &= 0x5555_5555_5555_5555;
+    x |= x >> 1;
+    x &= 0x3333_3333_3333_3333;
+    x |= x >> 2;
+    x &= 0x0F0F_0F0F_0F0F_0F0F;
+    x |= x >> 4;
+    x &= 0x00FF_00FF_00FF_00FF;
+    x |= x >> 8;
+    x &= 0x0000_FFFF_0000_FFFF;
+    x |= x >> 16;
+    x &= 0x0000_0000_FFFF_FFFF;
+    x
+}
+
+/// Spreads bits of x into even positions (inverse of even).
+fn uneven(mut x: u64) -> u64 {
+    x &= 0x0000_0000_FFFF_FFFF;
+    x |= x << 16;
+    x &= 0x0000_FFFF_0000_FFFF;
+    x |= x << 8;
+    x &= 0x00FF_00FF_00FF_00FF;
+    x |= x << 4;
+    x &= 0x0F0F_0F0F_0F0F_0F0F;
+    x |= x << 2;
+    x &= 0x3333_3333_3333_3333;
+    x |= x << 1;
+    x &= 0x5555_5555_5555_5555;
+    x
+}
 
 #[test]
 fn test_even_uneven_roundtrip() {

@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use circuits_bitvec::BitvecLogic;
-use circuits_mac::{circuit::MAC, concrete::given, evaluate::evaluate_given};
-use compile_algebra::{field::CompileField, p256::P256Field};
-use compile_logic::eval::EvalLogic;
+use crate::circuits::bitvec::BitvecLogic;
+use crate::circuits::mac::{circuit::MAC, concrete::given, evaluate::evaluate_given};
+use crate::compile::algebra::{field::CompileField, p256::P256Field};
+use crate::compile::logic::eval::EvalLogic;
 
 use super::test_support;
 
@@ -27,7 +27,7 @@ fn test_mac_direct_eval_generic<F: CompileField>(fc: &F) {
 
     let concrete_given = given(test_msg, av_val, [ap0_val, ap1_val]);
 
-    let tracker = compile_logic::scope::AssertionScope::new();
+    let tracker = crate::compile::logic::scope::AssertionScope::new();
     type L<'a, FC> = EvalLogic<'a, FC>;
     let lp = L::new(fc, &tracker);
     let bv = BitvecLogic::new(&lp);

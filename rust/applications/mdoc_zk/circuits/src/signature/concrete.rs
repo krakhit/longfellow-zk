@@ -12,11 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use compile_algebra::CompileNat;
-use core_algebra::Nat;
+use crate::core::algebra::Nat;
 
 #[derive(Clone, Debug)]
-pub struct SignatureInput<N = CompileNat<4>> {
+pub struct SignatureInput<N> {
     pub issuer_pk: (N, N),
     pub issuer_sig_e: N,
     pub issuer_sig_r: N,
@@ -34,24 +33,24 @@ pub struct SignatureMac {
 }
 
 #[derive(Clone, Debug)]
-pub struct ConcreteGiven<F: core_algebra::AlgebraicField, N = CompileNat<4>> {
+pub struct ConcreteGiven<F: crate::core::algebra::AlgebraicField, N> {
     pub sig_input: SignatureInput<N>,
     pub mac_input: SignatureMac,
     pub mac_e: [u128; 2],
     pub mac_device_pkx: [u128; 2],
     pub mac_device_pky: [u128; 2],
-    pub issuer_sig_given: circuits_ecdsa2::concrete::ConcreteGiven<F>,
-    pub device_sig_given: circuits_ecdsa2::concrete::ConcreteGiven<F>,
+    pub issuer_sig_given: crate::circuits::ecdsa2::concrete::ConcreteGiven<F>,
+    pub device_sig_given: crate::circuits::ecdsa2::concrete::ConcreteGiven<F>,
 }
 
 #[derive(Clone, Debug)]
-pub struct ConcreteDerived<F: core_algebra::AlgebraicField> {
-    pub issuer_sig_derived: circuits_ecdsa2::concrete::ConcreteDerived<F>,
-    pub device_sig_derived: circuits_ecdsa2::concrete::ConcreteDerived<F>,
+pub struct ConcreteDerived<F: crate::core::algebra::AlgebraicField> {
+    pub issuer_sig_derived: crate::circuits::ecdsa2::concrete::ConcreteDerived<F>,
+    pub device_sig_derived: crate::circuits::ecdsa2::concrete::ConcreteDerived<F>,
 }
 
 pub fn signature_input_of_parsed_mdoc<const W: usize, N: Nat<W>>(
-    parsed: &crate::cbor::mdoc::ParsedMdoc<N>,
+    parsed: &crate::mdoc::circuits::cbor::mdoc::ParsedMdoc<N>,
     issuer_pk: (N, N),
 ) -> SignatureInput<N> {
     SignatureInput {
@@ -68,7 +67,7 @@ pub fn signature_input_of_parsed_mdoc<const W: usize, N: Nat<W>>(
 
 pub fn compute_mac_tags<
     const W: usize,
-    F: core_algebra::AlgebraicField + core_algebra::SupportsNatConversions<W>,
+    F: crate::core::algebra::AlgebraicField + crate::core::algebra::SupportsNatConversions<W>,
 >(
     sig_input: &SignatureInput<F::N>,
     mac_input: &SignatureMac,
@@ -85,17 +84,17 @@ pub fn compute_mac_tags<
     let device_pkx_msg = to_32_bytes(&sig_input.device_pk.0);
     let device_pky_msg = to_32_bytes(&sig_input.device_pk.1);
 
-    let mac_e = circuits_mac::concrete::compute_tag(
+    let mac_e = crate::circuits::mac::concrete::compute_tag(
         &issuer_sig_e_msg,
         mac_input.mac_av,
         &mac_input.mac_ap[0],
     );
-    let mac_device_pkx = circuits_mac::concrete::compute_tag(
+    let mac_device_pkx = crate::circuits::mac::concrete::compute_tag(
         &device_pkx_msg,
         mac_input.mac_av,
         &mac_input.mac_ap[1],
     );
-    let mac_device_pky = circuits_mac::concrete::compute_tag(
+    let mac_device_pky = crate::circuits::mac::concrete::compute_tag(
         &device_pky_msg,
         mac_input.mac_av,
         &mac_input.mac_ap[2],
@@ -106,11 +105,11 @@ pub fn compute_mac_tags<
 
 pub fn given<
     const W: usize,
-    F: core_algebra::AlgebraicField
-        + core_algebra::SupportsNatConversions<W>
-        + core_algebra::HasLookupPoints,
-    Fn: core_algebra::AlgebraicField + core_algebra::SupportsNatConversions<W, N = F::N>,
-    C: core_algebra::Curve<W, F = F, N = F::N>,
+    F: crate::core::algebra::AlgebraicField
+        + crate::core::algebra::SupportsNatConversions<W>
+        + crate::core::algebra::HasLookupPoints,
+    Fn: crate::core::algebra::AlgebraicField + crate::core::algebra::SupportsNatConversions<W, N = F::N>,
+    C: crate::core::algebra::Curve<W, F = F, N = F::N>,
 >(
     sig_input: SignatureInput<F::N>,
     mac_input: SignatureMac,
@@ -127,17 +126,17 @@ pub fn given<
             padded
         };
 
-        let mac_e = circuits_mac::concrete::compute_tag(
+        let mac_e = crate::circuits::mac::concrete::compute_tag(
             &nat_to_32bytes(&sig_input.issuer_sig_e),
             mac_input.mac_av,
             &mac_input.mac_ap[0],
         );
-        let mac_device_pkx = circuits_mac::concrete::compute_tag(
+        let mac_device_pkx = crate::circuits::mac::concrete::compute_tag(
             &nat_to_32bytes(&sig_input.device_pk.0),
             mac_input.mac_av,
             &mac_input.mac_ap[1],
         );
-        let mac_device_pky = circuits_mac::concrete::compute_tag(
+        let mac_device_pky = crate::circuits::mac::concrete::compute_tag(
             &nat_to_32bytes(&sig_input.device_pk.1),
             mac_input.mac_av,
             &mac_input.mac_ap[2],
@@ -150,7 +149,7 @@ pub fn given<
         f.reduce_nat(&sig_input.issuer_pk.0),
         f.reduce_nat(&sig_input.issuer_pk.1),
     );
-    let issuer_sig_given = circuits_ecdsa2::concrete::given(
+    let issuer_sig_given = crate::circuits::ecdsa2::concrete::given(
         curve,
         &issuer_pkxy,
         &sig_input.issuer_sig_e,
@@ -164,7 +163,7 @@ pub fn given<
         f.reduce_nat(&sig_input.device_pk.0),
         f.reduce_nat(&sig_input.device_pk.1),
     );
-    let device_sig_given = circuits_ecdsa2::concrete::given(
+    let device_sig_given = crate::circuits::ecdsa2::concrete::given(
         curve,
         &device_pkxy,
         &sig_input.device_sig_e,
@@ -187,11 +186,11 @@ pub fn given<
 
 pub fn derived<
     const W: usize,
-    F: core_algebra::AlgebraicField
-        + core_algebra::SupportsNatConversions<W>
-        + core_algebra::HasLookupPoints,
-    Fn: core_algebra::AlgebraicField + core_algebra::SupportsNatConversions<W, N = F::N>,
-    C: core_algebra::Curve<W, F = F, N = F::N>,
+    F: crate::core::algebra::AlgebraicField
+        + crate::core::algebra::SupportsNatConversions<W>
+        + crate::core::algebra::HasLookupPoints,
+    Fn: crate::core::algebra::AlgebraicField + crate::core::algebra::SupportsNatConversions<W, N = F::N>,
+    C: crate::core::algebra::Curve<W, F = F, N = F::N>,
 >(
     f: &F,
     fn_field: &Fn,
@@ -202,7 +201,7 @@ pub fn derived<
         f.reduce_nat(&input.sig_input.issuer_pk.0),
         f.reduce_nat(&input.sig_input.issuer_pk.1),
     );
-    let issuer_sig_derived = circuits_ecdsa2::concrete::derived(
+    let issuer_sig_derived = crate::circuits::ecdsa2::concrete::derived(
         curve,
         &issuer_pkxy,
         &input.sig_input.issuer_sig_e,
@@ -216,7 +215,7 @@ pub fn derived<
         f.reduce_nat(&input.sig_input.device_pk.0),
         f.reduce_nat(&input.sig_input.device_pk.1),
     );
-    let device_sig_derived = circuits_ecdsa2::concrete::derived(
+    let device_sig_derived = crate::circuits::ecdsa2::concrete::derived(
         curve,
         &device_pkxy,
         &input.sig_input.device_sig_e,
@@ -232,10 +231,9 @@ pub fn derived<
     })
 }
 
-impl<FR: core_algebra::AlgebraicField> ConcreteDerived<FR> {
-    #[cfg(feature = "testonly")]
+impl<FR: crate::core::algebra::AlgebraicField> ConcreteDerived<FR> {
     pub fn push_derived(&self, mut push: impl FnMut(FR::E)) {
-        let push_ecdsa = |d: &circuits_ecdsa2::concrete::ConcreteDerived<FR>,
+        let push_ecdsa = |d: &crate::circuits::ecdsa2::concrete::ConcreteDerived<FR>,
                           p: &mut dyn FnMut(FR::E)| {
             p(d.pkxinv.clone());
             p(d.rxinv.clone());
@@ -259,3 +257,4 @@ impl<FR: core_algebra::AlgebraicField> ConcreteDerived<FR> {
         push_ecdsa(&self.device_sig_derived, &mut push);
     }
 }
+

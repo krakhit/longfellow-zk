@@ -12,16 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::{field::RuntimeField, middle_product::MiddleProduct, utility::AlgebraUtil};
+use crate::runtime::algebra::{
+    field::RuntimeField, middle_product::MiddleProduct, utility::AlgebraUtil,
+};
 
 /// The `ReedSolomon` class interpolates a polynomial given as input in point-eval
 /// form at a set of different points, thereby computing a form of RS encoding.
 ///
 /// The API takes `n > 0` input evaluations `p(0), ..., p(n - 1)` and a total
-/// encoded length `m >= n`. [`Interpolator::interpolate`](crate::Interpolator::interpolate)
-/// receives an `m`-element buffer whose first `n` entries contain those input
-/// evaluations, and fills entries `n..m` with the `m - n` new evaluations
-/// `p(n), ..., p(m - 1)`.
+/// encoded length `m >= n`.
+/// [`Interpolator::interpolate`](crate::runtime::algebra::Interpolator::interpolate) receives an
+/// `m`-element buffer whose first `n` entries contain those input evaluations, and fills entries
+/// `n..m` with the `m - n` new evaluations `p(n), ..., p(m - 1)`.
 ///
 /// The input polynomial has degree at most `d = n - 1`. The algorithm uses the
 /// following relation:
@@ -35,7 +37,7 @@ use crate::{field::RuntimeField, middle_product::MiddleProduct, utility::Algebra
 pub struct ReedSolomon<
     'a,
     const W: usize,
-    F: RuntimeField<W> + core_algebra::SupportsU64Conversions,
+    F: RuntimeField<W> + crate::core::algebra::SupportsU64Conversions,
     C: MiddleProduct<W, F>,
 > {
     f: &'a F,
@@ -49,7 +51,7 @@ pub struct ReedSolomon<
 impl<
         'a,
         const W: usize,
-        F: RuntimeField<W> + core_algebra::SupportsU64Conversions,
+        F: RuntimeField<W> + crate::core::algebra::SupportsU64Conversions,
         C: MiddleProduct<W, F>,
     > ReedSolomon<'a, W, F, C>
 {
@@ -126,9 +128,9 @@ impl<
 
 impl<
         const W: usize,
-        F: RuntimeField<W> + core_algebra::SupportsU64Conversions,
+        F: RuntimeField<W> + crate::core::algebra::SupportsU64Conversions,
         C: MiddleProduct<W, F>,
-    > crate::Interpolator<W, F> for ReedSolomon<'_, W, F, C>
+    > crate::runtime::algebra::Interpolator<W, F> for ReedSolomon<'_, W, F, C>
 {
     /// Given the values of a polynomial of degree at most n-1 at 0, 1, 2, ...,
     /// n-1, this computes the values at n, n+1, n+2, ..., m-1.
@@ -163,12 +165,12 @@ pub struct FftInterpolatorFactory<
     'a,
     const W: usize,
     F: RuntimeField<W>
-        + core_algebra::SupportsU64Conversions
-        + crate::field::SupportsQuadraticExtension<W>,
+        + crate::core::algebra::SupportsU64Conversions
+        + crate::runtime::algebra::field::SupportsQuadraticExtension<W>,
 > {
     f: &'a F,
-    f2: &'a crate::fp2::Fp2Field<'a, W, F>,
-    omega: crate::fp2::Fp2Element<W, F>,
+    f2: &'a crate::runtime::algebra::fp2::Fp2Field<'a, W, F>,
+    omega: crate::runtime::algebra::fp2::Fp2Element<W, F>,
     omega_order: u64,
 }
 
@@ -176,14 +178,14 @@ impl<
         'a,
         const W: usize,
         F: RuntimeField<W>
-            + core_algebra::SupportsU64Conversions
-            + crate::field::SupportsQuadraticExtension<W>,
+            + crate::core::algebra::SupportsU64Conversions
+            + crate::runtime::algebra::field::SupportsQuadraticExtension<W>,
     > FftInterpolatorFactory<'a, W, F>
 {
     pub fn new(
         f: &'a F,
-        f2: &'a crate::fp2::Fp2Field<'a, W, F>,
-        omega: crate::fp2::Fp2Element<W, F>,
+        f2: &'a crate::runtime::algebra::fp2::Fp2Field<'a, W, F>,
+        omega: crate::runtime::algebra::fp2::Fp2Element<W, F>,
         omega_order: u64,
     ) -> Self {
         Self {
@@ -199,15 +201,21 @@ impl<
         'a,
         const W: usize,
         F: RuntimeField<W>
-            + core_algebra::SupportsU64Conversions
-            + crate::field::SupportsQuadraticExtension<W>,
-    > crate::interpolator::InterpolatorFactory<W, F> for FftInterpolatorFactory<'a, W, F>
+            + crate::core::algebra::SupportsU64Conversions
+            + crate::runtime::algebra::field::SupportsQuadraticExtension<W>,
+    > crate::runtime::algebra::interpolator::InterpolatorFactory<W, F>
+    for FftInterpolatorFactory<'a, W, F>
 {
-    type Interpolator = ReedSolomon<'a, W, F, crate::middle_product::FFTExtMiddleProduct<'a, W, F>>;
+    type Interpolator = ReedSolomon<
+        'a,
+        W,
+        F,
+        crate::runtime::algebra::middle_product::FFTExtMiddleProduct<'a, W, F>,
+    >;
 
     fn make(&self, ylen: usize, block_enc: usize) -> Self::Interpolator {
         ReedSolomon::new(ylen, block_enc, self.f, |inverses| {
-            crate::middle_product::FFTExtMiddleProduct::new(
+            crate::runtime::algebra::middle_product::FFTExtMiddleProduct::new(
                 ylen,
                 block_enc,
                 &self.omega,

@@ -12,10 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use runtime_algebra::{field::RuntimeField, interpolator::InterpolatorFactory};
-use runtime_proto::{DIGEST_LEN, NONCE_LEN};
-
-use crate::param::{LigeroConfig, LigeroParam};
+use crate::runtime::{
+    algebra::{field::RuntimeField, interpolator::InterpolatorFactory},
+    ligero::param::{LigeroConfig, LigeroParam},
+    proto::{DIGEST_LEN, NONCE_LEN},
+};
 
 /// Computes total digests inside the Merkle path.
 /// Given a binary tree with h levels (0 to h-1):

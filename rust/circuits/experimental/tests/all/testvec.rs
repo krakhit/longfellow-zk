@@ -15,7 +15,7 @@
 #![allow(dead_code)]
 use num_bigint::BigUint;
 
-pub(crate) struct EcmulTestvec {
+pub(in crate::circuits::experimental) struct EcmulTestvec {
     pub exp: BigUint,
     pub ax: BigUint,
     pub ay: BigUint,
@@ -23,7 +23,7 @@ pub(crate) struct EcmulTestvec {
     pub by: BigUint,
 }
 
-pub(crate) fn get_testvec() -> EcmulTestvec {
+pub(in crate::circuits::experimental) fn get_testvec() -> EcmulTestvec {
     EcmulTestvec {
         exp: BigUint::parse_bytes(
             b"1234567890ABCDEF1234567890ABCDEF1234567890ABCDEF1234567890ABCDEF",

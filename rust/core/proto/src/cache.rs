@@ -14,7 +14,7 @@
 
 use std::ops::BitXor;
 
-use crate::circuit::TermDelta;
+use crate::core::proto::circuit::TermDelta;
 
 /// A single entry slot in our two-way set-associative LRU cache.
 #[derive(Clone, Copy, Default)]

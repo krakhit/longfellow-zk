@@ -151,10 +151,10 @@ pub fn gf2_128_accum_reduce(acc: &Gf2_128Accum) -> Gf2_128 {
 ))]
 #[inline(always)]
 pub fn cmovne<const N: usize>(
-    a: &mut [crate::limb::Limb; N],
-    x: crate::limb::Limb,
-    y: crate::limb::Limb,
-    b: &[crate::limb::Limb; N],
+    a: &mut [crate::runtime::algebra::limb::Limb; N],
+    x: crate::runtime::algebra::limb::Limb,
+    y: crate::runtime::algebra::limb::Limb,
+    b: &[crate::runtime::algebra::limb::Limb; N],
 ) {
     #[cfg(target_arch = "x86")]
     {
@@ -273,10 +273,10 @@ pub fn cmovne<const N: usize>(
 ))]
 #[inline(always)]
 pub fn cmovne<const N: usize>(
-    a: &mut [crate::limb::Limb; N],
-    x: crate::limb::Limb,
-    y: crate::limb::Limb,
-    b: &[crate::limb::Limb; N],
+    a: &mut [crate::runtime::algebra::limb::Limb; N],
+    x: crate::runtime::algebra::limb::Limb,
+    y: crate::runtime::algebra::limb::Limb,
+    b: &[crate::runtime::algebra::limb::Limb; N],
 ) {
     if N == 1 {
         unsafe {
@@ -369,9 +369,9 @@ pub fn cmovne<const N: usize>(
 
 #[inline(always)]
 pub fn cmovnz<const N: usize>(
-    a: &mut [crate::limb::Limb; N],
-    nz: crate::limb::Limb,
-    b: &[crate::limb::Limb; N],
+    a: &mut [crate::runtime::algebra::limb::Limb; N],
+    nz: crate::runtime::algebra::limb::Limb,
+    b: &[crate::runtime::algebra::limb::Limb; N],
 ) {
     cmovne(a, nz, 0, b);
 }
@@ -379,6 +379,6 @@ pub use cmovnz as cmovzn;
 
 #[inline(always)]
 #[must_use]
-pub fn zero_but_you_dont_know_it() -> crate::limb::Limb {
-    core::hint::black_box(0 as crate::limb::Limb)
+pub fn zero_but_you_dont_know_it() -> crate::runtime::algebra::limb::Limb {
+    core::hint::black_box(0 as crate::runtime::algebra::limb::Limb)
 }

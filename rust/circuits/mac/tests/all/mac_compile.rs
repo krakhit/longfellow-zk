@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use circuits_mac::{
+use crate::circuits::mac::{
     circuit::MAC,
     concrete::{given, ConcreteGiven},
 };
-use compile_algebra::{field::CompileField, gf2_128::Gf2_128Field, p256::P256Field};
-use compile_eval::FieldID;
-use core_algebra::SerializableField;
-use runtime_algebra::field::RuntimeField;
+use crate::compile::algebra::{field::CompileField, gf2_128::Gf2_128Field, p256::P256Field};
+use crate::compile::eval::FieldID;
+use crate::core::algebra::SerializableField;
+use crate::runtime::algebra::field::RuntimeField;
 
 use super::test_support;
 
@@ -35,7 +35,7 @@ fn push_u128_bits<const W: usize, FR: RuntimeField<W>>(
 }
 
 fn make_inputs<const W: usize, FR: RuntimeField<W>>(given: &ConcreteGiven, fr: &FR) -> Vec<FR::E> {
-    let mut inputs = compile_eval::initial_inputs(fr);
+    let mut inputs = crate::compile::eval::initial_inputs(fr);
     for &byte in &given.message {
         for k in 0..8 {
             let bit = (byte >> k) & 1;
@@ -61,18 +61,18 @@ fn test_compile_mac_for_field<
     name: &str,
     field_id: FieldID,
 ) {
-    let (circuit, stats, symbols) = compile_compiler::compile(fc, |iologic| {
-        let mut pos = compile_logic::K_FIRST_WIRE_POSITION;
+    let (circuit, stats, symbols) = crate::compile::compiler::compile(fc, |iologic| {
+        let mut pos = crate::compile::logic::K_FIRST_WIRE_POSITION;
 
         let mac_circuit = MAC::new(&iologic);
-        let given_wires = circuits_mac::allocate_given(&mac_circuit.bv, &mut pos);
+        let given_wires = crate::circuits::mac::allocate_given(&mac_circuit.bv, &mut pos);
 
         let assertion = mac_circuit.assert_mac(&given_wires);
 
         (assertion, 1, 0)
     });
 
-    compile_compiler::dump_stats(name, &circuit, &stats);
+    crate::compile::compiler::dump_stats(name, &circuit, &stats);
 
     let test_msg = [0x5au8; 32];
     let av_val: u128 = 0x112233445566778899aabbccddeeff00;
@@ -83,7 +83,7 @@ fn test_compile_mac_for_field<
 
     // Verify untampered passes
     let inputs = make_inputs(&concrete_given, fr);
-    compile_eval::eval_circuit_fc(fc, fr, &circuit, &symbols, &inputs, field_id)
+    crate::compile::eval::eval_circuit_fc(fc, fr, &circuit, &symbols, &inputs, field_id)
         .unwrap()
         .assert_all_passed();
 
@@ -95,7 +95,7 @@ fn test_compile_mac_for_field<
 
         let inputs_tampered = make_inputs(&g, fr);
         let eval_res =
-            compile_eval::eval_circuit_fc(fc, fr, &circuit, &symbols, &inputs_tampered, field_id)
+            crate::compile::eval::eval_circuit_fc(fc, fr, &circuit, &symbols, &inputs_tampered, field_id)
                 .unwrap();
         assert!(
             eval_res.is_err(),
@@ -115,10 +115,10 @@ fn test_compile_mac_for_field<
 #[test]
 fn test_compile_mac() {
     let fc_bin = Gf2_128Field::new();
-    let fr_bin = runtime_algebra::gf2_128::Gf2_128Field::new();
+    let fr_bin = crate::runtime::algebra::gf2_128::Gf2_128Field::new();
     test_compile_mac_for_field::<2, _, _>(&fc_bin, &fr_bin, "mac_bin", FieldID::Gf2_128);
 
     let fc_prime = P256Field::new();
-    let fr_prime = runtime_algebra::p256::P256Field::new();
+    let fr_prime = crate::runtime::algebra::p256::P256Field::new();
     test_compile_mac_for_field::<4, _, _>(&fc_prime, &fr_prime, "mac_prime", FieldID::P256);
 }

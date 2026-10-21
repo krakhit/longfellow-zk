@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use circuits_bitvec::V128;
-use circuits_boolean::{Bitw, Boolean};
-use compile_logic::Logic;
+use crate::circuits::bitvec::V128;
+use crate::circuits::boolean::{Bitw, Boolean};
+use crate::compile::logic::Logic;
 
 const THRESHOLD: usize = 16;
 

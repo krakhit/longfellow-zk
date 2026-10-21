@@ -13,14 +13,26 @@
 // limitations under the License.
 
 pub mod cbor;
-pub mod cbor_decoder;
-pub mod hash;
-pub mod mso_attribute;
-pub mod signature;
 pub mod traits;
 
-pub use cbor::{cbor_encode::*, mdoc::*, test_utils::*};
-pub use mdoc_zk_proto::*;
+pub use cbor::{cbor_encode::*, mdoc::*};
 pub use traits::*;
 
+pub use crate::mdoc::proto::config;
+
 pub const CURRENT_VERSION: usize = 8;
+
+cfg_compiler! {
+    pub mod cbor_decoder;
+    pub mod hash;
+    pub mod mso_attribute;
+    pub mod signature;
+}
+
+cfg_testonly! {
+    pub use cbor::test_utils::*;
+}
+
+#[cfg(test)]
+#[path = "../tests/all/mod.rs"]
+mod tests_all;

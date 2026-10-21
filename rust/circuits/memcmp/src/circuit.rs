@@ -12,18 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use circuits_bitvec::V8;
-use circuits_boolean::Bitw;
-use compile_logic::Logic;
+use crate::circuits::bitvec::V8;
+use crate::circuits::boolean::Bitw;
+use crate::compile::logic::Logic;
 
 pub struct Memcmp<'a, L: Logic> {
-    arithmetic: circuits_arithmetic::Arithmetic<'a, L>,
+    arithmetic: crate::circuits::arithmetic::Arithmetic<'a, L>,
 }
 
 impl<'a, L: Logic> Memcmp<'a, L> {
     pub fn new(logic: &'a L) -> Self {
         Self {
-            arithmetic: circuits_arithmetic::Arithmetic::new(logic),
+            arithmetic: crate::circuits::arithmetic::Arithmetic::new(logic),
         }
     }
 

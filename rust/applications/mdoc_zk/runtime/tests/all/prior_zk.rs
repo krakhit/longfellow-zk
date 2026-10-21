@@ -16,14 +16,16 @@
 mod tests {
     use std::fmt::Write;
 
-    use compile_algebra::CompileNat;
-    use mdoc_zk_circuits::parse_test_data;
-    use mdoc_zk_runtime::*;
     use sha2::{Digest, Sha256};
+
+    use crate::{
+        compile::algebra::CompileNat,
+        mdoc::{circuits::parse_test_data, runtime::*},
+    };
 
     fn is_supported_by_prior_version<N>(
         spec: &ZkSpecStruct,
-        parsed: &mdoc_zk_circuits::cbor::mdoc::ParsedMdoc<N>,
+        parsed: &crate::mdoc::circuits::cbor::mdoc::ParsedMdoc<N>,
     ) -> bool {
         if spec.version <= 7 {
             let max_mso_blocks = if spec.version <= 6 { 35 } else { 40 };
@@ -53,8 +55,8 @@ mod tests {
 
     #[test]
     fn test_circuit_ids_match_zkspecs() {
-        let p256 = runtime_algebra::p256::P256Field::new();
-        let gf2 = runtime_algebra::gf2_128::Gf2_128Field::new();
+        let p256 = crate::runtime::algebra::p256::P256Field::new();
+        let gf2 = crate::runtime::algebra::gf2_128::Gf2_128Field::new();
 
         for (version, nattrs) in provider::all_prior_versions_and_attrs() {
             let provided = provider::materialize(version, nattrs).expect("Failed to materialize");
@@ -71,14 +73,14 @@ mod tests {
                 c_hash.raw.npublic_input
             );
 
-            let sig_id = core_proto::circuit::compute_id(&p256, &c_sig.raw);
+            let sig_id = crate::core::proto::circuit::compute_id(&p256, &c_sig.raw);
             assert_eq!(
                 sig_id, c_sig.id,
                 "Signature ID mismatch for {}",
                 provided.name
             );
 
-            let hash_id = core_proto::circuit::compute_id(&gf2, &c_hash.raw);
+            let hash_id = crate::core::proto::circuit::compute_id(&gf2, &c_hash.raw);
             assert_eq!(hash_id, c_hash.id, "Hash ID mismatch for {}", provided.name);
 
             let mut hasher = Sha256::new();
@@ -100,7 +102,7 @@ mod tests {
 
     #[test]
     fn test_all_circuits_prior_compatibility() {
-        let test_data = &mdoc_zk_testcases::vectors::BIRTHDATE_1971_09_01_MDOC_3;
+        let test_data = &crate::mdoc::testcases::vectors::BIRTHDATE_1971_09_01_MDOC_3;
         let all_attrs = [
             req_attr(
                 "org.iso.18013.5.1",
@@ -137,16 +139,17 @@ mod tests {
                         let spec = &provided.spec;
                         let hash_hex = spec.combined_hash_hex();
                         let compressed = &provided.compressed;
-                        let _expected_prior_proof = mdoc_zk_artifacts::load_prior_proof(&hash_hex);
+                        let _expected_prior_proof =
+                            crate::mdoc::artifacts::load_prior_proof(&hash_hex);
                         let _expected_sig_witness =
-                            mdoc_zk_artifacts::load_prior_sig_witness(&hash_hex);
+                            crate::mdoc::artifacts::load_prior_sig_witness(&hash_hex);
                         let _expected_hash_witness =
-                            mdoc_zk_artifacts::load_prior_hash_witness(&hash_hex);
+                            crate::mdoc::artifacts::load_prior_hash_witness(&hash_hex);
 
                         let attrs = &attrs_ref[..spec.num_attributes];
 
-                        let parsed: mdoc_zk_circuits::cbor::mdoc::ParsedMdoc<CompileNat<4>> =
-                            mdoc_zk_circuits::cbor::mdoc::parse_mdoc(
+                        let parsed: crate::mdoc::circuits::cbor::mdoc::ParsedMdoc<CompileNat<4>> =
+                            crate::mdoc::circuits::cbor::mdoc::parse_mdoc(
                                 test_data.mdoc,
                                 test_data.transcript,
                                 "org.iso.18013.5.1.mDL",
@@ -157,9 +160,9 @@ mod tests {
                             return;
                         }
 
-                        let mut rng = runtime_random::DeterministicRng::new(42);
+                        let mut rng = crate::runtime::random::DeterministicRng::new(42);
 
-                        let proof_bytes = mdoc_zk_runtime::prover::run_mdoc_prover_inner(
+                        let proof_bytes = crate::mdoc::runtime::prover::run_mdoc_prover_inner(
                             spec,
                             compressed,
                             test_data.mdoc,
@@ -173,7 +176,7 @@ mod tests {
                         )
                         .expect("prover failed");
 
-                        mdoc_zk_runtime::verifier::run_mdoc_verifier(
+                        crate::mdoc::runtime::verifier::run_mdoc_verifier(
                             spec,
                             compressed,
                             test_data.pkx,
@@ -204,7 +207,7 @@ mod tests {
                     let compressed = &provided.compressed;
                     let mut count = 0;
 
-                    for case in mdoc_zk_testcases::vectors::ALL_TEST_CASES {
+                    for case in crate::mdoc::testcases::vectors::ALL_TEST_CASES {
                         if case.name.starts_with("fail-") {
                             continue;
                         }
@@ -233,7 +236,7 @@ mod tests {
                             .map(|a| req_attr(ns, &a.name, &a.cbor_value))
                             .collect();
 
-                        let mut rng = runtime_random::DeterministicRng::new(42);
+                        let mut rng = crate::runtime::random::DeterministicRng::new(42);
                         let prove_res = run_mdoc_prover_inner(
                             spec,
                             compressed,

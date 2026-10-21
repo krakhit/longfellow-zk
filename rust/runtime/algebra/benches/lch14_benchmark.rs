@@ -13,7 +13,7 @@
 // limitations under the License.
 
 use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
-use runtime_algebra::{gf2_128::Gf2_128RuntimeField, lch14::Lch14, AlgebraicField};
+use longfellow_zk::runtime::algebra::{gf2_128::Gf2_128RuntimeField, lch14::Lch14, AlgebraicField};
 
 fn bench_lch14(c: &mut Criterion) {
     let gf2 = Gf2_128RuntimeField::new();
@@ -23,8 +23,9 @@ fn bench_lch14(c: &mut Criterion) {
     group.measurement_time(std::time::Duration::from_millis(500));
     group.sample_size(10);
 
-    let subfield =
-        runtime_algebra::subfield::BinarySubfield::new(&core_algebra::proto::GF2_16_BASIS_V1);
+    let subfield = longfellow_zk::runtime::algebra::subfield::BinarySubfield::new(
+        &longfellow_zk::core::algebra::proto::GF2_16_BASIS_V1,
+    );
     let fft = Lch14::new(&gf2, &subfield);
 
     for l in [8, 12, 16] {

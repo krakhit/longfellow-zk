@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use circuits_mac::concrete::ConcreteGiven;
+use crate::circuits::mac::concrete::ConcreteGiven;
 
 #[allow(dead_code)]
 pub struct MacCorruptor {

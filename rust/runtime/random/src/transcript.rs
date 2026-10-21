@@ -16,10 +16,12 @@ use aes::{
     cipher::{generic_array::GenericArray, BlockEncrypt, KeyInit},
     Aes256,
 };
-use core_algebra::{ElementOf, SerializableField};
 use sha2::{Digest, Sha256};
 
-use crate::RandomEngine;
+use crate::{
+    core::algebra::{ElementOf, SerializableField},
+    runtime::random::RandomEngine,
+};
 
 /// The tag for raw byte arrays/strings in transcript formatting.
 const TAG_BSTR: u8 = 0;

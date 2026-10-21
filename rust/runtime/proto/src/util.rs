@@ -14,8 +14,10 @@
 
 use std::io::{Error, ErrorKind, Result};
 
-use core_algebra::{ElementOf, SerializableField};
-use runtime_algebra::Subfield;
+use crate::{
+    core::algebra::{ElementOf, SerializableField},
+    runtime::algebra::Subfield,
+};
 
 /// Helper to read a single serialized field element.
 pub fn read_elt_field<F: SerializableField>(bytes: &mut &[u8], f: &F) -> Result<ElementOf<F>> {

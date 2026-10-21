@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use compile_algebra::field::CompileField;
-use compile_logic::{scope::AssertionScope, Logic, LogicIO};
+use crate::compile::algebra::field::CompileField;
+use crate::compile::logic::{scope::AssertionScope, Logic, LogicIO};
 
-use crate::{
+use crate::compile::compiler::{
     algsimp::AlgebraicRewriter,
     arena::CompilerArena,
     cse::Cse,
@@ -83,7 +83,7 @@ where NEXT: RewriteT<'a, F>
     }
 
     fn precious(&self, x: &Self::Wire) -> Self::Wire {
-        crate::ir::promote_sum_to_precious(x, &self.next)
+        crate::compile::compiler::ir::promote_sum_to_precious(x, &self.next)
     }
 
     fn sum(&self, xs: &[Self::Wire]) -> Self::Wire {

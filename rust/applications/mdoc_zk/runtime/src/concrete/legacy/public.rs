@@ -12,13 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use core_algebra::{AlgebraicField, Nat, SupportsU64Conversions};
-use runtime_algebra::{
-    gf2_128::{Gf2_128, Gf2_128Field},
-    p256::{P256Element, P256Field},
+use crate::{
+    core::algebra::{AlgebraicField, Nat, SupportsU64Conversions},
+    mdoc::runtime::{attribute::RequestedAttribute, concrete::builder::AssignmentBuilder},
+    runtime::algebra::{
+        gf2_128::{Gf2_128, Gf2_128Field},
+        p256::{P256Element, P256Field},
+    },
 };
-
-use crate::{attribute::RequestedAttribute, concrete::builder::AssignmentBuilder};
 
 fn push_legacy_input_attrs(
     builder: &mut AssignmentBuilder<'_, Gf2_128Field>,
@@ -29,7 +30,7 @@ fn push_legacy_input_attrs(
     for la in attrs {
         if version >= 7 {
             let mut vbuf = Vec::with_capacity(3 + la.id.len());
-            mdoc_zk_circuits::cbor::encode_cbor_string_into(&la.id, &mut vbuf);
+            crate::mdoc::circuits::cbor::encode_cbor_string_into(&la.id, &mut vbuf);
 
             builder.push_raw_bytes(&vbuf);
             builder.push_pad(zero, (32 - vbuf.len()) * 8);
@@ -42,8 +43,8 @@ fn push_legacy_input_attrs(
             builder.push_bits_len((la.cbor_value.len() + 12 + 1) as u64, 8);
         } else {
             let mut vbuf = Vec::new();
-            mdoc_zk_circuits::cbor::encode_cbor_string_into(&la.id, &mut vbuf);
-            mdoc_zk_circuits::cbor::encode_cbor_string_into(b"elementValue", &mut vbuf);
+            crate::mdoc::circuits::cbor::encode_cbor_string_into(&la.id, &mut vbuf);
+            crate::mdoc::circuits::cbor::encode_cbor_string_into(b"elementValue", &mut vbuf);
             vbuf.extend_from_slice(&la.cbor_value);
 
             let len = vbuf.len();

@@ -17,20 +17,24 @@ use std::{
     sync::atomic::Ordering,
 };
 
-use compile_algebra::CompileNat;
-use core_algebra::Nat;
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
-use mdoc_zk_circuits::parse_test_data;
-use mdoc_zk_runtime::{
-    decompress_circuits, req_attr, run_mdoc_prover_inner, run_mdoc_verifier_inner,
-    RequestedAttribute,
-};
-use runtime_algebra::{
-    fp2::Fp2Field,
-    lch14_reed_solomon::Lch14InterpolatorFactory,
-    mem::{ALLOCATED, PEAK},
-    reed_solomon::FftInterpolatorFactory,
-    SupportsFFT,
+use longfellow_zk::{
+    compile::algebra::CompileNat,
+    core::algebra::Nat,
+    mdoc::{
+        circuits::parse_test_data,
+        runtime::{
+            decompress_circuits, req_attr, run_mdoc_prover_inner, run_mdoc_verifier_inner,
+            RequestedAttribute,
+        },
+    },
+    runtime::algebra::{
+        fp2::Fp2Field,
+        lch14_reed_solomon::Lch14InterpolatorFactory,
+        mem::{ALLOCATED, PEAK},
+        reed_solomon::FftInterpolatorFactory,
+        SupportsFFT,
+    },
 };
 
 struct TrackingAllocator;
@@ -96,7 +100,7 @@ fn hex_id(id: &[u8; 32]) -> String {
 
 fn bench_mdoc_zk_flow(c: &mut Criterion) {
     let (issuer_pk, parsed, now) =
-        parse_test_data::<4, CompileNat<4>>(&mdoc_zk_testcases::vectors::TEST_DATA);
+        parse_test_data::<4, CompileNat<4>>(&longfellow_zk::mdoc::testcases::vectors::TEST_DATA);
     let req_attrs: Vec<RequestedAttribute> = parsed
         .attrs
         .iter()
@@ -104,8 +108,8 @@ fn bench_mdoc_zk_flow(c: &mut Criterion) {
         .map(|a| req_attr("org.iso.18013.5.1", &a.name, &a.cbor_value))
         .collect();
 
-    let mdoc_bytes = mdoc_zk_testcases::vectors::TEST_DATA.mdoc;
-    let transcript = mdoc_zk_testcases::vectors::TEST_DATA.transcript;
+    let mdoc_bytes = longfellow_zk::mdoc::testcases::vectors::TEST_DATA.mdoc;
+    let transcript = longfellow_zk::mdoc::testcases::vectors::TEST_DATA.transcript;
     let doc_type = "org.iso.18013.5.1.mDL";
 
     let pubkey_x_string = format!(
@@ -117,17 +121,20 @@ fn bench_mdoc_zk_flow(c: &mut Criterion) {
         num_bigint::BigUint::from_bytes_le(&issuer_pk.1.to_bytes_le()).to_str_radix(16)
     );
 
-    let provided =
-        mdoc_zk_runtime::provider::materialize(mdoc_zk_runtime::CURRENT_VERSION, req_attrs.len())
-            .unwrap();
+    let provided = longfellow_zk::mdoc::runtime::provider::materialize(
+        longfellow_zk::mdoc::runtime::CURRENT_VERSION,
+        req_attrs.len(),
+    )
+    .unwrap();
     let spec = &provided.spec;
     let circuits = &provided.compressed;
-    let (config_hash, config_sig) = mdoc_zk_runtime::ligero_configs(spec);
+    let (config_hash, config_sig) = longfellow_zk::mdoc::runtime::ligero_configs(spec);
 
-    let gf2_runtime = runtime_algebra::gf2_128::Gf2_128RuntimeField::new();
-    let p256_runtime = runtime_algebra::p256::P256Field::new();
-    let subfield =
-        runtime_algebra::subfield::BinarySubfield::new(&core_algebra::proto::GF2_16_BASIS_V1);
+    let gf2_runtime = longfellow_zk::runtime::algebra::gf2_128::Gf2_128RuntimeField::new();
+    let p256_runtime = longfellow_zk::runtime::algebra::p256::P256Field::new();
+    let subfield = longfellow_zk::runtime::algebra::subfield::BinarySubfield::new(
+        &longfellow_zk::core::algebra::proto::GF2_16_BASIS_V1,
+    );
     let make_interpolator_hash = Lch14InterpolatorFactory::new(&gf2_runtime, &subfield);
     let p256_2 = Fp2Field::new(&p256_runtime);
     let omega = p256_2.omega();
@@ -146,7 +153,7 @@ fn bench_mdoc_zk_flow(c: &mut Criterion) {
             .expect("decompress");
         println!(
             "  Circuit Sizes: zstd-{}={} bytes, segmented (no zstd)={} bytes",
-            mdoc_zk_circuits::config::K_ZSTD_LEVEL,
+            longfellow_zk::mdoc::circuits::config::K_ZSTD_LEVEL,
             circuits.len(),
             decompressed.len()
         );
@@ -164,7 +171,7 @@ fn bench_mdoc_zk_flow(c: &mut Criterion) {
                 .raw
                 .layers
                 .iter()
-                .map(core_proto::layer::Layer::nw)
+                .map(longfellow_zk::core::proto::layer::Layer::nw)
                 .sum::<usize>()
                 - c_hash.raw.ninput
                 + c_hash.raw.noutput,
@@ -172,11 +179,12 @@ fn bench_mdoc_zk_flow(c: &mut Criterion) {
                 .raw
                 .layers
                 .iter()
-                .map(core_proto::layer::Layer::num_terms)
+                .map(longfellow_zk::core::proto::layer::Layer::num_terms)
                 .sum::<usize>(),
         );
-        let (count_w_hash, total_q_hash) = runtime_proto::witness_and_constraint_count(&c_hash);
-        let param_hash = runtime_ligero::param::LigeroParam::try_new(
+        let (count_w_hash, total_q_hash) =
+            longfellow_zk::runtime::proto::witness_and_constraint_count(&c_hash);
+        let param_hash = longfellow_zk::runtime::ligero::param::LigeroParam::try_new(
             count_w_hash,
             total_q_hash,
             config_hash,
@@ -201,7 +209,7 @@ fn bench_mdoc_zk_flow(c: &mut Criterion) {
                 .raw
                 .layers
                 .iter()
-                .map(core_proto::layer::Layer::nw)
+                .map(longfellow_zk::core::proto::layer::Layer::nw)
                 .sum::<usize>()
                 - c_sig.raw.ninput
                 + c_sig.raw.noutput,
@@ -209,11 +217,12 @@ fn bench_mdoc_zk_flow(c: &mut Criterion) {
                 .raw
                 .layers
                 .iter()
-                .map(core_proto::layer::Layer::num_terms)
+                .map(longfellow_zk::core::proto::layer::Layer::num_terms)
                 .sum::<usize>(),
         );
-        let (count_w_sig, total_q_sig) = runtime_proto::witness_and_constraint_count(&c_sig);
-        let param_sig = runtime_ligero::param::LigeroParam::try_new(
+        let (count_w_sig, total_q_sig) =
+            longfellow_zk::runtime::proto::witness_and_constraint_count(&c_sig);
+        let param_sig = longfellow_zk::runtime::ligero::param::LigeroParam::try_new(
             count_w_sig,
             total_q_sig,
             config_sig,
@@ -238,7 +247,7 @@ fn bench_mdoc_zk_flow(c: &mut Criterion) {
     let baseline = get_current_allocated();
     reset_peak();
 
-    let mut dry_rng = runtime_random::DeterministicRng::new(42);
+    let mut dry_rng = longfellow_zk::runtime::random::DeterministicRng::new(42);
     let dry_zkproof = run_mdoc_prover_inner(
         spec,
         circuits,
@@ -304,7 +313,7 @@ fn bench_mdoc_zk_flow(c: &mut Criterion) {
     group.sample_size(10);
     group.bench_function("prove_mdoc_flow_current", |b| {
         b.iter(|| {
-            let mut rng = runtime_random::DeterministicRng::new(42);
+            let mut rng = longfellow_zk::runtime::random::DeterministicRng::new(42);
             let zkproof = run_mdoc_prover_inner(
                 black_box(spec),
                 black_box(circuits),

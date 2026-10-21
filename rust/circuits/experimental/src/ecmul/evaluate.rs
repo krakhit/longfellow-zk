@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use circuits_ec::{evaluate_pt2, evaluate_pt3};
-use compile_algebra::field::{CompileField, SupportsNatConversions};
-use compile_logic::Logic;
+use crate::circuits::ec::{evaluate_pt2, evaluate_pt3};
+use crate::compile::algebra::field::{CompileField, SupportsNatConversions};
+use crate::compile::logic::Logic;
 
 use super::{
     circuit::{Derived as WireDerived, Given as WireGiven},
@@ -30,7 +30,7 @@ pub fn evaluate_given<
     logic: &L,
     n: usize,
 ) -> WireGiven<L> {
-    let boolean = circuits_boolean::Boolean::new(logic);
+    let boolean = crate::circuits::boolean::Boolean::new(logic);
     let mut exp_bits = Vec::with_capacity(n);
     for i in 0..n {
         let bit_val = ((&given.exp >> i) & num_bigint::BigUint::from(1u32))

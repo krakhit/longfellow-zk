@@ -12,8 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use runtime_algebra::{field::SupportsU64Conversions, p256::P256Field, AlgebraicField, ElementOf};
-use runtime_sumcheck::{as_scalar, normalize};
+use crate::runtime::{
+    algebra::{field::SupportsU64Conversions, p256::P256Field, AlgebraicField, ElementOf},
+    sumcheck::{as_scalar, normalize},
+};
 
 #[test]
 fn test_normalize() {

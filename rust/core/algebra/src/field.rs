@@ -95,7 +95,7 @@ pub trait HasLookupPoints: BareField {
 }
 
 pub trait SupportsNatConversions<const W: usize>: SerializableField {
-    type N: crate::Nat<W>;
+    type N: crate::core::algebra::Nat<W>;
 
     /// Maps a fixed-width natural number into the field using the field's native reduction.
     ///

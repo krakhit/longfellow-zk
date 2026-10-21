@@ -12,21 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use circuits_analog_adder::FieldWrappingSum;
-use circuits_bitvec::{Bitvec, BitvecLogic, V256, V8};
-use circuits_boolean::Boolean;
-use circuits_routing::Routing;
-use compile_logic::{Logic, LogicIO};
+use crate::circuits::analog_adder::FieldWrappingSum;
+use crate::circuits::bitvec::{Bitvec, BitvecLogic, V256, V8};
+use crate::circuits::boolean::Boolean;
+use crate::circuits::routing::Routing;
+use crate::compile::logic::{Logic, LogicIO};
 
 use super::constants::{
     K_ATTR_INDEX_BITS, K_ATTR_PREIMAGE_LEN, K_DIGEST_ID, K_ELEMENT_IDENTIFIER_PREFIX,
     K_ELEMENT_VALUE_PREFIX, K_MAX_ATTR_CBOR_LEN, K_RANDOM_ID,
 };
-use crate::cbor_decoder::CborByteDecoder;
+use crate::mdoc::circuits::cbor_decoder::CborByteDecoder;
 
 pub type AttrIndex<L> = Bitvec<L, K_ATTR_INDEX_BITS>;
 
-pub type AttrSlice<L, const N: usize> = circuits_bitvec::Slice<L, V8<L>, N, K_ATTR_INDEX_BITS>;
+pub type AttrSlice<L, const N: usize> = crate::circuits::bitvec::Slice<L, V8<L>, N, K_ATTR_INDEX_BITS>;
 
 /// Represents a disclosed attribute name, its value, and
 /// their verified lengths.  These are concrete values, not indices in
@@ -93,24 +93,24 @@ impl<L: Logic> Clone for FieldLocator<L> {
     }
 }
 
-pub struct Given<L: compile_logic::Logic> {
+pub struct Given<L: crate::compile::logic::Logic> {
     pub attribute_preimage: AttrSlice<L, K_ATTR_PREIMAGE_LEN>,
     pub field_locator: FieldLocator<L>,
     pub disclosed_attribute: DisclosedAttribute<L>,
     pub expected_digest: V256<L>,
 }
 
-pub type Derived<L> = circuits_sha256msg::Derived<L>;
+pub type Derived<L> = crate::circuits::sha256msg::Derived<L>;
 
 pub struct AttributeVerifier<'a, L: Logic>
 where L::F: FieldWrappingSum
 {
     logic: &'a L,
     boolean: Boolean<'a, L>,
-    pub(crate) bv: BitvecLogic<'a, L>,
+    pub(in crate::mdoc::circuits) bv: BitvecLogic<'a, L>,
     cbor_decoder: CborByteDecoder<'a, L>,
     routing: Routing<'a, L>,
-    pub(crate) shamsg: circuits_sha256msg::Sha256Msg<'a, L, 2>,
+    pub(in crate::mdoc::circuits) shamsg: crate::circuits::sha256msg::Sha256Msg<'a, L, 2>,
 }
 
 impl<L: LogicIO> AttributeVerifier<'_, L> where L::F: FieldWrappingSum {}
@@ -125,7 +125,7 @@ where L::F: FieldWrappingSum
             bv: BitvecLogic::new(logic),
             cbor_decoder: CborByteDecoder::new(logic),
             routing: Routing::new(logic),
-            shamsg: circuits_sha256msg::Sha256Msg::new(logic),
+            shamsg: crate::circuits::sha256msg::Sha256Msg::new(logic),
         }
     }
 
@@ -176,7 +176,7 @@ where L::F: FieldWrappingSum
             .bv
             .zext::<{ K_ATTR_INDEX_BITS }, 64>(&given.attribute_preimage.len);
         let two_wire = self.bv.of_u64::<2>(2);
-        let shamsg_given = circuits_sha256msg::circuit::Given {
+        let shamsg_given = crate::circuits::sha256msg::circuit::Given {
             padded_preimage: given.attribute_preimage.data.to_vec(),
             nblocks: two_wire,
             length_bytes: preimage_len_64,

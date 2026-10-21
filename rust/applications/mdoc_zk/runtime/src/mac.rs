@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use core_algebra::{AlgebraicField, Nat, SerializableField, SupportsU128Conversions};
-use runtime_algebra::{field::RuntimeSerializableField, gf2_128::Gf2_128Field};
+use crate::core::algebra::{AlgebraicField, Nat, SerializableField, SupportsU128Conversions};
+use crate::runtime::algebra::{field::RuntimeSerializableField, gf2_128::Gf2_128Field};
 
-pub fn generate_mac_ap<RNG: runtime_random::RandomEngine + ?Sized>(
+pub fn generate_mac_ap<RNG: crate::runtime::random::RandomEngine + ?Sized>(
     rng: &mut RNG,
 ) -> [[u128; 2]; 3] {
     std::array::from_fn(|_| [rng.u128(), rng.u128()])
@@ -56,7 +56,7 @@ fn push_modern_macs<N: Nat<4>>(
         .iter()
         .enumerate()
     {
-        let tag = circuits_mac::concrete::compute_tag(&nat_to_32bytes(nat), av, &mac_ap[i]);
+        let tag = crate::circuits::mac::concrete::compute_tag(&nat_to_32bytes(nat), av, &mac_ap[i]);
         out[2 * i..2 * i + 2].copy_from_slice(&tag);
     }
     out

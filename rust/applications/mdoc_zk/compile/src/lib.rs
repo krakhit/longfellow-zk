@@ -21,7 +21,7 @@ pub mod generate_sig;
 pub use allocate_hash::*;
 pub use allocate_sig::*;
 pub use allocator::*;
-use compile_algebra::{gf2_128::Gf2_128Field, p256::P256Field};
+use crate::compile::algebra::{gf2_128::Gf2_128Field, p256::P256Field};
 pub use generate_hash::*;
 pub use generate_sig::*;
 
@@ -38,8 +38,8 @@ pub fn compile_circuits(
 ) -> Result<
     (
         Vec<u8>,
-        runtime_ligero::param::LigeroConfig,
-        runtime_ligero::param::LigeroConfig,
+        crate::runtime::ligero::param::LigeroConfig,
+        crate::runtime::ligero::param::LigeroConfig,
     ),
     String,
 > {
@@ -49,15 +49,15 @@ pub fn compile_circuits(
     let (seg_hash, config_hash) = generate_hash_circuit(&f128_compile, num_attrs, hash_profile)?;
 
     let writer_sig =
-        core_proto::writer::CircuitWriter::new(&p256_compile, core_proto::FieldID::P256);
+        crate::core::proto::writer::CircuitWriter::new(&p256_compile, crate::core::proto::FieldID::P256);
     let sig_bytes = writer_sig.to_bytes_lfc2(&seg_sig);
 
     let writer_hash =
-        core_proto::writer::CircuitWriter::new(&f128_compile, core_proto::FieldID::Gf2_128);
+        crate::core::proto::writer::CircuitWriter::new(&f128_compile, crate::core::proto::FieldID::Gf2_128);
     let hash_bytes = writer_hash.to_bytes_lfc2(&seg_hash);
 
-    let mut builder = core_proto::archive::CircuitArchiveBuilder::new();
-    builder.set_circuit_version(mdoc_zk_circuits::CURRENT_VERSION as u32);
+    let mut builder = crate::core::proto::archive::CircuitArchiveBuilder::new();
+    builder.set_circuit_version(crate::mdoc::circuits::CURRENT_VERSION as u32);
     builder.add_entry("sig", seg_sig.id, sig_bytes);
     builder.add_entry("hash", seg_hash.id, hash_bytes);
 
@@ -74,8 +74,8 @@ pub fn compile_all_circuits(
     Result<
         (
             Vec<u8>,
-            runtime_ligero::param::LigeroConfig,
-            runtime_ligero::param::LigeroConfig,
+            crate::runtime::ligero::param::LigeroConfig,
+            crate::runtime::ligero::param::LigeroConfig,
         ),
         String,
     >,

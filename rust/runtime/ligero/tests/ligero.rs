@@ -1,6 +1,5 @@
 use std::cell::Cell;
 
-use core_algebra::SerializableField;
 // Copyright 2026 Google LLC.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,16 +13,21 @@ use core_algebra::SerializableField;
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-use runtime_algebra::{
+use crate::runtime::algebra::{
     gf2_128::Gf2_128RuntimeField, lch14_reed_solomon::Lch14InterpolatorFactory,
     subfield::BinarySubfield, ElementOf, Interpolator, RuntimeField, Subfield, SupportsSampling,
 };
-use runtime_ligero::{
-    LigeroCommitment, LigeroConfig, LigeroError, LigeroLinearConstraint, LigeroParam, LigeroProof,
-    LigeroProver, LigeroQuadraticConstraint, LigeroVerifier,
+use crate::{
+    core::algebra::SerializableField,
+    runtime::{
+        ligero::{
+            LigeroCommitment, LigeroConfig, LigeroError, LigeroLinearConstraint, LigeroParam,
+            LigeroProof, LigeroProver, LigeroQuadraticConstraint, LigeroVerifier,
+        },
+        merkle::{Digest, MerkleError},
+        random::{RandomEngine, Transcript},
+    },
 };
-use runtime_merkle::{Digest, MerkleError};
-use runtime_random::{RandomEngine, Transcript};
 
 struct SimpleRng {
     state: u64,
@@ -72,8 +76,9 @@ struct BadInterpolatorFactory<'a, IF> {
 impl<
         const W: usize,
         F: RuntimeField<W>,
-        IF: runtime_algebra::interpolator::InterpolatorFactory<W, F>,
-    > runtime_algebra::interpolator::InterpolatorFactory<W, F> for BadInterpolatorFactory<'_, IF>
+        IF: crate::runtime::algebra::interpolator::InterpolatorFactory<W, F>,
+    > crate::runtime::algebra::interpolator::InterpolatorFactory<W, F>
+    for BadInterpolatorFactory<'_, IF>
 {
     type Interpolator = BadInterpolator<IF::Interpolator>;
 
@@ -98,8 +103,8 @@ struct SlowMiddleProduct<'a, const W: usize, F: RuntimeField<W>> {
     y: Vec<F::E>,
 }
 
-impl<const W: usize, F: RuntimeField<W>> runtime_algebra::middle_product::MiddleProduct<W, F>
-    for SlowMiddleProduct<'_, W, F>
+impl<const W: usize, F: RuntimeField<W>>
+    crate::runtime::algebra::middle_product::MiddleProduct<W, F> for SlowMiddleProduct<'_, W, F>
 {
     fn middle_product(&self, x: &[F::E], z: &mut [F::E]) {
         let n = x.len();
@@ -120,13 +125,13 @@ impl<const W: usize, F: RuntimeField<W>> runtime_algebra::middle_product::Middle
 struct SlowInterpolator<
     'a,
     const W: usize,
-    F: RuntimeField<W> + core_algebra::SupportsU64Conversions,
+    F: RuntimeField<W> + crate::core::algebra::SupportsU64Conversions,
 > {
-    rs: runtime_algebra::reed_solomon::ReedSolomon<'a, W, F, SlowMiddleProduct<'a, W, F>>,
+    rs: crate::runtime::algebra::reed_solomon::ReedSolomon<'a, W, F, SlowMiddleProduct<'a, W, F>>,
 }
 
-impl<const W: usize, F: RuntimeField<W> + core_algebra::SupportsU64Conversions> Interpolator<W, F>
-    for SlowInterpolator<'_, W, F>
+impl<const W: usize, F: RuntimeField<W> + crate::core::algebra::SupportsU64Conversions>
+    Interpolator<W, F> for SlowInterpolator<'_, W, F>
 {
     fn interpolate(&self, y: &mut [F::E]) {
         self.rs.interpolate(y);
@@ -135,23 +140,25 @@ impl<const W: usize, F: RuntimeField<W> + core_algebra::SupportsU64Conversions> 
 struct SlowInterpolatorFactory<
     'a,
     const W: usize,
-    F: RuntimeField<W> + core_algebra::SupportsU64Conversions,
+    F: RuntimeField<W> + crate::core::algebra::SupportsU64Conversions,
 > {
     f: &'a F,
 }
 
-impl<'a, const W: usize, F: RuntimeField<W> + core_algebra::SupportsU64Conversions>
-    runtime_algebra::interpolator::InterpolatorFactory<W, F> for SlowInterpolatorFactory<'a, W, F>
+impl<'a, const W: usize, F: RuntimeField<W> + crate::core::algebra::SupportsU64Conversions>
+    crate::runtime::algebra::interpolator::InterpolatorFactory<W, F>
+    for SlowInterpolatorFactory<'a, W, F>
 {
     type Interpolator = SlowInterpolator<'a, W, F>;
 
     fn make(&self, n: usize, m: usize) -> Self::Interpolator {
-        let rs = runtime_algebra::reed_solomon::ReedSolomon::new(n, m, self.f, |inverses| {
-            SlowMiddleProduct {
-                f: self.f,
-                y: inverses.to_vec(),
-            }
-        });
+        let rs =
+            crate::runtime::algebra::reed_solomon::ReedSolomon::new(n, m, self.f, |inverses| {
+                SlowMiddleProduct {
+                    f: self.f,
+                    y: inverses.to_vec(),
+                }
+            });
         SlowInterpolator { rs }
     }
 
@@ -163,7 +170,7 @@ impl<'a, const W: usize, F: RuntimeField<W> + core_algebra::SupportsU64Conversio
 fn ligero_test<
     const W: usize,
     F: RuntimeField<W> + SerializableField + SupportsSampling<W>,
-    IF: runtime_algebra::interpolator::InterpolatorFactory<W, F>,
+    IF: crate::runtime::algebra::interpolator::InterpolatorFactory<W, F>,
     SF: Subfield<E = ElementOf<F>>,
 >(
     make_interpolator: &IF,
@@ -301,7 +308,7 @@ fn ligero_test<
 fn test_ligero_verifier_failures_generic<
     const W: usize,
     F: RuntimeField<W> + SerializableField + SupportsSampling<W>,
-    IF: runtime_algebra::interpolator::InterpolatorFactory<W, F>,
+    IF: crate::runtime::algebra::interpolator::InterpolatorFactory<W, F>,
     SF: Subfield<E = ElementOf<F>>,
 >(
     make_interpolator: &IF,
@@ -558,23 +565,32 @@ fn test_ligero_verifier_failures_generic<
 fn test_debug_try_new() {
     let nw_hash = 77998;
     let nq_hash = 20;
-    let config_hash = runtime_ligero::param::LigeroConfig {
+    let config_hash = crate::runtime::ligero::param::LigeroConfig {
         rateinv: 7,
         nreq: 132,
         block_enc: 451,
     };
     let gf2_runtime = Gf2_128RuntimeField::new();
-    let subfield = BinarySubfield::new(&core_algebra::proto::GF2_16_BASIS_V1);
-    let factory =
-        runtime_algebra::lch14_reed_solomon::Lch14InterpolatorFactory::new(&gf2_runtime, &subfield);
-    let res = runtime_ligero::param::LigeroParam::try_new(nw_hash, nq_hash, config_hash, &factory);
+    let subfield = BinarySubfield::new(&crate::core::algebra::proto::GF2_16_BASIS_V1);
+    let factory = crate::runtime::algebra::lch14_reed_solomon::Lch14InterpolatorFactory::new(
+        &gf2_runtime,
+        &subfield,
+    );
+    let res = crate::runtime::ligero::param::LigeroParam::try_new(
+        nw_hash,
+        nq_hash,
+        config_hash,
+        &factory,
+    );
     println!("DEBUG TEST RES: {res:?}");
 }
 
 #[test]
 fn test_ligero_gf2_128() {
     let f = Gf2_128RuntimeField::new();
-    let sf = runtime_algebra::subfield::BinarySubfield::new(&core_algebra::proto::GF2_16_BASIS_V1);
+    let sf = crate::runtime::algebra::subfield::BinarySubfield::new(
+        &crate::core::algebra::proto::GF2_16_BASIS_V1,
+    );
     let make_interpolator = Lch14InterpolatorFactory::new(&f, &sf);
     ligero_test(&make_interpolator, &f, &sf, 3000, 300, 189, 7, 4096);
     test_ligero_verifier_failures_generic(&make_interpolator, &f, &sf);
@@ -582,8 +598,8 @@ fn test_ligero_gf2_128() {
 
 #[test]
 fn test_ligero_p256() {
-    let f = runtime_algebra::p256::P256Field::new();
-    let sf = runtime_algebra::p256::P256Subfield::new(&f);
+    let f = crate::runtime::algebra::p256::P256Field::new();
+    let sf = crate::runtime::algebra::p256::P256Subfield::new(&f);
     let make_slow_rs = SlowInterpolatorFactory { f: &f };
     ligero_test(&make_slow_rs, &f, &sf, 300, 30, 18, 7, 256);
     test_ligero_verifier_failures_generic(&make_slow_rs, &f, &sf);
@@ -607,13 +623,13 @@ fn test_cpp_roundtrip_gf2_128() {
     let subfield_boundary = read_u64(data, &mut offset);
 
     let f = Gf2_128RuntimeField::new();
-    let subfield = BinarySubfield::new(&core_algebra::proto::GF2_16_BASIS_V1);
+    let subfield = BinarySubfield::new(&crate::core::algebra::proto::GF2_16_BASIS_V1);
 
     // Read W
     let mut w = Vec::with_capacity(nw);
     for _ in 0..nw {
         let mut slice = &data[offset..];
-        let val = runtime_proto::util::read_elt_field(&mut slice, &f).unwrap();
+        let val = crate::runtime::proto::util::read_elt_field(&mut slice, &f).unwrap();
         offset += f.serialized_size_bytes();
         w.push(val);
     }
@@ -622,7 +638,7 @@ fn test_cpp_roundtrip_gf2_128() {
     let mut a = Vec::with_capacity(nw);
     for _ in 0..nw {
         let mut slice = &data[offset..];
-        let val = runtime_proto::util::read_elt_field(&mut slice, &f).unwrap();
+        let val = crate::runtime::proto::util::read_elt_field(&mut slice, &f).unwrap();
         offset += f.serialized_size_bytes();
         a.push(val);
     }
@@ -643,7 +659,7 @@ fn test_cpp_roundtrip_gf2_128() {
         let c = read_u64(data, &mut offset);
         let w_idx = read_u64(data, &mut offset);
         let mut slice = &data[offset..];
-        let val = runtime_proto::util::read_elt_field(&mut slice, &f).unwrap();
+        let val = crate::runtime::proto::util::read_elt_field(&mut slice, &f).unwrap();
         offset += f.serialized_size_bytes();
         llterm.push(LigeroLinearConstraint {
             c,
@@ -656,7 +672,7 @@ fn test_cpp_roundtrip_gf2_128() {
     let mut b = Vec::with_capacity(nl);
     for _ in 0..nl {
         let mut slice = &data[offset..];
-        let val = runtime_proto::util::read_elt_field(&mut slice, &f).unwrap();
+        let val = crate::runtime::proto::util::read_elt_field(&mut slice, &f).unwrap();
         offset += f.serialized_size_bytes();
         b.push(val);
     }
@@ -690,7 +706,9 @@ fn test_cpp_roundtrip_gf2_128() {
         &make_interpolator,
     );
 
-    let sf = runtime_algebra::subfield::BinarySubfield::new(&core_algebra::proto::GF2_16_BASIS_V1);
+    let sf = crate::runtime::algebra::subfield::BinarySubfield::new(
+        &crate::core::algebra::proto::GF2_16_BASIS_V1,
+    );
     // 1. Deserialize C++ proof using Rust's reader
     let mut r_slice = cpp_proof_bytes;
     let cpp_proof = LigeroProof::read(&mut r_slice, &param.geom, &f, &sf)

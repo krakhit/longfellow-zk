@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use circuits_analog_decoder::{AnalogDecoder, BinaryDecoder};
-use circuits_bitvec::Bitvec;
-use compile_logic::{Eltw, Logic};
+use crate::circuits::analog_decoder::{AnalogDecoder, BinaryDecoder};
+use crate::circuits::bitvec::Bitvec;
+use crate::compile::logic::{Eltw, Logic};
 
 pub struct BitPlucker<'a, L: Logic, const LOGN: usize> {
     decoder: BinaryDecoder<'a, L>,

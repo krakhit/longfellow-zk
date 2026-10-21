@@ -12,10 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use core_algebra::Nat;
-
 use crate::{
-    cbor::{
+    core::algebra::Nat,
+    mdoc::circuits::cbor::{
         append_bytes_len, append_text_len,
         constants::{
             K_COSE1_PREFIX_LEN, K_COSE_SIGN1_SIGNING_HEADER, K_DEVICE_AUTHENTICATION_HEADER,
@@ -23,8 +22,14 @@ use crate::{
         },
         parse::{CborElement, CborIndexVal, CborParser, CborValue},
     },
-    mso_attribute::concrete::FieldLocator,
 };
+
+#[derive(Clone, Copy, Debug)]
+pub struct FieldLocator {
+    pub slot_position: [usize; 4],
+    pub length: [usize; 4],
+    pub permutation: usize,
+}
 
 #[derive(Clone, Debug)]
 pub struct ParsedAttr {
@@ -436,7 +441,7 @@ fn validate_mso_layout(
     cbor_mso_map_bytes: &[u8],
 ) -> Result<(), MdocParseError> {
     // SHA-256 padding needs one marker byte and an eight-byte length suffix.
-    let max_preimage_len = crate::hash::constants::K_MSO_PREIMAGE_LEN - 9;
+    let max_preimage_len = crate::mdoc::proto::hash::constants::K_MSO_PREIMAGE_LEN - 9;
     let formatted_len = K_COSE1_PREFIX_LEN
         .checked_add(2)
         .and_then(|len| len.checked_add(cbor_mso_wrapped.len()))
@@ -721,16 +726,18 @@ fn format_cose_sign1_message(cbor_mso: &[u8]) -> Vec<u8> {
 
 #[cfg(test)]
 mod tests {
-    use compile_algebra::CompileNat;
     use sha2::{Digest, Sha256};
 
     use super::{
         compute_transcript_hash, parse_mdoc, parse_signature, required_map_value,
         validate_mso_layout, MdocParseError,
     };
-    use crate::cbor::{
-        constants::{K_COSE_SIGN1_SIGNING_HEADER, K_DEVICE_AUTHENTICATION_HEADER},
-        parse::CborParser,
+    use crate::{
+        compile::algebra::CompileNat,
+        mdoc::circuits::cbor::{
+            constants::{K_COSE_SIGN1_SIGNING_HEADER, K_DEVICE_AUTHENTICATION_HEADER},
+            parse::CborParser,
+        },
     };
 
     fn wrapped_mso(map_len: usize) -> (Vec<u8>, Vec<u8>) {

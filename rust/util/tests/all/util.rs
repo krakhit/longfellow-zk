@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use util::ceil_log2;
+use crate::util::ceil_log2;
 
 #[test]
 fn test_ceil_log2() {

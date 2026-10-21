@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use circuits_boolean::{Bitw, Boolean};
-use circuits_ec::{EcCircuit, Pt2, Pt3};
-use compile_algebra::Curve;
-use compile_logic::{Eltw, Logic};
+use crate::circuits::boolean::{Bitw, Boolean};
+use crate::circuits::ec::{EcCircuit, Pt2, Pt3};
+use crate::compile::algebra::Curve;
+use crate::compile::logic::{Eltw, Logic};
 
 pub struct Given<L: Logic> {
     pub exp_bits: Vec<Bitw<L>>,
@@ -29,9 +29,9 @@ pub struct Derived<L: Logic> {
 }
 
 pub struct EcmulCircuit<'a, const W: usize, C: Curve<W>, L: Logic<F = C::F>> {
-    pub(crate) ec: EcCircuit<'a, W, C, L>,
-    pub(crate) boolean: Boolean<'a, L>,
-    pub(crate) logic: &'a L,
+    pub(in crate::circuits::experimental) ec: EcCircuit<'a, W, C, L>,
+    pub(in crate::circuits::experimental) boolean: Boolean<'a, L>,
+    pub(in crate::circuits::experimental) logic: &'a L,
     pub n: usize,
 }
 
@@ -39,7 +39,7 @@ impl<'a, const W: usize, C, L, F> EcmulCircuit<'a, W, C, L>
 where
     C: Curve<W, F = F>,
     L: Logic<F = F>,
-    F: compile_algebra::field::CompileField + compile_algebra::field::SupportsNatConversions<W>,
+    F: crate::compile::algebra::field::CompileField + crate::compile::algebra::field::SupportsNatConversions<W>,
 {
     pub fn new(logic: &'a L, curve: &'a C, n: usize) -> Self {
         let ec = EcCircuit::new(logic, curve);

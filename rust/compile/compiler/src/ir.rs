@@ -14,9 +14,9 @@
 
 use std::{fmt, hash::Hash};
 
-use compile_algebra::field::CompileField;
+use crate::compile::algebra::field::CompileField;
 
-use crate::node::Node;
+use crate::compile::compiler::node::Node;
 
 #[derive(Debug)]
 pub enum IrError {
@@ -26,7 +26,7 @@ pub enum IrError {
 pub type ExprNode<'a, F> = &'a Node<'a, Expr<'a, F>>;
 pub type RawAssertions<'a, F> = &'a [ExprNode<'a, F>];
 
-use compile_logic::scope::AssertionId;
+use crate::compile::logic::scope::AssertionId;
 
 /// Assertion item coupling a root assertion expression with its assertion ID.
 pub struct AssertionItem<'a, F: CompileField> {
@@ -275,7 +275,7 @@ impl<'a, F: CompileField, T: RewriteT<'a, F>> RewriteT<'a, F> for &T {
 
 /// Recursively walks the expression/assertion tree from input arena ('a) to target arena ('b).
 pub fn walk<'a, 'b, F: CompileField, NEXT: RewriteT<'b, F>>(
-    arena: &'b crate::arena::CompilerArena<'b, F>,
+    arena: &'b crate::compile::compiler::arena::CompilerArena<'b, F>,
     assertions: Assertions<'a, F>,
     rewriter: &NEXT,
 ) -> Assertions<'b, F> {
@@ -436,8 +436,8 @@ impl std::error::Error for IrError {}
 /// 3. **Fast inequality check:** Map key comparison `Equivalent::equivalent` is accelerated by
 ///    comparing the precomputed hash values before comparing elements.
 pub struct HashedExpr<'a, F: CompileField> {
-    pub(crate) expr: Expr<'a, F>,
-    pub(crate) hash: u64,
+    pub(in crate::compile::compiler) expr: Expr<'a, F>,
+    pub(in crate::compile::compiler) hash: u64,
 }
 
 impl<'a, F: CompileField> HashedExpr<'a, F> {

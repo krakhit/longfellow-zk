@@ -12,19 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use circuits_bitvec::BitvecLogic;
-use compile_logic::LogicIO;
+use crate::circuits::bitvec::BitvecLogic;
+use crate::compile::logic::LogicIO;
 
 use super::circuit::{Derived, Given};
 
 pub fn allocate_given<L: LogicIO>(logic: &L, bv: &BitvecLogic<L>, pos: &mut usize) -> Given<L> {
-    let bitvec_io = circuits_bitvec::BitvecIO::new(bv);
+    let bitvec_io = crate::circuits::bitvec::BitvecIO::new(bv);
     let issuer_pk = (logic.next(pos), logic.next(pos));
     let issuer_sig_e = bitvec_io.next::<256>(pos);
-    let issuer_sig_given = circuits_ecdsa2::allocate_given_wires(logic, pos);
+    let issuer_sig_given = crate::circuits::ecdsa2::allocate_given_wires(logic, pos);
     let device_pk = (bitvec_io.next::<256>(pos), bitvec_io.next::<256>(pos));
     let device_sig_e = bitvec_io.next::<256>(pos);
-    let device_sig_given = circuits_ecdsa2::allocate_given_wires(logic, pos);
+    let device_sig_given = crate::circuits::ecdsa2::allocate_given_wires(logic, pos);
     let mac_e = [bitvec_io.next::<128>(pos), bitvec_io.next::<128>(pos)];
     let mac_device_pkx = [bitvec_io.next::<128>(pos), bitvec_io.next::<128>(pos)];
     let mac_device_pky = [bitvec_io.next::<128>(pos), bitvec_io.next::<128>(pos)];
@@ -46,8 +46,8 @@ pub fn allocate_given<L: LogicIO>(logic: &L, bv: &BitvecLogic<L>, pos: &mut usiz
 }
 
 pub fn allocate_derived<L: LogicIO>(logic: &L, pos: &mut usize) -> Derived<L> {
-    let issuer_sig_derived = circuits_ecdsa2::allocate_derived_wires(logic, pos);
-    let device_sig_derived = circuits_ecdsa2::allocate_derived_wires(logic, pos);
+    let issuer_sig_derived = crate::circuits::ecdsa2::allocate_derived_wires(logic, pos);
+    let device_sig_derived = crate::circuits::ecdsa2::allocate_derived_wires(logic, pos);
     Derived {
         issuer_sig_derived,
         device_sig_derived,

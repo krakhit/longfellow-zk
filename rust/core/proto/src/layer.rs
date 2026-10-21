@@ -14,7 +14,7 @@
 
 use std::fmt;
 
-use core_algebra::SerializableField;
+use crate::core::algebra::SerializableField;
 
 pub struct Term<F: SerializableField> {
     pub k: F::E,
@@ -63,12 +63,12 @@ pub struct TermDelta {
 }
 
 pub struct Layer<F: SerializableField> {
-    pub(crate) nw: usize,
-    pub(crate) logw: usize,
-    pub(crate) deltas: Vec<TermDelta>,
-    pub(crate) delta_segments: Vec<Vec<u32>>,
-    pub(crate) delta_tokens: Vec<u32>,
-    pub(crate) _marker: std::marker::PhantomData<F>,
+    pub(in crate::core::proto) nw: usize,
+    pub(in crate::core::proto) logw: usize,
+    pub(in crate::core::proto) deltas: Vec<TermDelta>,
+    pub(in crate::core::proto) delta_segments: Vec<Vec<u32>>,
+    pub(in crate::core::proto) delta_tokens: Vec<u32>,
+    pub(in crate::core::proto) _marker: std::marker::PhantomData<F>,
 }
 
 impl<F: SerializableField> Layer<F> {
@@ -112,7 +112,7 @@ impl<F: SerializableField> Layer<F> {
         &self.delta_tokens
     }
 
-    pub(crate) fn new_uncompressed(
+    pub(in crate::core::proto) fn new_uncompressed(
         nw: usize,
         logw: usize,
         deltas: Vec<TermDelta>,
@@ -130,7 +130,7 @@ impl<F: SerializableField> Layer<F> {
         runs: Vec<Vec<TermDelta>>,
         tokens: Vec<u32>,
     ) -> Self {
-        let mut db = crate::cache::ExactDeltaTableBuilder::new();
+        let mut db = crate::core::proto::cache::ExactDeltaTableBuilder::new();
         let mut delta_segments = Vec::with_capacity(runs.len());
         for run in runs {
             let mut seg = Vec::with_capacity(run.len());
@@ -182,7 +182,10 @@ impl<F: SerializableField> Layer<F> {
 
     #[allow(dead_code)]
     #[inline(always)]
-    pub(crate) fn try_for_each_delta_index<E, MutCb: FnMut(u32) -> Result<(), E>>(
+    pub(in crate::core::proto) fn try_for_each_delta_index<
+        E,
+        MutCb: FnMut(u32) -> Result<(), E>,
+    >(
         &self,
         mut cb: MutCb,
     ) -> Result<(), E> {
@@ -353,7 +356,7 @@ pub fn canonical_term<F: SerializableField>(t: Term<F>) -> Term<F> {
 }
 
 pub fn compare_term<F: SerializableField>(f: &F, t: &Term<F>, s: &Term<F>) -> std::cmp::Ordering {
-    ::util::morton::cmp(t.h0 as usize, t.h1 as usize, s.h0 as usize, s.h1 as usize)
+    crate::util::morton::cmp(t.h0 as usize, t.h1 as usize, s.h0 as usize, s.h1 as usize)
         .then_with(|| t.g.cmp(&s.g))
         .then_with(|| f.to_bytes(&t.k).cmp(&f.to_bytes(&s.k)))
 }

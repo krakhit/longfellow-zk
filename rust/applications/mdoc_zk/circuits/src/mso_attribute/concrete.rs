@@ -12,12 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#[derive(Clone, Copy, Debug)]
-pub struct FieldLocator {
-    pub slot_position: [usize; 4],
-    pub length: [usize; 4],
-    pub permutation: usize,
-}
+pub use crate::mdoc::circuits::cbor::mdoc::FieldLocator;
 
 #[derive(Clone, Debug)]
 pub struct DisclosedAttribute {
@@ -36,18 +31,19 @@ pub struct ConcreteGiven {
 
 #[derive(Clone, Debug)]
 pub struct ConcreteDerived {
-    pub sha_derived: circuits_sha256msg::concrete::ConcreteDerived,
+    pub sha_derived: crate::circuits::sha256msg::concrete::ConcreteDerived,
 }
 
 #[must_use]
 pub fn derived(given: &ConcreteGiven) -> ConcreteDerived {
     ConcreteDerived {
-        sha_derived: circuits_sha256msg::concrete::ConcreteDerived {
-            sha_derived: circuits_sha256msg::concrete::sha256_msg_derived(
+        sha_derived: crate::circuits::sha256msg::concrete::ConcreteDerived {
+            sha_derived: crate::circuits::sha256msg::concrete::sha256_msg_derived(
                 &given.preimage,
-                &circuits_sha256::constants::INITIAL,
+                &crate::circuits::sha256::constants::INITIAL,
                 2,
             ),
         },
     }
 }
+

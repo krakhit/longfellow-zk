@@ -22,3 +22,7 @@ pub use ligero::{LigeroCommitment, LigeroGeometry, LigeroProof};
 pub use merkle::{Digest, MerkleNonce, MerkleProof, DIGEST_LEN, NONCE_LEN};
 pub use sumcheck::{LayerProof, RoundPoly, SumcheckProof, SumcheckProofGeometry};
 pub use zk::{witness_and_constraint_count, ZkProof, ZkProofGeometry};
+
+#[cfg(test)]
+#[path = "../tests/proto.rs"]
+mod tests_proto;

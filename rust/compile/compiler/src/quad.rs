@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use compile_algebra::field::CompileField;
-use core_algebra::ElementOf;
+use crate::compile::algebra::field::CompileField;
+use crate::core::algebra::ElementOf;
 
 pub type Wire = usize;
 pub type Term<F> = (ElementOf<F>, Wire, Wire);

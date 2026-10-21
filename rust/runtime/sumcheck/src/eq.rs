@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use runtime_algebra::RuntimeField;
+use crate::runtime::algebra::RuntimeField;
 
 /// EQ[i,j] is 2D sparse array EQ[i, j] = (i == j).
 /// This function contains a state-free version of EQ, which

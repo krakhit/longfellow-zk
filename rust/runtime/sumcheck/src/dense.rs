@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use runtime_algebra::field::RuntimeField;
+use crate::runtime::algebra::field::RuntimeField;
 
 #[inline(always)]
 pub fn affine_interpolation<const W: usize, F: RuntimeField<W>>(
@@ -102,7 +102,10 @@ pub fn bind_all<const W: usize, F: RuntimeField<W>>(
     f: &F,
 ) {
     assert!(!v.is_empty(), "vector length must be >= 1 in bind_all");
-    assert!(crate::sane_logw(logv), "logv must be sane");
+    assert!(
+        crate::runtime::sumcheck::sane_logw(logv),
+        "logv must be sane"
+    );
     assert!(
         v.len() as u64 <= (1u64 << logv),
         "size of wires {} exceeds 2^logw {}",

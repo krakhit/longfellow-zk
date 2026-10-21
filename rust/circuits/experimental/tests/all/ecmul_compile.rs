@@ -12,18 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use circuits_experimental::ecmul::{
+use crate::circuits::experimental::ecmul::{
     concrete::{self, ConcreteGiven},
     EcmulCircuit,
 };
-use compile_algebra::{
+use crate::compile::algebra::{
     field::{CompilePrimeField, SupportsNatConversions},
     p256::P256Field,
     secp256r1::Secp256r1,
 };
-use compile_eval::FieldID;
-use core_algebra::{Nat, SerializableField};
-use runtime_algebra::field::RuntimeField;
+use crate::compile::eval::FieldID;
+use crate::core::algebra::{Nat, SerializableField};
+use crate::runtime::algebra::field::RuntimeField;
 
 use super::testvec;
 
@@ -31,8 +31,8 @@ fn test_compile_ecmul_generic<
     const W: usize,
     FC: CompilePrimeField + SupportsNatConversions<W> + SerializableField,
     FR: RuntimeField<W> + SupportsNatConversions<W> + SerializableField,
-    CC: core_algebra::Curve<W, F = FC>,
-    CR: core_algebra::Curve<W, F = FR>,
+    CC: crate::core::algebra::Curve<W, F = FC>,
+    CR: crate::core::algebra::Curve<W, F = FR>,
 >(
     curve_c: &CC,
     curve_r: &CR,
@@ -40,18 +40,18 @@ fn test_compile_ecmul_generic<
     fr: &FR,
 ) {
     let n = 256;
-    let (compiled_circuit, stats, symbols) = compile_compiler::compile(fc, |iologic| {
-        let mut pos = compile_logic::K_FIRST_WIRE_POSITION;
+    let (compiled_circuit, stats, symbols) = crate::compile::compiler::compile(fc, |iologic| {
+        let mut pos = crate::compile::logic::K_FIRST_WIRE_POSITION;
 
         let circuit = EcmulCircuit::new(&iologic, curve_c, n);
-        let given = circuits_experimental::ecmul::allocate_given(&iologic, n, &mut pos);
-        let derived = circuits_experimental::ecmul::allocate_derived(&iologic, n, &mut pos);
+        let given = crate::circuits::experimental::ecmul::allocate_given(&iologic, n, &mut pos);
+        let derived = crate::circuits::experimental::ecmul::allocate_derived(&iologic, n, &mut pos);
         let assertion = circuit.assert_scalar_mul(&given, &derived);
 
         (assertion, 1, 0)
     });
 
-    compile_compiler::dump_stats("ecmul", &compiled_circuit, &stats);
+    crate::compile::compiler::dump_stats("ecmul", &compiled_circuit, &stats);
 
     assert_eq!(stats.ninput, 1030);
     assert_eq!(stats.npublic_input, 1);
@@ -74,11 +74,11 @@ fn test_compile_ecmul_generic<
     };
     let concrete_derived = concrete::derived(curve_r, n, &concrete_given, fr);
 
-    let mut inputs = compile_eval::initial_inputs(fr);
+    let mut inputs = crate::compile::eval::initial_inputs(fr);
     concrete_given.push_elements(n, fr, |e| inputs.push(e));
     concrete_derived.push_elements(|e| inputs.push(e));
 
-    compile_eval::eval_circuit_fc(fc, fr, &compiled_circuit, &symbols, &inputs, FieldID::P256)
+    crate::compile::eval::eval_circuit_fc(fc, fr, &compiled_circuit, &symbols, &inputs, FieldID::P256)
         .unwrap()
         .assert_all_passed();
 }
@@ -86,8 +86,8 @@ fn test_compile_ecmul_generic<
 #[test]
 fn test_compile_ecmul() {
     let fc = P256Field::new();
-    let fr = runtime_algebra::p256::P256Field::new();
+    let fr = crate::runtime::algebra::p256::P256Field::new();
     let curve_c = Secp256r1::new(&fc);
-    let curve_r = runtime_algebra::secp256r1::Secp256r1::new(&fr);
+    let curve_r = crate::runtime::algebra::secp256r1::Secp256r1::new(&fr);
     test_compile_ecmul_generic::<4, _, _, _, _>(&curve_c, &curve_r, &fc, &fr);
 }

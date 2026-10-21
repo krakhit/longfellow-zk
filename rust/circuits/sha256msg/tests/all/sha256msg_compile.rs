@@ -12,13 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use circuits_analog_adder::FieldWrappingSum;
-use circuits_sha256msg::{concrete::given, Sha256Msg};
-use compile_algebra::{field::CompileField, gf2_128::Gf2_128Field, p256::P256Field};
-use compile_compiler::CompilerLogic;
-use compile_eval::FieldID;
-use core_algebra::SerializableField;
-use runtime_algebra::field::RuntimeField;
+use crate::circuits::analog_adder::FieldWrappingSum;
+use crate::circuits::sha256msg::{concrete::given, Sha256Msg};
+use crate::compile::algebra::{field::CompileField, gf2_128::Gf2_128Field, p256::P256Field};
+use crate::compile::compiler::CompilerLogic;
+use crate::compile::eval::FieldID;
+use crate::core::algebra::SerializableField;
+use crate::runtime::algebra::field::RuntimeField;
 use sha2::{Digest, Sha256 as Sha2Reference};
 
 use super::test_support;
@@ -40,13 +40,13 @@ fn test_compile_sha256msg_for_field<
     hasher.update(message);
     let _reference_hash = hasher.finalize();
 
-    let (circuit, stats, symbols) = compile_compiler::compile(fc, |iologic| {
-        let mut pos = compile_logic::K_FIRST_WIRE_POSITION;
+    let (circuit, stats, symbols) = crate::compile::compiler::compile(fc, |iologic| {
+        let mut pos = crate::compile::logic::K_FIRST_WIRE_POSITION;
         let sha256msg = Sha256Msg::<_, MAX_BLOCKS>::new(&iologic);
-        let bv = circuits_bitvec::BitvecLogic::new(&iologic);
+        let bv = crate::circuits::bitvec::BitvecLogic::new(&iologic);
         let given_wires =
-            circuits_sha256msg::allocate_given::<CompilerLogic<'_, FC>, MAX_BLOCKS>(&bv, &mut pos);
-        let derived_wires = circuits_sha256msg::allocate_derived::<CompilerLogic<'_, FC>, MAX_BLOCKS>(
+            crate::circuits::sha256msg::allocate_given::<CompilerLogic<'_, FC>, MAX_BLOCKS>(&bv, &mut pos);
+        let derived_wires = crate::circuits::sha256msg::allocate_derived::<CompilerLogic<'_, FC>, MAX_BLOCKS>(
             &bv, &mut pos,
         );
 
@@ -57,17 +57,17 @@ fn test_compile_sha256msg_for_field<
         )
     });
 
-    let given = given(message, &circuits_sha256::constants::INITIAL, MAX_BLOCKS).unwrap();
-    let derived = circuits_sha256msg::concrete::derived(&given, MAX_BLOCKS);
+    let given = given(message, &crate::circuits::sha256::constants::INITIAL, MAX_BLOCKS).unwrap();
+    let derived = crate::circuits::sha256msg::concrete::derived(&given, MAX_BLOCKS);
 
-    compile_compiler::dump_stats(name, &circuit, &stats);
+    crate::compile::compiler::dump_stats(name, &circuit, &stats);
 
-    let mut inputs = compile_eval::initial_inputs(fr);
+    let mut inputs = crate::compile::eval::initial_inputs(fr);
     given.push_elements(fr, MAX_BLOCKS, |e| inputs.push(e));
     derived.push_elements(fr, |e| inputs.push(e));
 
     // Evaluate circuit
-    compile_eval::eval_circuit_fc(fc, fr, &circuit, &symbols, &inputs, field_id)
+    crate::compile::eval::eval_circuit_fc(fc, fr, &circuit, &symbols, &inputs, field_id)
         .unwrap()
         .assert_all_passed();
 }
@@ -75,7 +75,7 @@ fn test_compile_sha256msg_for_field<
 #[test]
 fn test_compile_sha256msg() {
     let p256_c = P256Field::new();
-    let p256_r = runtime_algebra::p256::P256Field::new();
+    let p256_r = crate::runtime::algebra::p256::P256Field::new();
     test_compile_sha256msg_for_field::<4, _, _, 1>(
         &p256_c,
         &p256_r,
@@ -92,7 +92,7 @@ fn test_compile_sha256msg() {
     );
 
     let gf2_c = Gf2_128Field::new();
-    let gf2_r = runtime_algebra::gf2_128::Gf2_128Field::new();
+    let gf2_r = crate::runtime::algebra::gf2_128::Gf2_128Field::new();
     test_compile_sha256msg_for_field::<2, _, _, 1>(
         &gf2_c,
         &gf2_r,
@@ -112,25 +112,25 @@ fn test_compile_sha256msg() {
 #[test]
 fn test_compile_sha256msg_tampering() {
     let fc = P256Field::new();
-    let fr = runtime_algebra::p256::P256Field::new();
+    let fr = crate::runtime::algebra::p256::P256Field::new();
     let message = b"hello world";
     let const_max_blocks = 2;
     let given_orig = given(
         message,
-        &circuits_sha256::constants::INITIAL,
+        &crate::circuits::sha256::constants::INITIAL,
         const_max_blocks,
     )
     .unwrap();
-    let derived_orig = circuits_sha256msg::concrete::derived(&given_orig, const_max_blocks);
+    let derived_orig = crate::circuits::sha256msg::concrete::derived(&given_orig, const_max_blocks);
 
-    let (circuit, _stats, symbols) = compile_compiler::compile(&fc, |iologic| {
-        let mut pos = compile_logic::K_FIRST_WIRE_POSITION;
+    let (circuit, _stats, symbols) = crate::compile::compiler::compile(&fc, |iologic| {
+        let mut pos = crate::compile::logic::K_FIRST_WIRE_POSITION;
         let sha256msg = Sha256Msg::<_, 2>::new(&iologic);
-        let bv = circuits_bitvec::BitvecLogic::new(&iologic);
+        let bv = crate::circuits::bitvec::BitvecLogic::new(&iologic);
         let given_wires =
-            circuits_sha256msg::allocate_given::<CompilerLogic<'_, P256Field>, 2>(&bv, &mut pos);
+            crate::circuits::sha256msg::allocate_given::<CompilerLogic<'_, P256Field>, 2>(&bv, &mut pos);
         let derived_wires =
-            circuits_sha256msg::allocate_derived::<CompilerLogic<'_, P256Field>, 2>(&bv, &mut pos);
+            crate::circuits::sha256msg::allocate_derived::<CompilerLogic<'_, P256Field>, 2>(&bv, &mut pos);
 
         (
             sha256msg.assert_message_hash::<2>(&given_wires, &derived_wires),
@@ -146,12 +146,12 @@ fn test_compile_sha256msg_tampering() {
         let mut d = derived_orig.clone();
         (c.corrupt)(&mut g, &mut d);
 
-        let mut inputs = compile_eval::initial_inputs(&fr);
+        let mut inputs = crate::compile::eval::initial_inputs(&fr);
         g.push_elements(&fr, const_max_blocks, |e| inputs.push(e));
         d.push_elements(&fr, |e| inputs.push(e));
 
         let eval_res =
-            compile_eval::eval_circuit_fc(&fc, &fr, &circuit, &symbols, &inputs, FieldID::P256)
+            crate::compile::eval::eval_circuit_fc(&fc, &fr, &circuit, &symbols, &inputs, FieldID::P256)
                 .unwrap();
         assert!(
             eval_res.is_err(),

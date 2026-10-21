@@ -12,14 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use core_algebra::{AlgebraicField, SerializableField, SupportsU64Conversions};
 use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
-use num_bigint::BigUint;
-use runtime_algebra::{
-    fft::fftf,
-    fp2::{Fp2Element, Fp2Field},
-    p256::P256Field,
+use longfellow_zk::{
+    core::algebra::{AlgebraicField, SerializableField, SupportsU64Conversions},
+    runtime::algebra::{
+        fft::fftf,
+        fp2::{Fp2Element, Fp2Field},
+        p256::P256Field,
+    },
 };
+use num_bigint::BigUint;
 
 fn bench_fft(c: &mut Criterion) {
     let p256 = P256Field::new();

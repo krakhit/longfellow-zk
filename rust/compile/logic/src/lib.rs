@@ -12,20 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#[cfg(feature = "testonly")]
-pub mod concrete;
 pub mod eval;
+// `compile::logic::logic` mirrors the layout of the former `compile-logic` crate.
+#[allow(clippy::module_inception)]
 pub mod logic;
 pub mod scope;
-#[cfg(feature = "testonly")]
-pub use concrete::*;
 
-pub use crate::{
+pub mod tracker {
+    pub use crate::compile::logic::scope::AssertionScope as AssertionTracker;
+}
+
+pub use crate::compile::logic::{
     eval::EvalContext,
     logic::{Eltw, Logic, LogicIO, K_FIRST_WIRE_POSITION},
     scope::AssertionScope,
 };
 
-pub mod tracker {
-    pub use crate::scope::AssertionScope as AssertionTracker;
+cfg_testonly! {
+    pub mod concrete;
+    pub use concrete::*;
 }
+
+#[cfg(test)]
+#[path = "../tests/eval.rs"]
+mod tests_eval;

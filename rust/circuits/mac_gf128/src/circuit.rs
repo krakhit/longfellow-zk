@@ -12,23 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use circuits_bitvec::BitvecLogic;
+use crate::circuits::bitvec::BitvecLogic;
 
-pub struct Given<L: compile_logic::Logic> {
-    pub message: circuits_bitvec::Bitvec<L, 256>,
-    pub mac_av: compile_logic::Eltw<L>,
-    pub mac_ap: [compile_logic::Eltw<L>; 2],
-    pub tag: [compile_logic::Eltw<L>; 2],
+pub struct Given<L: crate::compile::logic::Logic> {
+    pub message: crate::circuits::bitvec::Bitvec<L, 256>,
+    pub mac_av: crate::compile::logic::Eltw<L>,
+    pub mac_ap: [crate::compile::logic::Eltw<L>; 2],
+    pub tag: [crate::compile::logic::Eltw<L>; 2],
 }
 
 pub type Derived = ();
 
-pub struct MAC<'a, L: compile_logic::Logic> {
+pub struct MAC<'a, L: crate::compile::logic::Logic> {
     pub logic: &'a L,
     pub bv: BitvecLogic<'a, L>,
 }
 
-impl<'a, L: compile_logic::Logic> MAC<'a, L> {
+impl<'a, L: crate::compile::logic::Logic> MAC<'a, L> {
     pub fn new(logic: &'a L) -> Self {
         Self {
             logic,

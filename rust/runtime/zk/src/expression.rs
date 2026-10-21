@@ -12,14 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use runtime_algebra::{ElementOf, RuntimeField, ZkField};
-use runtime_ligero::param::LigeroLinearConstraint;
+use crate::runtime::{
+    algebra::{ElementOf, RuntimeField, ZkField},
+    ligero::param::LigeroLinearConstraint,
+};
 
 #[derive(Debug)]
-pub(crate) struct Expression<const W: usize, F: RuntimeField<W>> {
-    pub(crate) known: ElementOf<F>,
-    pub(crate) base_idx: usize,
-    pub(crate) symbolic: Vec<ElementOf<F>>,
+pub(in crate::runtime::zk) struct Expression<const W: usize, F: RuntimeField<W>> {
+    pub(in crate::runtime::zk) known: ElementOf<F>,
+    pub(in crate::runtime::zk) base_idx: usize,
+    pub(in crate::runtime::zk) symbolic: Vec<ElementOf<F>>,
 }
 
 impl<const W: usize, F: RuntimeField<W>> Clone for Expression<W, F> {
@@ -33,7 +35,7 @@ impl<const W: usize, F: RuntimeField<W>> Clone for Expression<W, F> {
 }
 
 impl<const W: usize, F: RuntimeField<W>> Expression<W, F> {
-    pub(crate) fn zero(f: &F) -> Self {
+    pub(in crate::runtime::zk) fn zero(f: &F) -> Self {
         Self {
             known: f.zero(),
             base_idx: 0,
@@ -41,7 +43,7 @@ impl<const W: usize, F: RuntimeField<W>> Expression<W, F> {
         }
     }
 
-    pub(crate) fn var(witness_idx: usize, f: &F) -> Self {
+    pub(in crate::runtime::zk) fn var(witness_idx: usize, f: &F) -> Self {
         let mut symbolic = Vec::with_capacity(64);
         symbolic.push(f.one());
         Self {
@@ -51,7 +53,7 @@ impl<const W: usize, F: RuntimeField<W>> Expression<W, F> {
         }
     }
 
-    pub(crate) fn resize(&mut self, l: usize, h: usize, f: &F) {
+    pub(in crate::runtime::zk) fn resize(&mut self, l: usize, h: usize, f: &F) {
         if l >= h {
             return;
         }
@@ -69,25 +71,30 @@ impl<const W: usize, F: RuntimeField<W>> Expression<W, F> {
         }
     }
 
-    pub(crate) fn add_scalar(&mut self, val: &ElementOf<F>, f: &F) {
+    pub(in crate::runtime::zk) fn add_scalar(&mut self, val: &ElementOf<F>, f: &F) {
         f.add(&mut self.known, val);
     }
 
-    pub(crate) fn sub_scalar(&mut self, val: &ElementOf<F>, f: &F) {
+    pub(in crate::runtime::zk) fn sub_scalar(&mut self, val: &ElementOf<F>, f: &F) {
         f.sub(&mut self.known, val);
     }
 
-    pub(crate) fn add_var(&mut self, witness_idx: usize, coeff: ElementOf<F>, f: &F) {
+    pub(in crate::runtime::zk) fn add_var(
+        &mut self,
+        witness_idx: usize,
+        coeff: ElementOf<F>,
+        f: &F,
+    ) {
         self.resize(witness_idx, witness_idx + 1, f);
         f.add(&mut self.symbolic[witness_idx - self.base_idx], &coeff);
     }
 
-    pub(crate) fn scale(&mut self, s: &ElementOf<F>, f: &F) {
+    pub(in crate::runtime::zk) fn scale(&mut self, s: &ElementOf<F>, f: &F) {
         f.mul(&mut self.known, s);
-        runtime_algebra::blas::scale(&mut self.symbolic, s, f);
+        crate::runtime::algebra::blas::scale(&mut self.symbolic, s, f);
     }
 
-    pub(crate) fn axpy(&mut self, other: &Self, alpha: &ElementOf<F>, f: &F) {
+    pub(in crate::runtime::zk) fn axpy(&mut self, other: &Self, alpha: &ElementOf<F>, f: &F) {
         f.fma(&mut self.known, alpha, &other.known);
 
         if other.symbolic.is_empty() {
@@ -108,7 +115,7 @@ impl<const W: usize, F: RuntimeField<W>> Expression<W, F> {
 }
 
 impl<const W: usize, F: ZkField<W>> Expression<W, F> {
-    pub(crate) fn constrain_to_be_zero(
+    pub(in crate::runtime::zk) fn constrain_to_be_zero(
         &self,
         a: &mut Vec<LigeroLinearConstraint<W, F>>,
         b: &mut Vec<ElementOf<F>>,

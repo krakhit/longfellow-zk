@@ -12,20 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use circuits_ec::{
+use crate::circuits::ec::{
     concrete::{add, affine, double, projective, push_pt2, scalar_mul},
     pt2_wires, EcCircuit,
 };
-use compile_algebra::{
+use crate::compile::algebra::{
     field::{CompileField, CompilePrimeField, SupportsNatConversions},
     p256::P256Field,
     secp256r1::Secp256r1,
     Curve,
 };
-use compile_eval::FieldID;
-use compile_logic::{concrete::push_eltw, Logic, LogicIO};
-use core_algebra::{Nat, SerializableField};
-use runtime_algebra::field::RuntimeField;
+use crate::compile::eval::FieldID;
+use crate::compile::logic::{concrete::push_eltw, Logic, LogicIO};
+use crate::core::algebra::{Nat, SerializableField};
+use crate::runtime::algebra::field::RuntimeField;
 
 fn test_compile_ec_generic<
     const W: usize,
@@ -39,10 +39,10 @@ fn test_compile_ec_generic<
     curve_r: &CR,
     fr: &FR,
 ) {
-    let (circuit, stats, symbols) = compile_compiler::compile(fc, |iologic| {
+    let (circuit, stats, symbols) = crate::compile::compiler::compile(fc, |iologic| {
         let ec_circuit = EcCircuit::new(&iologic, curve_c);
 
-        let mut pos = compile_logic::K_FIRST_WIRE_POSITION;
+        let mut pos = crate::compile::logic::K_FIRST_WIRE_POSITION;
         let p1 = pt2_wires(&iologic, &mut pos);
         let p2 = pt2_wires(&iologic, &mut pos);
         let p1_double_target = pt2_wires(&iologic, &mut pos);
@@ -64,7 +64,7 @@ fn test_compile_ec_generic<
         (iologic.assert_all("ec_add_double", &[a1, a2, a3, a4]), 1, 0)
     });
 
-    compile_compiler::dump_stats("ec_add_double", &circuit, &stats);
+    crate::compile::compiler::dump_stats("ec_add_double", &circuit, &stats);
 
     // Fill concrete values into environment using RuntimeField
     let g_2d_run = curve_r.g();
@@ -81,7 +81,7 @@ fn test_compile_ec_generic<
     let g3_normalized = affine(fr, &g3);
     let g3_zinv_val = fr.invert(&g3.2);
 
-    let mut inputs = compile_eval::initial_inputs(fr);
+    let mut inputs = crate::compile::eval::initial_inputs(fr);
     push_pt2(g_2d_run, &mut inputs);
     push_pt2(&g2_normalized, &mut inputs);
     push_pt2(&g2_normalized, &mut inputs);
@@ -89,7 +89,7 @@ fn test_compile_ec_generic<
     push_pt2(&g3_normalized, &mut inputs);
     push_eltw(g3_zinv_val, &mut inputs);
 
-    compile_eval::eval_circuit_fc(fc, fr, &circuit, &symbols, &inputs, FieldID::P256)
+    crate::compile::eval::eval_circuit_fc(fc, fr, &circuit, &symbols, &inputs, FieldID::P256)
         .unwrap()
         .assert_all_passed();
 }
@@ -98,12 +98,12 @@ fn test_compile_ec_generic<
 fn test_compile_ec() {
     let fc = P256Field::new();
     let curve_c = Secp256r1::new(&fc);
-    let fr = runtime_algebra::p256::P256Field::new();
-    let curve_r = runtime_algebra::secp256r1::Secp256r1::new(&fr);
+    let fr = crate::runtime::algebra::p256::P256Field::new();
+    let curve_r = crate::runtime::algebra::secp256r1::Secp256r1::new(&fr);
     test_compile_ec_generic::<4, _, _, _, _>(&curve_c, &fc, &curve_r, &fr);
 }
 
-use compile_logic::eval::EvalLogic;
+use crate::compile::logic::eval::EvalLogic;
 
 fn test_ec_runtime_arithmetic_robust_generic<
     const W: usize,
@@ -189,7 +189,7 @@ fn test_ec_circuit_evaluation_generic<
     curve: &C,
     f: &F,
 ) {
-    let tracker = compile_logic::scope::AssertionScope::new();
+    let tracker = crate::compile::logic::scope::AssertionScope::new();
     type L<'a, F> = EvalLogic<'a, F>;
     let l = L::new(f, &tracker);
     let ec_circuit = EcCircuit::new(&l, curve);

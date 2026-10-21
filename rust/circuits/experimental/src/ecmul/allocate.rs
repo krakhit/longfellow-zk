@@ -12,25 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use compile_logic::LogicIO;
+use crate::compile::logic::LogicIO;
 
 use super::circuit::{Derived, Given};
 
 pub fn allocate_given<L: LogicIO>(logic: &L, n: usize, pos: &mut usize) -> Given<L> {
-    let boolean_io = circuits_boolean::BooleanIO::new(logic);
+    let boolean_io = crate::circuits::boolean::BooleanIO::new(logic);
     let mut exp_bits = Vec::with_capacity(n);
     for _ in 0..n {
         exp_bits.push(boolean_io.next(pos));
     }
-    let a = circuits_ec::pt2_wires(logic, pos);
-    let b = circuits_ec::pt2_wires(logic, pos);
+    let a = crate::circuits::ec::pt2_wires(logic, pos);
+    let b = crate::circuits::ec::pt2_wires(logic, pos);
     Given { exp_bits, a, b }
 }
 
 pub fn allocate_derived<L: LogicIO>(logic: &L, n: usize, pos: &mut usize) -> Derived<L> {
     let mut round = Vec::with_capacity(n);
     for _ in 0..n {
-        round.push(circuits_ec::pt3_wires(logic, pos));
+        round.push(crate::circuits::ec::pt3_wires(logic, pos));
     }
     let zinv = logic.next(pos);
     Derived { round, zinv }

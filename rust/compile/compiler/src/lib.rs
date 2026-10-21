@@ -26,7 +26,7 @@ mod scheduler;
 pub mod segment;
 pub mod top;
 
-pub use compile_proto::debug;
+pub use crate::compile::proto::debug;
 pub use debug::{
     AssertionSymbol, CircuitDebugSymbols, CompiledAssertionStatus, CompiledEvalAssertions,
     EvaluatedCompiledAssertion, WireRef,
@@ -35,9 +35,6 @@ pub use ir::AssertionItem;
 pub use logic_impl::{CompilerAssertions, CompilerLogic};
 pub use segment::{segment_circuit, segment_layer};
 pub use top::{compile, dump_stats};
-
-#[cfg(test)]
-extern crate self as compile_compiler;
 
 #[cfg(test)]
 #[path = "../tests/all/mod.rs"]

@@ -12,12 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use compile_algebra::{field::CompileField, Curve};
-use compile_logic::{Eltw, Logic};
-use core_algebra::ElementOf;
+use crate::compile::algebra::{field::CompileField, Curve};
+use crate::compile::logic::{Eltw, Logic};
+use crate::core::algebra::ElementOf;
 
-pub type Pt2<T> = (T, T);
-pub type Pt3<T> = (T, T, T);
+pub use crate::circuits::ec::{Pt2, Pt3};
 
 pub fn iter_pt2<T, E>(pt: &(T, T), f: &mut impl FnMut(&T) -> Result<(), E>) -> Result<(), E> {
     f(&pt.0)?;
@@ -220,13 +219,13 @@ where
     }
 }
 
-pub fn pt2_wires<L: compile_logic::LogicIO>(iologic: &L, pos: &mut usize) -> Pt2<Eltw<L>> {
+pub fn pt2_wires<L: crate::compile::logic::LogicIO>(iologic: &L, pos: &mut usize) -> Pt2<Eltw<L>> {
     let x = iologic.next(pos);
     let y = iologic.next(pos);
     (x, y)
 }
 
-pub fn pt3_wires<L: compile_logic::LogicIO>(iologic: &L, pos: &mut usize) -> Pt3<Eltw<L>> {
+pub fn pt3_wires<L: crate::compile::logic::LogicIO>(iologic: &L, pos: &mut usize) -> Pt3<Eltw<L>> {
     let x = iologic.next(pos);
     let y = iologic.next(pos);
     let z = iologic.next(pos);

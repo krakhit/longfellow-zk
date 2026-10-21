@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use circuits_analog_adder::FieldWrappingSum;
-use circuits_sha256::{derived, ConcreteDerived, ConcreteGiven, Sha256};
-use compile_algebra::{field::CompileField, gf2_128::Gf2_128Field, p256::P256Field};
-use compile_eval::FieldID;
-use core_algebra::SerializableField;
-use runtime_algebra::field::RuntimeField;
+use crate::circuits::analog_adder::FieldWrappingSum;
+use crate::circuits::sha256::{derived, ConcreteDerived, ConcreteGiven, Sha256};
+use crate::compile::algebra::{field::CompileField, gf2_128::Gf2_128Field, p256::P256Field};
+use crate::compile::eval::FieldID;
+use crate::core::algebra::SerializableField;
+use crate::runtime::algebra::field::RuntimeField;
 
 use super::test_support;
 
@@ -33,7 +33,7 @@ fn make_inputs<const W: usize, FR: RuntimeField<W>>(
     derived: &ConcreteDerived,
     fr: &FR,
 ) -> Vec<FR::E> {
-    let mut inputs = compile_eval::initial_inputs(fr);
+    let mut inputs = crate::compile::eval::initial_inputs(fr);
     for &val in &given.input_block {
         push_u32_bits(&mut inputs, val, fr);
     }
@@ -65,7 +65,7 @@ fn test_compile_sha256_for_field<
     fr: &'a FR,
     name: &str,
     field_id: FieldID,
-    expected_stats: compile_eval::CircuitGeometry,
+    expected_stats: crate::compile::eval::CircuitGeometry,
 ) {
     let input = [
         0, 0xdeadbeef, 0xbd5b7dde, 0x9c093ccd, 0x7ab6fbbc, 0x5964baab, 0x3812799a, 0x16c03889,
@@ -81,12 +81,12 @@ fn test_compile_sha256_for_field<
     };
     let derived_val = derived(&given);
 
-    let (circuit, stats, symbols) = compile_compiler::compile(fc, |iologic| {
-        let mut pos = compile_logic::K_FIRST_WIRE_POSITION;
+    let (circuit, stats, symbols) = crate::compile::compiler::compile(fc, |iologic| {
+        let mut pos = crate::compile::logic::K_FIRST_WIRE_POSITION;
         let sha256 = Sha256::new(&iologic);
-        let bv = circuits_bitvec::BitvecLogic::new(&iologic);
-        let given_wires = circuits_sha256::allocate_given(&bv, &mut pos);
-        let derived_wires = circuits_sha256::allocate_derived(&bv, &mut pos);
+        let bv = crate::circuits::bitvec::BitvecLogic::new(&iologic);
+        let given_wires = crate::circuits::sha256::allocate_given(&bv, &mut pos);
+        let derived_wires = crate::circuits::sha256::allocate_derived(&bv, &mut pos);
 
         (
             sha256.assert_transform_block(&given_wires, &derived_wires),
@@ -95,13 +95,13 @@ fn test_compile_sha256_for_field<
         )
     });
 
-    compile_compiler::dump_stats(name, &circuit, &stats);
+    crate::compile::compiler::dump_stats(name, &circuit, &stats);
 
     assert_eq!(stats, expected_stats);
 
     // Verify valid compile-time circuit evaluation
     let inputs = make_inputs(&given, &derived_val, fr);
-    compile_eval::eval_circuit_fc(fc, fr, &circuit, &symbols, &inputs, field_id)
+    crate::compile::eval::eval_circuit_fc(fc, fr, &circuit, &symbols, &inputs, field_id)
         .unwrap()
         .assert_all_passed();
 }
@@ -109,13 +109,13 @@ fn test_compile_sha256_for_field<
 #[test]
 fn test_compile_sha256() {
     let p256_c = P256Field::new();
-    let p256_r = runtime_algebra::p256::P256Field::new();
+    let p256_r = crate::runtime::algebra::p256::P256Field::new();
     test_compile_sha256_for_field::<4, _, _>(
         &p256_c,
         &p256_r,
         "sha256_p256",
         FieldID::P256,
-        compile_eval::CircuitGeometry {
+        crate::compile::eval::CircuitGeometry {
             ninput: 6657,
             npublic_input: 1,
             noutput: 176,
@@ -126,13 +126,13 @@ fn test_compile_sha256() {
         },
     );
     let gf2_c = Gf2_128Field::new();
-    let gf2_r = runtime_algebra::gf2_128::Gf2_128Field::new();
+    let gf2_r = crate::runtime::algebra::gf2_128::Gf2_128Field::new();
     test_compile_sha256_for_field::<2, _, _>(
         &gf2_c,
         &gf2_r,
         "sha256_gf2_128",
         FieldID::Gf2_128,
-        compile_eval::CircuitGeometry {
+        crate::compile::eval::CircuitGeometry {
             ninput: 6657,
             npublic_input: 1,
             noutput: 128,
@@ -147,7 +147,7 @@ fn test_compile_sha256() {
 #[test]
 fn test_compile_sha256_tampering() {
     let fc = P256Field::new();
-    let fr = runtime_algebra::p256::P256Field::new();
+    let fr = crate::runtime::algebra::p256::P256Field::new();
     let input = [
         0, 0xdeadbeef, 0xbd5b7dde, 0x9c093ccd, 0x7ab6fbbc, 0x5964baab, 0x3812799a, 0x16c03889,
         0xf56df778, 0xd41bb667, 0xb2c97556, 0x91773445, 0x7024f334, 0x4ed2b223, 0x2d807112,
@@ -162,12 +162,12 @@ fn test_compile_sha256_tampering() {
     };
     let derived_val = derived(&given);
 
-    let (circuit, _stats, symbols) = compile_compiler::compile(&fc, |iologic| {
-        let mut pos = compile_logic::K_FIRST_WIRE_POSITION;
+    let (circuit, _stats, symbols) = crate::compile::compiler::compile(&fc, |iologic| {
+        let mut pos = crate::compile::logic::K_FIRST_WIRE_POSITION;
         let sha256 = Sha256::new(&iologic);
-        let bv = circuits_bitvec::BitvecLogic::new(&iologic);
-        let given_wires = circuits_sha256::allocate_given(&bv, &mut pos);
-        let derived_wires = circuits_sha256::allocate_derived(&bv, &mut pos);
+        let bv = crate::circuits::bitvec::BitvecLogic::new(&iologic);
+        let given_wires = crate::circuits::sha256::allocate_given(&bv, &mut pos);
+        let derived_wires = crate::circuits::sha256::allocate_derived(&bv, &mut pos);
 
         (
             sha256.assert_transform_block(&given_wires, &derived_wires),
@@ -185,7 +185,7 @@ fn test_compile_sha256_tampering() {
 
         let inputs = make_inputs(&g, &d, &fr);
         let eval_res =
-            compile_eval::eval_circuit_fc(&fc, &fr, &circuit, &symbols, &inputs, FieldID::P256)
+            crate::compile::eval::eval_circuit_fc(&fc, &fr, &circuit, &symbols, &inputs, FieldID::P256)
                 .unwrap();
         assert!(
             eval_res.is_err(),

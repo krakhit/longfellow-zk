@@ -12,15 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use core_algebra::{ElementOf, SerializableField};
-use runtime_algebra::{field::RuntimeField, Subfield};
-
 use crate::{
-    util::{
-        read_bytes_32, read_elt_field, read_size_4bytes, read_subfield_elt, read_vec_field,
-        write_elt_field, write_size_4bytes, write_subfield_elt,
+    core::algebra::{ElementOf, SerializableField},
+    runtime::{
+        algebra::{field::RuntimeField, Subfield},
+        proto::{
+            util::{
+                read_bytes_32, read_elt_field, read_size_4bytes, read_subfield_elt, read_vec_field,
+                write_elt_field, write_size_4bytes, write_subfield_elt,
+            },
+            Digest, MerkleNonce, MerkleProof,
+        },
     },
-    Digest, MerkleNonce, MerkleProof,
 };
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

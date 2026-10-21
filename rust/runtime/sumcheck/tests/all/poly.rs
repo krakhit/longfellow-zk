@@ -12,11 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use runtime_algebra::{
-    field::SupportsU64Conversions, gf2_128::Gf2_128RuntimeField, p256::P256Field,
-    poly::InterpolationField,
+use crate::runtime::{
+    algebra::{
+        field::SupportsU64Conversions, gf2_128::Gf2_128RuntimeField, p256::P256Field,
+        poly::InterpolationField,
+    },
+    sumcheck::poly::{LagrangeBasis, Poly},
 };
-use runtime_sumcheck::poly::{LagrangeBasis, Poly};
 
 fn test_poly_evaluation_generic<const W: usize, F: InterpolationField<W>>(
     f: &F,
@@ -92,7 +94,9 @@ fn test_poly_evaluation_p256() {
 #[test]
 fn test_poly_evaluation_gf2_128() {
     let f = Gf2_128RuntimeField::new();
-    let sf = runtime_algebra::subfield::BinarySubfield::new(&core_algebra::proto::GF2_16_BASIS_V1);
+    let sf = crate::runtime::algebra::subfield::BinarySubfield::new(
+        &crate::core::algebra::proto::GF2_16_BASIS_V1,
+    );
     test_poly_evaluation_generic(&f, sf.embed(5), sf.embed(10), sf.embed(20), sf.embed(15));
 }
 

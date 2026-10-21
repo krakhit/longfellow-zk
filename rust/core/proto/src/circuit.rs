@@ -14,12 +14,13 @@
 
 use std::fmt;
 
-pub use core_algebra::SerializableField;
 use sha2::{Digest, Sha256};
+
+pub use crate::core::algebra::SerializableField;
 
 pub type DigestBytes = [u8; 32];
 
-pub use crate::layer::{canonical_term, compare_term, Layer, Term, TermDelta};
+pub use crate::core::proto::layer::{canonical_term, compare_term, Layer, Term, TermDelta};
 
 pub struct RawCircuit<F: SerializableField> {
     pub ninput: usize,

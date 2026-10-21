@@ -12,12 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use compile_algebra::p256::P256Field as P256CompileField;
-use core_algebra::{
-    AlgebraicField, Curve, Nat, SerializableField, SupportsNatConversions, SupportsU64Conversions,
-};
 use num_bigint::BigUint;
-use runtime_algebra::{field::RuntimeSerializableField, p256::*, poly::InterpolationField};
+
+use crate::{
+    compile::algebra::p256::P256Field as P256CompileField,
+    core::algebra::{
+        AlgebraicField, Curve, Nat, SerializableField, SupportsNatConversions,
+        SupportsU64Conversions,
+    },
+    runtime::algebra::{field::RuntimeSerializableField, p256::*, poly::InterpolationField},
+};
 
 #[test]
 fn test_specific_mul() {
@@ -37,22 +41,22 @@ fn test_specific_mul() {
 #[test]
 fn test_specific_double() {
     let fr = P256Field::new();
-    let curve = runtime_algebra::secp256r1::Secp256r1::new(&fr);
+    let curve = crate::runtime::algebra::secp256r1::Secp256r1::new(&fr);
     let g_2d = curve.g();
-    let g = core_algebra::ec::projective(&curve, &fr, g_2d);
-    let g2 = core_algebra::ec::double(&curve, &fr, &g);
-    let g2_normalized = core_algebra::ec::affine(&fr, &g2);
+    let g = crate::core::algebra::ec::projective(&curve, &fr, g_2d);
+    let g2 = crate::core::algebra::ec::double(&curve, &fr, &g);
+    let g2_normalized = crate::core::algebra::ec::affine(&fr, &g2);
     println!("SPECIFIC DOUBLE X: {:?}", fr.to_bytes(&g2_normalized.0));
 }
 
 #[test]
 fn test_runtime_double_vs_affine() {
     let fr = P256Field::new();
-    let curve = runtime_algebra::secp256r1::Secp256r1::new(&fr);
+    let curve = crate::runtime::algebra::secp256r1::Secp256r1::new(&fr);
     let g_2d = *curve.g();
-    let g = core_algebra::ec::projective(&curve, &fr, &g_2d);
-    let g2 = core_algebra::ec::double(&curve, &fr, &g);
-    let g2_normalized = core_algebra::ec::affine(&fr, &g2);
+    let g = crate::core::algebra::ec::projective(&curve, &fr, &g_2d);
+    let g2 = crate::core::algebra::ec::double(&curve, &fr, &g);
+    let g2_normalized = crate::core::algebra::ec::affine(&fr, &g2);
 
     let g2_affine = {
         let (x, y) = &g_2d;
@@ -178,7 +182,7 @@ fn test_p256_reduce_nat() {
     for value in values {
         let mut bytes = value.to_bytes_le();
         bytes.resize(32, 0);
-        let nat = runtime_algebra::RuntimeNat::<4>::from_bytes_le(&bytes);
+        let nat = crate::runtime::algebra::RuntimeNat::<4>::from_bytes_le(&bytes);
         let reduced = field.reduce_nat(&nat);
         assert_eq!(
             BigUint::from_bytes_le(&field.to_bytes(&reduced)),

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::field::RuntimeField;
+use crate::runtime::algebra::field::RuntimeField;
 
 pub trait Interpolator<const W: usize, F: RuntimeField<W>> {
     fn interpolate(&self, y: &mut [F::E]);

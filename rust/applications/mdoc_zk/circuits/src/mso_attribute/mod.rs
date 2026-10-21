@@ -12,17 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-pub mod allocate;
 pub mod circuit;
-pub use allocate::{allocate_derived, allocate_given};
+
+pub use crate::mdoc::proto::mso_attribute::constants;
 pub use circuit::{
     AttrIndex, AttrSlice, AttributeVerifier, Derived, DisclosedAttribute, FieldLocator, Given,
     Slice,
 };
-pub use mdoc_zk_proto::mso_attribute::constants;
-#[cfg(feature = "testonly")]
-pub mod evaluate;
-#[cfg(feature = "testonly")]
-pub use evaluate::{evaluate_derived, evaluate_given};
-pub mod concrete;
-pub use concrete::{derived, ConcreteDerived, ConcreteGiven};
+
+cfg_testonly! {
+    pub mod allocate;
+    pub mod concrete;
+    pub mod evaluate;
+
+    pub use self::{
+        allocate::{allocate_derived, allocate_given},
+        concrete::{derived, ConcreteDerived, ConcreteGiven},
+        evaluate::{evaluate_derived, evaluate_given},
+    };
+}
+

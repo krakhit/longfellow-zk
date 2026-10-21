@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use circuits_bitvec::{BitvecLogic, V128};
-use compile_logic::Logic;
+use crate::circuits::bitvec::{BitvecLogic, V128};
+use crate::compile::logic::Logic;
 
 use super::{circuit::Given as WireGiven, concrete::ConcreteGiven};
 
@@ -22,7 +22,7 @@ pub fn evaluate_given<L: Logic>(
     bv: &BitvecLogic<L>,
     given: &ConcreteGiven,
 ) -> WireGiven<L> {
-    let boolean = circuits_boolean::Boolean::new(logic);
+    let boolean = crate::circuits::boolean::Boolean::new(logic);
     let message = bv.from_fn::<256, _>(|idx| {
         let byte_idx = idx / 8;
         let bit_idx = idx % 8;

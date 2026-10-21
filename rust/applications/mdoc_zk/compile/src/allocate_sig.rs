@@ -12,15 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use circuits_bit_plucker::BitPlucker;
-use compile_compiler::CompilerLogic;
-use mdoc_zk_circuits::{
+use crate::circuits::bit_plucker::BitPlucker;
+use crate::compile::compiler::CompilerLogic;
+use crate::mdoc::circuits::{
     config::K_SIG_MAC_BIT_PLUCKER,
     signature::{Derived as SigDerived, Given as SigGiven},
     MdocSigCompileField,
 };
 
-use crate::allocator::WireAllocator;
+use crate::mdoc::compile::allocator::WireAllocator;
 
 pub fn allocate_sig<'b, FC, C>(
     allocator: &mut WireAllocator<'_, 'b, FC>,
@@ -34,7 +34,7 @@ pub fn allocate_sig<'b, FC, C>(
 )
 where
     FC: MdocSigCompileField,
-    C: compile_algebra::Curve<4, F = FC, N = FC::N>,
+    C: crate::compile::algebra::Curve<4, F = FC, N = FC::N>,
 {
     let issuer_pk = (allocator.allocate_wire(), allocator.allocate_wire());
     let device_sig_e = allocator.allocate_bitvec::<256>();
@@ -52,13 +52,13 @@ where
         allocator.allocate_bitvec::<256>(),
     );
     let issuer_sig_given =
-        circuits_ecdsa2::allocate_given_wires(allocator.iologic, &mut allocator.pos);
+        crate::circuits::ecdsa2::allocate_given_wires(allocator.iologic, &mut allocator.pos);
     let device_sig_given =
-        circuits_ecdsa2::allocate_given_wires(allocator.iologic, &mut allocator.pos);
+        crate::circuits::ecdsa2::allocate_given_wires(allocator.iologic, &mut allocator.pos);
     let issuer_sig_derived =
-        circuits_ecdsa2::allocate_derived_wires(allocator.iologic, &mut allocator.pos);
+        crate::circuits::ecdsa2::allocate_derived_wires(allocator.iologic, &mut allocator.pos);
     let device_sig_derived =
-        circuits_ecdsa2::allocate_derived_wires(allocator.iologic, &mut allocator.pos);
+        crate::circuits::ecdsa2::allocate_derived_wires(allocator.iologic, &mut allocator.pos);
 
     let subfield_boundary_val = allocator.pos;
 
@@ -69,7 +69,7 @@ where
         [ap0, ap1, ap2]
     };
 
-    let given = mdoc_zk_circuits::signature::Given {
+    let given = crate::mdoc::circuits::signature::Given {
         issuer_pk,
         issuer_sig_e,
         issuer_sig_given,

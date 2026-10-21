@@ -12,18 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use circuits_bitvec::{Bitvec, BitvecLogic};
-use circuits_boolean::Boolean;
-use circuits_memcmp::Memcmp;
-use compile_algebra::gf2_128::Gf2_128Field;
-use compile_logic::eval::EvalLogic;
+use crate::circuits::bitvec::{Bitvec, BitvecLogic};
+use crate::circuits::boolean::Boolean;
+use crate::circuits::memcmp::Memcmp;
+use crate::compile::algebra::gf2_128::Gf2_128Field;
+use crate::compile::logic::eval::EvalLogic;
 
-fn compare_bool<L: compile_logic::Logic>(
+fn compare_bool<L: crate::compile::logic::Logic>(
     boolean: &Boolean<L>,
     want: bool,
-    got: &circuits_boolean::Bitw<L>,
+    got: &crate::circuits::boolean::Bitw<L>,
 ) where
-    compile_logic::Eltw<L>: PartialEq + std::fmt::Debug,
+    crate::compile::logic::Eltw<L>: PartialEq + std::fmt::Debug,
 {
     let got_val = boolean.as_eltw(got);
     let want_val = boolean.as_eltw(&boolean.konst(want));
@@ -33,7 +33,7 @@ fn compare_bool<L: compile_logic::Logic>(
 #[test]
 fn test_memcmp_leq() {
     let f = Gf2_128Field::new();
-    let tracker = compile_logic::scope::AssertionScope::new();
+    let tracker = crate::compile::logic::scope::AssertionScope::new();
     type L<'a> = EvalLogic<'a, Gf2_128Field>;
     let l = L::new(&f, &tracker);
     let bv = BitvecLogic::new(&l);

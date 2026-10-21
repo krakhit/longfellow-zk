@@ -12,15 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use circuits_arithmetic::Arithmetic;
-use circuits_bitvec::{BitvecLogic, V256};
-use circuits_boolean::Boolean;
-use circuits_ec::{EcCircuit, Pt2, Pt3};
-use compile_algebra::{
+use crate::circuits::arithmetic::Arithmetic;
+use crate::circuits::bitvec::{BitvecLogic, V256};
+use crate::circuits::boolean::Boolean;
+use crate::circuits::ec::{EcCircuit, Pt2, Pt3};
+use crate::compile::algebra::{
     field::{CompileField, SupportsNatConversions},
     Curve,
 };
-use compile_logic::{Eltw, Logic, LogicIO};
+use crate::compile::logic::{Eltw, Logic, LogicIO};
 
 #[derive(Clone)]
 pub struct Slicing<L: Logic> {
@@ -49,18 +49,18 @@ pub struct Derived<L: Logic> {
 }
 
 pub struct EcdsaCircuit<'a, const W: usize, C: Curve<W>, L: Logic<F = C::F>> {
-    pub(crate) ec: EcCircuit<'a, W, C, L>,
-    pub(crate) boolean: Boolean<'a, L>,
-    pub(crate) bv: BitvecLogic<'a, L>,
-    pub(crate) logic: &'a L,
-    pub(crate) curve: &'a C,
+    pub(in crate::circuits::ecdsa2) ec: EcCircuit<'a, W, C, L>,
+    pub(in crate::circuits::ecdsa2) boolean: Boolean<'a, L>,
+    pub(in crate::circuits::ecdsa2) bv: BitvecLogic<'a, L>,
+    pub(in crate::circuits::ecdsa2) logic: &'a L,
+    pub(in crate::circuits::ecdsa2) curve: &'a C,
 }
 
 impl<'a, const W: usize, C, L, F> EcdsaCircuit<'a, W, C, L>
 where
     C: Curve<W, F = F, N = F::N>,
     L: Logic<F = F>,
-    F: CompileField + SupportsNatConversions<W> + core_algebra::SupportsU64Conversions,
+    F: CompileField + SupportsNatConversions<W> + crate::core::algebra::SupportsU64Conversions,
 {
     pub fn new(logic: &'a L, curve: &'a C) -> Self {
         let ec = EcCircuit::new(logic, curve);
@@ -106,7 +106,7 @@ where
     pub fn assert_signature(&self, given: &Given<L>, derived: &Derived<L>) -> L::Assertions {
         assert_eq!(given.ers.len(), 256);
 
-        let order_bits = circuits_big_bitvec::BigBitvec::new(self.logic)
+        let order_bits = crate::circuits::big_bitvec::BigBitvec::new(self.logic)
             .of_nat::<W, 256, F>(&self.curve.order());
         let (pkx, _pky) = &given.pkxy;
 
@@ -131,7 +131,7 @@ where
 
         let opts = [self.ec.zero(), r, pk, pk_r, g, g_r, g_pk, g_pk_r];
 
-        let lookup = circuits_lookup::Lookup::new(self.logic);
+        let lookup = crate::circuits::lookup::Lookup::new(self.logic);
 
         let table_x = lookup.table(9, |idx| self.opt8(idx, || opts[idx].0.clone()));
         let table_y = lookup.table(9, |idx| self.opt8(idx, || opts[idx].1.clone()));
@@ -231,6 +231,6 @@ impl<const W: usize, C, L, F> EcdsaCircuit<'_, W, C, L>
 where
     C: Curve<W, F = F, N = F::N>,
     L: LogicIO<F = F>,
-    F: CompileField + SupportsNatConversions<W> + core_algebra::SupportsU64Conversions,
+    F: CompileField + SupportsNatConversions<W> + crate::core::algebra::SupportsU64Conversions,
 {
 }

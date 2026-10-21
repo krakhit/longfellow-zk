@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use circuits_bitvec::BitvecLogic;
-use compile_logic::Logic;
+use crate::circuits::bitvec::BitvecLogic;
+use crate::compile::logic::Logic;
 
 use super::{
     circuit::{
@@ -62,7 +62,7 @@ pub fn evaluate_given<L: Logic>(given: &ConcreteGiven, bv: &BitvecLogic<L>) -> W
         },
     };
 
-    let boolean = circuits_boolean::Boolean::new(bv.logic());
+    let boolean = crate::circuits::boolean::Boolean::new(bv.logic());
     let expected_digest = bv.from_fn::<256, _>(|idx| {
         let word_idx = 7 - (idx / 32);
         let bit_idx = idx % 32;
@@ -83,5 +83,5 @@ pub fn evaluate_derived<L: Logic>(
     derived: &ConcreteDerived,
     bv: &BitvecLogic<L>,
 ) -> WireDerived<L> {
-    circuits_sha256msg::evaluate::evaluate_derived(&derived.sha_derived, bv)
+    crate::circuits::sha256msg::evaluate::evaluate_derived(&derived.sha_derived, bv)
 }

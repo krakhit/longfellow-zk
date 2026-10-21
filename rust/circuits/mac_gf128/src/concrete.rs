@@ -78,11 +78,9 @@ pub fn derived(_given: &ConcreteGiven) -> ConcreteDerived {
     ConcreteDerived
 }
 
-#[cfg(feature = "testonly")]
-use runtime_algebra::field::RuntimeField;
+use crate::runtime::algebra::field::RuntimeField;
 
 impl ConcreteDerived {
-    #[cfg(feature = "testonly")]
     pub fn push_derived<const W: usize, FR: RuntimeField<W>>(
         &self,
         _fr: &FR,
@@ -90,3 +88,4 @@ impl ConcreteDerived {
     ) {
     }
 }
+

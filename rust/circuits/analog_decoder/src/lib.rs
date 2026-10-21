@@ -12,7 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-pub mod circuit;
 pub mod proto;
-pub use circuit::{AnalogDecoder, BinaryDecoder, BitDecoder, UnaryDecoder};
+
 pub use proto::{binary_point, unary_point};
+
+cfg_compiler! {
+    pub mod circuit;
+    pub use circuit::{AnalogDecoder, BinaryDecoder, BitDecoder, UnaryDecoder};
+}
+
+#[cfg(test)]
+#[path = "../tests/analog_decoder.rs"]
+mod tests_analog_decoder;

@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use circuits_bitvec::BitvecLogic;
-use core_algebra::Nat;
+use crate::circuits::bitvec::BitvecLogic;
+use crate::core::algebra::Nat;
 
 use super::{
     circuit::{
@@ -24,7 +24,7 @@ use super::{
     concrete::{ConcreteDerived, ConcreteGiven},
     constants::K_HASH_INDEX_BITS,
 };
-use crate::mso_attribute::{
+use crate::mdoc::circuits::mso_attribute::{
     circuit::{
         AttrSlice as MsoSlice, DisclosedAttribute as WireDisclosedAttribute,
         FieldLocator as WireFieldLocator,
@@ -32,8 +32,8 @@ use crate::mso_attribute::{
     constants::K_ATTR_INDEX_BITS,
 };
 
-fn eval_mac_gf128<L: compile_logic::LogicIO>(bv: &BitvecLogic<L>, val: u128) -> L::Wire {
-    let boolean = circuits_boolean::Boolean::new(bv.logic());
+fn eval_mac_gf128<L: crate::compile::logic::LogicIO>(bv: &BitvecLogic<L>, val: u128) -> L::Wire {
+    let boolean = crate::circuits::boolean::Boolean::new(bv.logic());
     let v128 = bv.from_fn::<128, _>(|idx| {
         let bit_val = (val.checked_shr(idx as u32).unwrap_or(0) & 1) == 1;
         boolean.konst(bit_val)
@@ -41,12 +41,12 @@ fn eval_mac_gf128<L: compile_logic::LogicIO>(bv: &BitvecLogic<L>, val: u128) -> 
     bv.as_eltw_field(&v128)
 }
 
-pub fn evaluate_given<L: compile_logic::LogicIO>(
+pub fn evaluate_given<L: crate::compile::logic::LogicIO>(
     logic: &L,
     bv: &BitvecLogic<L>,
-    given: &ConcreteGiven,
+    given: &ConcreteGiven<crate::compile::algebra::CompileNat<4>>,
 ) -> WireGiven<L> {
-    let boolean = circuits_boolean::Boolean::new(logic);
+    let boolean = crate::circuits::boolean::Boolean::new(logic);
 
     let get_byte = |bytes: &[u8], idx: usize| {
         if idx < bytes.len() {
@@ -215,18 +215,18 @@ pub fn evaluate_given<L: compile_logic::LogicIO>(
     }
 }
 
-pub fn evaluate_derived<L: compile_logic::LogicIO>(
+pub fn evaluate_derived<L: crate::compile::logic::LogicIO>(
     _logic: &L,
     bv: &BitvecLogic<L>,
     derived: &ConcreteDerived,
 ) -> WireDerived<L> {
     let mut attribute_derived = Vec::with_capacity(derived.attribute_derived.len());
     for a in &derived.attribute_derived {
-        let sha_derived = circuits_sha256msg::evaluate::evaluate_derived(&a.sha_derived, bv);
+        let sha_derived = crate::circuits::sha256msg::evaluate::evaluate_derived(&a.sha_derived, bv);
         attribute_derived.push(WireAttrDerived { sha_derived });
     }
 
-    let sha_derived = circuits_sha256msg::evaluate::evaluate_derived(&derived.sha_derived, bv);
+    let sha_derived = crate::circuits::sha256msg::evaluate::evaluate_derived(&derived.sha_derived, bv);
 
     WireDerived {
         attribute_derived,

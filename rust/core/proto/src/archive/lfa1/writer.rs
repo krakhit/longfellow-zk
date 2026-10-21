@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::archive::CircuitArchive;
+use crate::core::proto::archive::CircuitArchive;
 
 /// Serializes a `CircuitArchive` to LFA1 format (concatenated LFC1 circuit payloads).
 /// Asserts that no metadata information is lost.

@@ -12,17 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use compile_algebra::p256::P256Field;
-use compile_eval::eval_circuit_fc;
-use compile_logic::{Logic, LogicIO};
-use core_algebra::AlgebraicField;
-use core_proto::FieldID;
-use runtime_algebra::p256::P256Field as RuntimeP256Field;
+use crate::compile::algebra::p256::P256Field;
+use crate::compile::eval::eval_circuit_fc;
+use crate::compile::logic::{Logic, LogicIO};
+use crate::core::algebra::AlgebraicField;
+use crate::core::proto::FieldID;
+use crate::runtime::algebra::p256::P256Field as RuntimeP256Field;
 
 #[test]
 fn test_compiled_circuit_debug_symbols() {
     let f = P256Field::new();
-    let (circuit, _info, symbols) = compile_compiler::compile(&f, |l| {
+    let (circuit, _info, symbols) = crate::compile::compiler::compile(&f, |l| {
         let w1 = l.input(1);
         let w2 = l.input(2);
 
@@ -77,7 +77,7 @@ fn test_compiled_circuit_debug_symbols() {
 #[test]
 fn test_debug_symbols_record_assertion_layers() {
     let f = P256Field::new();
-    let (circuit, info, symbols) = compile_compiler::compile(&f, |l| {
+    let (circuit, info, symbols) = crate::compile::compiler::compile(&f, |l| {
         let x = l.input(1);
         let square = l.mul(&x, &x);
         let fourth_power = l.mul(&square, &square);
@@ -113,7 +113,7 @@ fn test_debug_symbols_record_assertion_layers() {
 #[test]
 fn test_attached_assertion_keeps_its_path() {
     let f = P256Field::new();
-    let (circuit, info, symbols) = compile_compiler::compile(&f, |l| {
+    let (circuit, info, symbols) = crate::compile::compiler::compile(&f, |l| {
         let computed = l.input(1);
         let witness = l.input(2);
         let sliced = l.slicing("slice", &witness, &computed);

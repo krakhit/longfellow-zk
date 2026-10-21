@@ -12,40 +12,43 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use circuits_analog_decoder::AnalogDecoder;
-use circuits_boolean::Boolean;
-use compile_algebra::{
-    field::{CompileField, SupportsNatConversions, SupportsU64Conversions},
-    p256::P256Field,
+use crate::{
+    circuits::{analog_decoder::AnalogDecoder, boolean::Boolean},
+    compile::{
+        algebra::{
+            field::{CompileField, SupportsNatConversions, SupportsU64Conversions},
+            p256::P256Field,
+        },
+        logic::{eval::EvalLogic, Logic, LogicIO},
+    },
 };
-use compile_logic::{eval::EvalLogic, Logic, LogicIO};
 
 #[test]
 fn test_compile_analog_decoder() {
     let f = P256Field::new();
-    let (circuit, stats, _symbols) = compile_compiler::compile(&f, |iologic| {
+    let (circuit, stats, _symbols) = crate::compile::compiler::compile(&f, |iologic| {
         let ad = AnalogDecoder::new(&iologic);
 
         let n = 5;
-        let mut pos = compile_logic::K_FIRST_WIRE_POSITION;
+        let mut pos = crate::compile::logic::K_FIRST_WIRE_POSITION;
         let x = iologic.next(&mut pos);
 
         let decoder = ad.unary(n);
         let (exactly_one, _decoded) = decoder.decode(&x);
         (exactly_one, 1, 0)
     });
-    compile_compiler::dump_stats("analog_decoder_compile", &circuit, &stats);
+    crate::compile::compiler::dump_stats("analog_decoder_compile", &circuit, &stats);
 }
 
 #[test]
 fn test_compile_analog_decoder_binary() {
     let f = P256Field::new();
-    let (circuit, stats, _symbols) = compile_compiler::compile(&f, |iologic| {
+    let (circuit, stats, _symbols) = crate::compile::compiler::compile(&f, |iologic| {
         let ad = AnalogDecoder::new(&iologic);
         let boolean = Boolean::new(&iologic);
 
         let width = 3;
-        let mut pos = compile_logic::K_FIRST_WIRE_POSITION;
+        let mut pos = crate::compile::logic::K_FIRST_WIRE_POSITION;
         let x = iologic.next(&mut pos);
 
         let decoder = ad.binary(width);
@@ -54,7 +57,7 @@ fn test_compile_analog_decoder_binary() {
         (boolean.assert_true("assert_decoded0", &decoded[0]), 1, 0)
     });
 
-    compile_compiler::dump_stats("analog_decoder_binary_compile", &circuit, &stats);
+    crate::compile::compiler::dump_stats("analog_decoder_binary_compile", &circuit, &stats);
 }
 
 fn test_analog_decoder_unary_generic<
@@ -63,7 +66,7 @@ fn test_analog_decoder_unary_generic<
 >(
     f: &F,
 ) {
-    let tracker = compile_logic::scope::AssertionScope::new();
+    let tracker = crate::compile::logic::scope::AssertionScope::new();
     let iologic = EvalLogic::new(f, &tracker);
     let ad = AnalogDecoder::new(&iologic);
     let boolean = Boolean::new(&iologic);
@@ -105,7 +108,7 @@ fn test_analog_decoder_binary_generic<
 >(
     f: &F,
 ) {
-    let tracker = compile_logic::scope::AssertionScope::new();
+    let tracker = crate::compile::logic::scope::AssertionScope::new();
     let iologic = EvalLogic::new(f, &tracker);
     let ad = AnalogDecoder::new(&iologic);
     let boolean = Boolean::new(&iologic);
@@ -133,12 +136,12 @@ fn test_analog_decoder_binary_generic<
 }
 
 struct F1009Tag;
-type F1009Field = compile_algebra::fp::FpField<F1009Tag>;
+type F1009Field = crate::compile::algebra::fp::FpField<F1009Tag>;
 
 fn new_f1009_field() -> F1009Field {
-    compile_algebra::fp::FpField::new_field(compile_algebra::fp::FpParameters {
+    crate::compile::algebra::fp::FpField::new_field(crate::compile::algebra::fp::FpParameters {
         length_bytes: 2,
-        modulo: compile_algebra::CompileNat::<4>::from(1009),
+        modulo: crate::compile::algebra::CompileNat::<4>::from(1009),
     })
 }
 
@@ -148,7 +151,7 @@ fn test_analog_decoder_exhaustive_field_1009_generic<
 >(
     f: &F,
 ) {
-    let tracker = compile_logic::scope::AssertionScope::new();
+    let tracker = crate::compile::logic::scope::AssertionScope::new();
     let iologic = EvalLogic::new(f, &tracker);
     let ad = AnalogDecoder::new(&iologic);
     let boolean = Boolean::new(&iologic);
@@ -217,7 +220,7 @@ fn test_analog_decoder_exhaustive_field_1009_generic<
                     .as_eltw(bit)
                     .assertions
                     .values()
-                    .all(|s| matches!(s, compile_logic::scope::AssertionStatus::Passed))
+                    .all(|s| matches!(s, crate::compile::logic::scope::AssertionStatus::Passed))
             });
 
             if let Some(i) = valid_points.iter().position(|vp| vp == &pt) {

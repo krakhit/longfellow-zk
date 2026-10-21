@@ -12,16 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-pub use core_algebra::AlgebraicField;
+pub use crate::core::algebra::AlgebraicField;
 
 pub trait RuntimeSerializableField<const W: usize>:
-    RuntimeField<W> + core_algebra::SerializableField
+    RuntimeField<W> + crate::core::algebra::SerializableField
 {
     fn to_words64(&self, e: &Self::E) -> [u64; W];
     fn words64_to_element(&self, words: &[u64; W]) -> Result<Self::E, String>;
 }
 
-pub trait RuntimeField<const W: usize>: core_algebra::AlgebraicField {
+pub trait RuntimeField<const W: usize>: crate::core::algebra::AlgebraicField {
     type Accum: Clone + std::fmt::Debug;
 
     // Arithmetic operations
@@ -45,7 +45,9 @@ pub trait RuntimeField<const W: usize>: core_algebra::AlgebraicField {
     fn accum_reduce(&self, acc: &Self::Accum) -> Self::E;
 }
 
-pub use core_algebra::{SupportsNatConversions, SupportsU128Conversions, SupportsU64Conversions};
+pub use crate::core::algebra::{
+    SupportsNatConversions, SupportsU128Conversions, SupportsU64Conversions,
+};
 
 pub trait SupportsSampling<const W: usize>: RuntimeField<W> {
     fn sample<R: FnMut(usize) -> Vec<u8>>(&self, rng: R) -> Self::E;
@@ -53,7 +55,7 @@ pub trait SupportsSampling<const W: usize>: RuntimeField<W> {
 
 pub trait RuntimeBinaryField<const W: usize>: RuntimeField<W> {}
 
-/// Marker for base fields that support [`crate::fp2::Fp2Field`].
+/// Marker for base fields that support [`crate::runtime::algebra::fp2::Fp2Field`].
 ///
 /// `Fp2Field` uses the fixed polynomial `x^2 + 1`, so implementors must ensure
 /// that `-1` is not a square in the base field. This property depends on the

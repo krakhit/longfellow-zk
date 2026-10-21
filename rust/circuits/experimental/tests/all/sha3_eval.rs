@@ -12,19 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use circuits_bitvec::BitvecLogic;
-use circuits_experimental::sha3::{
+use crate::circuits::bitvec::BitvecLogic;
+use crate::circuits::experimental::sha3::{
     derived,
     evaluate::{evaluate_derived, evaluate_given},
     ConcreteGiven, Sha3,
 };
-use compile_algebra::gf2_128::Gf2_128Field;
-use compile_logic::eval::EvalLogic;
+use crate::compile::algebra::gf2_128::Gf2_128Field;
+use crate::compile::logic::eval::EvalLogic;
 
 #[test]
 fn test_eval_keccak_f_1600() {
     let f = Gf2_128Field::new();
-    let tracker = compile_logic::scope::AssertionScope::new();
+    let tracker = crate::compile::logic::scope::AssertionScope::new();
     type L<'a> = EvalLogic<'a, Gf2_128Field>;
     let l = L::new(&f, &tracker);
     let bv = BitvecLogic::new(&l);

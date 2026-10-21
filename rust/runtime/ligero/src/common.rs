@@ -12,9 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use runtime_algebra::RuntimeField;
-
-use crate::param::{LigeroLinearConstraint, LigeroParam, LigeroQuadraticConstraint};
+use crate::runtime::{
+    algebra::RuntimeField,
+    ligero::param::{LigeroLinearConstraint, LigeroParam, LigeroQuadraticConstraint},
+};
 
 /// Computes the linear combination coefficients vector `a` for the verifier's
 /// inner product test.
@@ -98,8 +99,8 @@ pub fn layout_aext_into<const W: usize, F: RuntimeField<W>>(
     a_ext: &mut [F::E],
     f: &F,
 ) {
-    runtime_algebra::blas::clear(a_ext, f);
-    runtime_algebra::blas::copy(
+    crate::runtime::algebra::blas::clear(a_ext, f);
+    crate::runtime::algebra::blas::copy(
         &mut a_ext[param.r..param.r + param.w],
         &a[i * param.w..(i + 1) * param.w],
     );

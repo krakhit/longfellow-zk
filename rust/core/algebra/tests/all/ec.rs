@@ -12,8 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use core_algebra::{ec::*, nat::Nat, AlgebraicField, BareField, Curve, ElementOf};
 use num_bigint::BigUint;
+
+use crate::core::algebra::{ec::*, nat::Nat, AlgebraicField, BareField, Curve, ElementOf};
 
 #[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Debug)]
 struct TestNat(BigUint);

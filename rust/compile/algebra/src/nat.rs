@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use core_algebra::Nat;
+use crate::core::algebra::Nat;
 use num_bigint::BigUint;
 
 #[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct CompileNat<const W: usize>(pub(crate) BigUint);
+pub struct CompileNat<const W: usize>(pub(in crate::compile::algebra) BigUint);
 
 impl<const W: usize> CompileNat<W> {
     fn assert_fits(val: &BigUint) {

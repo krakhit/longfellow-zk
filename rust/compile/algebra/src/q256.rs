@@ -14,12 +14,12 @@
 
 use num_bigint::BigUint;
 
-use crate::fp::{FpField, FpParameters};
+use crate::compile::algebra::fp::{FpField, FpParameters};
 
 fn q256_params() -> FpParameters<4> {
     FpParameters {
         length_bytes: 32,
-        modulo: crate::CompileNat::from_biguint(
+        modulo: crate::compile::algebra::CompileNat::from_biguint(
             &BigUint::parse_bytes(
                 b"ffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc632551",
                 16,

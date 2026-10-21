@@ -12,12 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::{field::RuntimeBinaryField, lch14::Lch14, subfield::BinarySubfield, Interpolator};
+use crate::runtime::algebra::{
+    field::RuntimeBinaryField, lch14::Lch14, subfield::BinarySubfield, Interpolator,
+};
 
 pub struct Lch14ReedSolomon<
     'a,
     const W: usize,
-    F: RuntimeBinaryField<W, E = crate::gf2_128::Gf2_128>,
+    F: RuntimeBinaryField<W, E = crate::runtime::algebra::gf2_128::Gf2_128>,
 > {
     f: &'a F,
     n: usize,
@@ -25,8 +27,11 @@ pub struct Lch14ReedSolomon<
     lch14: Lch14<'a, W, F>,
 }
 
-impl<'a, const W: usize, F: RuntimeBinaryField<W, E = crate::gf2_128::Gf2_128>>
-    Lch14ReedSolomon<'a, W, F>
+impl<
+        'a,
+        const W: usize,
+        F: RuntimeBinaryField<W, E = crate::runtime::algebra::gf2_128::Gf2_128>,
+    > Lch14ReedSolomon<'a, W, F>
 {
     pub fn new(n: usize, m: usize, f: &'a F, subfield: &'a BinarySubfield) -> Self {
         assert!(n > 0, "LCH14 input length must be positive");
@@ -47,8 +52,8 @@ impl<'a, const W: usize, F: RuntimeBinaryField<W, E = crate::gf2_128::Gf2_128>>
     }
 }
 
-impl<const W: usize, F: RuntimeBinaryField<W, E = crate::gf2_128::Gf2_128>> Interpolator<W, F>
-    for Lch14ReedSolomon<'_, W, F>
+impl<const W: usize, F: RuntimeBinaryField<W, E = crate::runtime::algebra::gf2_128::Gf2_128>>
+    Interpolator<W, F> for Lch14ReedSolomon<'_, W, F>
 {
     fn interpolate(&self, y: &mut [F::E]) {
         assert_eq!(
@@ -67,14 +72,14 @@ impl<const W: usize, F: RuntimeBinaryField<W, E = crate::gf2_128::Gf2_128>> Inte
         let limit = std::cmp::min(self.m, fftn);
         y[self.n..limit].clone_from_slice(&c[self.n..limit]);
 
-        crate::blas::clear(&mut c[self.n..fftn], self.f);
+        crate::runtime::algebra::blas::clear(&mut c[self.n..fftn], self.f);
 
         let mut temp = vec![self.f.zero(); fftn];
         let mut coset = 1;
         while (coset << l) < self.m {
             let b = coset << l;
             let chunk_limit = std::cmp::min(self.m - b, fftn);
-            crate::blas::copy(&mut temp, &c);
+            crate::runtime::algebra::blas::copy(&mut temp, &c);
             self.lch14.fft(l, b, &mut temp);
             y[b..(chunk_limit + b)].clone_from_slice(&temp[..chunk_limit]);
             coset += 1;
@@ -85,22 +90,29 @@ impl<const W: usize, F: RuntimeBinaryField<W, E = crate::gf2_128::Gf2_128>> Inte
 pub struct Lch14InterpolatorFactory<
     'a,
     const W: usize,
-    F: RuntimeBinaryField<W, E = crate::gf2_128::Gf2_128>,
+    F: RuntimeBinaryField<W, E = crate::runtime::algebra::gf2_128::Gf2_128>,
 > {
     f: &'a F,
     subfield: &'a BinarySubfield,
 }
 
-impl<'a, const W: usize, F: RuntimeBinaryField<W, E = crate::gf2_128::Gf2_128>>
-    Lch14InterpolatorFactory<'a, W, F>
+impl<
+        'a,
+        const W: usize,
+        F: RuntimeBinaryField<W, E = crate::runtime::algebra::gf2_128::Gf2_128>,
+    > Lch14InterpolatorFactory<'a, W, F>
 {
     pub fn new(f: &'a F, subfield: &'a BinarySubfield) -> Self {
         Self { f, subfield }
     }
 }
 
-impl<'a, const W: usize, F: RuntimeBinaryField<W, E = crate::gf2_128::Gf2_128>>
-    crate::interpolator::InterpolatorFactory<W, F> for Lch14InterpolatorFactory<'a, W, F>
+impl<
+        'a,
+        const W: usize,
+        F: RuntimeBinaryField<W, E = crate::runtime::algebra::gf2_128::Gf2_128>,
+    > crate::runtime::algebra::interpolator::InterpolatorFactory<W, F>
+    for Lch14InterpolatorFactory<'a, W, F>
 {
     type Interpolator = Lch14ReedSolomon<'a, W, F>;
 

@@ -33,5 +33,14 @@ pub fn sane_logw(logw: usize) -> bool {
 }
 
 pub use circuit::{CircuitGeometry, FieldID};
-pub use core_algebra::SerializableField;
 pub use layer::{canonical_term, compare_term, Layer, Term, TermDelta};
+
+pub use crate::core::algebra::SerializableField;
+
+#[cfg(test)]
+#[path = "../tests/archive_test.rs"]
+mod tests_archive_test;
+
+#[cfg(test)]
+#[path = "../tests/serialization.rs"]
+mod tests_serialization;

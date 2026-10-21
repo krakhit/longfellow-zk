@@ -13,21 +13,26 @@
 // limitations under the License.
 
 #![allow(dead_code)]
-use core_algebra::{AlgebraicField, Curve, Nat, SupportsNatConversions};
-use mdoc_zk_circuits::{hash::HashInput, signature::SignatureInput};
+use crate::{
+    core::algebra::{AlgebraicField, Curve, Nat, SupportsNatConversions},
+    mdoc::circuits::{hash::HashInput, signature::SignatureInput},
+};
 
-pub(crate) fn prepare_mock_signatures<
+pub(in crate::mdoc::circuits) fn prepare_mock_signatures<
     const W: usize,
-    FR: AlgebraicField + SupportsNatConversions<W> + core_algebra::HasLookupPoints,
-    FnR: core_algebra::AlgebraicField + SupportsNatConversions<W, N = FR::N>,
+    FR: AlgebraicField + SupportsNatConversions<W> + crate::core::algebra::HasLookupPoints,
+    FnR: crate::core::algebra::AlgebraicField + SupportsNatConversions<W, N = FR::N>,
     C: Curve<W, F = FR, N = FR::N>,
 >(
     curve_r: &C,
     fr: &FR,
     fn_field: &FnR,
-    mut hash_input: HashInput,
+    mut hash_input: HashInput<crate::compile::algebra::CompileNat<4>>,
     mut signature_input: SignatureInput<FR::N>,
-) -> (HashInput, SignatureInput<FR::N>) {
+) -> (
+    HashInput<crate::compile::algebra::CompileNat<4>>,
+    SignatureInput<FR::N>,
+) {
     let d_dpk = C::N::from_u64(987654321u64);
     let k_dpk = C::N::from_u64(123456789u64);
     let dummy_e = FR::N::from_u64(0);
@@ -49,8 +54,10 @@ pub(crate) fn prepare_mock_signatures<
     hash_input.cbor_mso[dpkx_cose_offset..dpkx_cose_offset + 32].copy_from_slice(&dpkx_be);
     hash_input.cbor_mso[dpky_cose_offset..dpky_cose_offset + 32].copy_from_slice(&dpky_be);
 
-    let dpkx_compile = compile_algebra::CompileNat::<4>::from_bytes_le(&dpkx_val.to_bytes_le());
-    let dpky_compile = compile_algebra::CompileNat::<4>::from_bytes_le(&dpky_val.to_bytes_le());
+    let dpkx_compile =
+        crate::compile::algebra::CompileNat::<4>::from_bytes_le(&dpkx_val.to_bytes_le());
+    let dpky_compile =
+        crate::compile::algebra::CompileNat::<4>::from_bytes_le(&dpky_val.to_bytes_le());
     hash_input.device_pk = (dpkx_compile, dpky_compile);
 
     signature_input.device_pk = (dpkx_val.clone(), dpky_val.clone());
@@ -60,7 +67,7 @@ pub(crate) fn prepare_mock_signatures<
     hasher.update(&hash_input.cbor_mso);
     let sha_result = hasher.finalize();
 
-    hash_input.issuer_sig_e = compile_algebra::CompileNat::<4>::from_bytes_be(&sha_result);
+    hash_input.issuer_sig_e = crate::compile::algebra::CompileNat::<4>::from_bytes_be(&sha_result);
     signature_input.issuer_sig_e = FR::N::from_bytes_be(&sha_result);
     signature_input.device_sig_e = FR::N::from_bytes_be(&sha_result);
 
@@ -94,7 +101,7 @@ pub(crate) fn prepare_mock_signatures<
 
 fn sign_and_generate_given_input<
     const W: usize,
-    F: AlgebraicField + SupportsNatConversions<W> + core_algebra::HasLookupPoints,
+    F: AlgebraicField + SupportsNatConversions<W> + crate::core::algebra::HasLookupPoints,
     S: AlgebraicField + SupportsNatConversions<W, N = F::N>,
     C: Curve<W, F = F, N = F::N>,
 >(
@@ -105,18 +112,23 @@ fn sign_and_generate_given_input<
     k: &C::N,
     e: &C::N,
 ) -> (
-    (core_algebra::ElementOf<F>, core_algebra::ElementOf<F>),
+    (
+        crate::core::algebra::ElementOf<F>,
+        crate::core::algebra::ElementOf<F>,
+    ),
     C::N,
     C::N,
 ) {
     let g_val = curve.g().clone();
-    let g_proj = circuits_ec::concrete::projective::<F, W, C>(curve, field, &g_val);
+    let g_proj = crate::circuits::ec::concrete::projective::<F, W, C>(curve, field, &g_val);
 
-    let q_proj = circuits_ec::concrete::scalar_mul::<F, W, C>(curve, field, 256, d, &g_proj);
-    let q_normalized = circuits_ec::concrete::affine::<F>(field, &q_proj);
+    let q_proj =
+        crate::circuits::ec::concrete::scalar_mul::<F, W, C>(curve, field, 256, d, &g_proj);
+    let q_normalized = crate::circuits::ec::concrete::affine::<F>(field, &q_proj);
 
-    let r_proj = circuits_ec::concrete::scalar_mul::<F, W, C>(curve, field, 256, k, &g_proj);
-    let r_normalized = circuits_ec::concrete::affine::<F>(field, &r_proj);
+    let r_proj =
+        crate::circuits::ec::concrete::scalar_mul::<F, W, C>(curve, field, 256, k, &g_proj);
+    let r_normalized = crate::circuits::ec::concrete::affine::<F>(field, &r_proj);
     let rx = field.to_nat(&r_normalized.0);
 
     let rx_scalar = scalar_field.reduce_nat(&rx);

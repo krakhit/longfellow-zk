@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-pub(crate) fn bitrev<T>(a: &mut [T]) {
+pub(in crate::runtime::algebra) fn bitrev<T>(a: &mut [T]) {
     let n = a.len();
     let mut revi = 0;
     for i in 0..(n - 1) {

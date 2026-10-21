@@ -14,3 +14,7 @@
 
 pub mod circuit;
 pub use circuit::{AnalogAdder, FieldWrappingSum};
+
+#[cfg(test)]
+#[path = "../tests/analog_adder.rs"]
+mod tests_analog_adder;

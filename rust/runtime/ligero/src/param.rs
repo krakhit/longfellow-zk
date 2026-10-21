@@ -84,8 +84,8 @@
 //! this structure, the code stores `NQTRIPLES = (NQ / W)` instead of the
 //! number `3 * NQTRIPLES` of rows.
 
-use runtime_algebra::{field::RuntimeField, interpolator::InterpolatorFactory};
-pub use runtime_proto::{LigeroCommitment, LigeroGeometry};
+use crate::runtime::algebra::{field::RuntimeField, interpolator::InterpolatorFactory};
+pub use crate::runtime::proto::{LigeroCommitment, LigeroGeometry};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct LigeroConfig {
@@ -181,7 +181,7 @@ impl LigeroParam {
             block_enc: config.block_enc,
             nrow,
             nreq: config.nreq,
-            mc_pathlen: runtime_merkle::merkle_heap_len(config.block_enc - dblock),
+            mc_pathlen: crate::runtime::merkle::merkle_heap_len(config.block_enc - dblock),
         };
 
         Some(Self {
@@ -211,7 +211,7 @@ impl LigeroParam {
         assert_eq!(self.geom.nrow, self.iw + self.nwqrow);
         assert_eq!(
             self.geom.mc_pathlen,
-            runtime_merkle::merkle_heap_len(self.geom.block_enc - self.geom.dblock)
+            crate::runtime::merkle::merkle_heap_len(self.geom.block_enc - self.geom.dblock)
         );
     }
 }

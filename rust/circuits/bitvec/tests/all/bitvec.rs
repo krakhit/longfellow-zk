@@ -12,38 +12,38 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use circuits_bitvec::{Bitvec, BitvecIO, BitvecLogic};
-use circuits_boolean::Boolean;
-use compile_algebra::p256::P256Field;
+use crate::circuits::bitvec::{Bitvec, BitvecIO, BitvecLogic};
+use crate::circuits::boolean::Boolean;
+use crate::compile::algebra::p256::P256Field;
 
 #[test]
 fn test_compile_bitvec() {
     let f = P256Field::new();
-    let (circuit, stats, _symbols) = compile_compiler::compile(&f, |iologic| {
+    let (circuit, stats, _symbols) = crate::compile::compiler::compile(&f, |iologic| {
         let bv = BitvecLogic::new(&iologic);
         let bitvec_io = BitvecIO::new(&bv);
 
-        let mut pos = compile_logic::K_FIRST_WIRE_POSITION;
+        let mut pos = crate::compile::logic::K_FIRST_WIRE_POSITION;
         let a: Bitvec<_, 8> = bitvec_io.next(&mut pos);
         let b: Bitvec<_, 8> = bitvec_io.next(&mut pos);
 
         let (sum, _carry) = bv.unchecked_add(&a, &b);
         (bv.assert_false("sum_zero", &sum), 1, 0)
     });
-    compile_compiler::dump_stats("bitvec_add_compile", &circuit, &stats);
+    crate::compile::compiler::dump_stats("bitvec_add_compile", &circuit, &stats);
 }
 
 #[test]
 fn test_compile_bitvec_leq() {
-    use compile_algebra::p256::P256Field;
-    use compile_eval::FieldID;
+    use crate::compile::algebra::p256::P256Field;
+    use crate::compile::eval::FieldID;
     let fc = P256Field::new();
-    let fr = runtime_algebra::p256::P256Field::new();
-    let (circuit, _stats, symbols) = compile_compiler::compile(&fc, |iologic| {
+    let fr = crate::runtime::algebra::p256::P256Field::new();
+    let (circuit, _stats, symbols) = crate::compile::compiler::compile(&fc, |iologic| {
         let bv = BitvecLogic::new(&iologic);
         let bitvec_io = BitvecIO::new(&bv);
 
-        let mut pos = compile_logic::K_FIRST_WIRE_POSITION;
+        let mut pos = crate::compile::logic::K_FIRST_WIRE_POSITION;
         let a: Bitvec<_, 64> = bitvec_io.next(&mut pos);
         let b: Bitvec<_, 64> = bitvec_io.next(&mut pos);
 
@@ -53,26 +53,26 @@ fn test_compile_bitvec_leq() {
     });
 
     // Let's test a = 65, b = 119
-    let mut inputs = compile_eval::initial_inputs(&fr);
-    circuits_bitvec::concrete::push_bitvec_u64(&fr, 65, 64, &mut inputs);
-    circuits_bitvec::concrete::push_bitvec_u64(&fr, 119, 64, &mut inputs);
+    let mut inputs = crate::compile::eval::initial_inputs(&fr);
+    crate::circuits::bitvec::concrete::push_bitvec_u64(&fr, 65, 64, &mut inputs);
+    crate::circuits::bitvec::concrete::push_bitvec_u64(&fr, 119, 64, &mut inputs);
 
-    compile_eval::eval_circuit_fc(&fc, &fr, &circuit, &symbols, &inputs, FieldID::P256)
+    crate::compile::eval::eval_circuit_fc(&fc, &fr, &circuit, &symbols, &inputs, FieldID::P256)
         .unwrap()
         .assert_all_passed();
 }
 
 #[test]
 fn test_compile_bitvec_is_zero() {
-    use compile_algebra::p256::P256Field;
-    use compile_eval::FieldID;
+    use crate::compile::algebra::p256::P256Field;
+    use crate::compile::eval::FieldID;
     let fc = P256Field::new();
-    let fr = runtime_algebra::p256::P256Field::new();
-    let (circuit, _stats, symbols) = compile_compiler::compile(&fc, |iologic| {
+    let fr = crate::runtime::algebra::p256::P256Field::new();
+    let (circuit, _stats, symbols) = crate::compile::compiler::compile(&fc, |iologic| {
         let bv = BitvecLogic::new(&iologic);
         let bitvec_io = BitvecIO::new(&bv);
 
-        let mut pos = compile_logic::K_FIRST_WIRE_POSITION;
+        let mut pos = crate::compile::logic::K_FIRST_WIRE_POSITION;
         let a: Bitvec<_, 8> = bitvec_io.next(&mut pos);
 
         let boolean = Boolean::new(&iologic);
@@ -81,16 +81,16 @@ fn test_compile_bitvec_is_zero() {
     });
 
     // Test a = 0 (should pass)
-    let mut inputs = compile_eval::initial_inputs(&fr);
-    circuits_bitvec::concrete::push_bitvec_u64(&fr, 0, 8, &mut inputs);
-    compile_eval::eval_circuit_fc(&fc, &fr, &circuit, &symbols, &inputs, FieldID::P256)
+    let mut inputs = crate::compile::eval::initial_inputs(&fr);
+    crate::circuits::bitvec::concrete::push_bitvec_u64(&fr, 0, 8, &mut inputs);
+    crate::compile::eval::eval_circuit_fc(&fc, &fr, &circuit, &symbols, &inputs, FieldID::P256)
         .unwrap()
         .assert_all_passed();
 
     // Test a = 5 (should fail)
-    let mut inputs_fail = compile_eval::initial_inputs(&fr);
-    circuits_bitvec::concrete::push_bitvec_u64(&fr, 5, 8, &mut inputs_fail);
-    assert!(compile_eval::eval_circuit_fc(
+    let mut inputs_fail = crate::compile::eval::initial_inputs(&fr);
+    crate::circuits::bitvec::concrete::push_bitvec_u64(&fr, 5, 8, &mut inputs_fail);
+    assert!(crate::compile::eval::eval_circuit_fc(
         &fc,
         &fr,
         &circuit,
@@ -105,15 +105,15 @@ fn test_compile_bitvec_is_zero() {
 
 #[test]
 fn test_compile_bitvec_lt() {
-    use compile_algebra::p256::P256Field;
-    use compile_eval::FieldID;
+    use crate::compile::algebra::p256::P256Field;
+    use crate::compile::eval::FieldID;
     let fc = P256Field::new();
-    let fr = runtime_algebra::p256::P256Field::new();
-    let (circuit, _stats, symbols) = compile_compiler::compile(&fc, |iologic| {
+    let fr = crate::runtime::algebra::p256::P256Field::new();
+    let (circuit, _stats, symbols) = crate::compile::compiler::compile(&fc, |iologic| {
         let bv = BitvecLogic::new(&iologic);
         let bitvec_io = BitvecIO::new(&bv);
 
-        let mut pos = compile_logic::K_FIRST_WIRE_POSITION;
+        let mut pos = crate::compile::logic::K_FIRST_WIRE_POSITION;
         let a: Bitvec<_, 64> = bitvec_io.next(&mut pos);
         let b: Bitvec<_, 64> = bitvec_io.next(&mut pos);
 
@@ -122,18 +122,18 @@ fn test_compile_bitvec_lt() {
     });
 
     // Test a = 65, b = 66 (should pass since 65 < 66)
-    let mut inputs = compile_eval::initial_inputs(&fr);
-    circuits_bitvec::concrete::push_bitvec_u64(&fr, 65, 64, &mut inputs);
-    circuits_bitvec::concrete::push_bitvec_u64(&fr, 66, 64, &mut inputs);
-    compile_eval::eval_circuit_fc(&fc, &fr, &circuit, &symbols, &inputs, FieldID::P256)
+    let mut inputs = crate::compile::eval::initial_inputs(&fr);
+    crate::circuits::bitvec::concrete::push_bitvec_u64(&fr, 65, 64, &mut inputs);
+    crate::circuits::bitvec::concrete::push_bitvec_u64(&fr, 66, 64, &mut inputs);
+    crate::compile::eval::eval_circuit_fc(&fc, &fr, &circuit, &symbols, &inputs, FieldID::P256)
         .unwrap()
         .assert_all_passed();
 
     // Test a = 65, b = 65 (should fail since 65 < 65 is false)
-    let mut inputs_fail = compile_eval::initial_inputs(&fr);
-    circuits_bitvec::concrete::push_bitvec_u64(&fr, 65, 64, &mut inputs_fail);
-    circuits_bitvec::concrete::push_bitvec_u64(&fr, 65, 64, &mut inputs_fail);
-    assert!(compile_eval::eval_circuit_fc(
+    let mut inputs_fail = crate::compile::eval::initial_inputs(&fr);
+    crate::circuits::bitvec::concrete::push_bitvec_u64(&fr, 65, 64, &mut inputs_fail);
+    crate::circuits::bitvec::concrete::push_bitvec_u64(&fr, 65, 64, &mut inputs_fail);
+    assert!(crate::compile::eval::eval_circuit_fc(
         &fc,
         &fr,
         &circuit,
@@ -146,9 +146,9 @@ fn test_compile_bitvec_lt() {
     .is_err());
 }
 
-use circuits_boolean::Bitw;
-use compile_algebra::{field::CompileField, gf2_128::Gf2_128Field};
-use compile_logic::{eval::EvalLogic, Eltw, Logic};
+use crate::circuits::boolean::Bitw;
+use crate::compile::algebra::{field::CompileField, gf2_128::Gf2_128Field};
+use crate::compile::logic::{eval::EvalLogic, Eltw, Logic};
 use test_helpers::{compare_bitw as compare, new_f65537_field, LPrime};
 
 use super::test_helpers;
@@ -325,11 +325,11 @@ fn test_bitvec_for_logic<F: CompileField>(logic: &EvalLogic<F>) {
 #[test]
 fn test_bitvec() {
     let field = new_f65537_field();
-    let tracker = compile_logic::scope::AssertionScope::new();
+    let tracker = crate::compile::logic::scope::AssertionScope::new();
     let l_prime = LPrime::new(&field, &tracker);
     test_bitvec_for_logic(&l_prime);
     let field_bin = Gf2_128Field::new();
-    let tracker_bin = compile_logic::scope::AssertionScope::new();
+    let tracker_bin = crate::compile::logic::scope::AssertionScope::new();
     let l_bin = LBinary::new(&field_bin, &tracker_bin);
     test_bitvec_for_logic(&l_bin);
 }
@@ -387,12 +387,12 @@ fn test_assert_add_for_logic<F: CompileField>(logic: &EvalLogic<'_, F>) {
 #[test]
 fn test_assert_add() {
     let field = new_f65537_field();
-    let tracker = compile_logic::scope::AssertionScope::new();
+    let tracker = crate::compile::logic::scope::AssertionScope::new();
     let l_prime = LPrime::new(&field, &tracker);
     test_assert_wrapping_add_for_logic(&l_prime);
     test_assert_add_for_logic(&l_prime);
     let field_bin = Gf2_128Field::new();
-    let tracker_bin = compile_logic::scope::AssertionScope::new();
+    let tracker_bin = crate::compile::logic::scope::AssertionScope::new();
     let l_bin = LBinary::new(&field_bin, &tracker_bin);
     test_assert_wrapping_add_for_logic(&l_bin);
     test_assert_add_for_logic(&l_bin);
@@ -416,11 +416,11 @@ where Eltw<L>: PartialEq + std::fmt::Debug {
 #[test]
 fn test_is_zero() {
     let field = new_f65537_field();
-    let tracker = compile_logic::scope::AssertionScope::new();
+    let tracker = crate::compile::logic::scope::AssertionScope::new();
     let l_prime = LPrime::new(&field, &tracker);
     test_is_zero_for_logic(&l_prime);
     let field_bin = Gf2_128Field::new();
-    let tracker_bin = compile_logic::scope::AssertionScope::new();
+    let tracker_bin = crate::compile::logic::scope::AssertionScope::new();
     let l_bin = LBinary::new(&field_bin, &tracker_bin);
     test_is_zero_for_logic(&l_bin);
 }
@@ -443,11 +443,11 @@ fn test_assert_neq_for_logic<F: CompileField>(logic: &EvalLogic<'_, F>) {
 #[test]
 fn test_assert_neq() {
     let field = new_f65537_field();
-    let tracker = compile_logic::scope::AssertionScope::new();
+    let tracker = crate::compile::logic::scope::AssertionScope::new();
     let l_prime = LPrime::new(&field, &tracker);
     test_assert_neq_for_logic(&l_prime);
     let field_bin = Gf2_128Field::new();
-    let tracker_bin = compile_logic::scope::AssertionScope::new();
+    let tracker_bin = crate::compile::logic::scope::AssertionScope::new();
     let l_bin = LBinary::new(&field_bin, &tracker_bin);
     test_assert_neq_for_logic(&l_bin);
 }
@@ -483,11 +483,11 @@ fn test_checked_add_sub_for_logic<F: CompileField>(logic: &EvalLogic<'_, F>) {
 #[test]
 fn test_checked_add_sub() {
     let field = new_f65537_field();
-    let tracker = compile_logic::scope::AssertionScope::new();
+    let tracker = crate::compile::logic::scope::AssertionScope::new();
     let l_prime = LPrime::new(&field, &tracker);
     test_checked_add_sub_for_logic(&l_prime);
     let field_bin = Gf2_128Field::new();
-    let tracker_bin = compile_logic::scope::AssertionScope::new();
+    let tracker_bin = crate::compile::logic::scope::AssertionScope::new();
     let l_bin = LBinary::new(&field_bin, &tracker_bin);
     test_checked_add_sub_for_logic(&l_bin);
 }

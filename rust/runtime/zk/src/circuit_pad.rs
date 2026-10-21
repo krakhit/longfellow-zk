@@ -68,14 +68,14 @@ impl CircuitPad {
     }
 
     /// Computes the total number of padding elements for the given circuit.
-    pub fn pad_size<const W: usize, F: core_algebra::SerializableField>(
-        circuit: &core_proto::circuit::Circuit<F>,
+    pub fn pad_size<const W: usize, F: crate::core::algebra::SerializableField>(
+        circuit: &crate::core::proto::circuit::Circuit<F>,
     ) -> usize {
         circuit
             .raw
             .layers
             .iter()
-            .map(|l| core_proto::Layer::logw(l) * 4 + 3)
+            .map(|l| crate::core::proto::Layer::logw(l) * 4 + 3)
             .sum()
     }
 }

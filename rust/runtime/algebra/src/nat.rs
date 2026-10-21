@@ -12,19 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use core_algebra::Nat;
+use crate::core::algebra::Nat;
 
 #[derive(Clone, PartialEq, Eq, Hash)]
 pub struct RuntimeNat<const W: usize>([u64; W]);
 
 impl<const W: usize> RuntimeNat<W> {
     #[inline(always)]
-    pub(crate) fn from_limbs(limbs: [u64; W]) -> Self {
+    pub(in crate::runtime::algebra) fn from_limbs(limbs: [u64; W]) -> Self {
         Self(limbs)
     }
 
     #[inline(always)]
-    pub(crate) fn limbs(&self) -> &[u64; W] {
+    pub(in crate::runtime::algebra) fn limbs(&self) -> &[u64; W] {
         &self.0
     }
 }

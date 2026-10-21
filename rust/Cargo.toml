@@ -1,52 +1,110 @@
-[workspace]
-resolver = "2"
-members = [
-    "core/algebra",
-    "compile/algebra",
-    "compile/proto",
-    "compile/eval",
-    "circuits/analog_adder",
-    "circuits/analog_decoder",
-    "circuits/arithmetic",
-    "circuits/bitvec",
-    "circuits/bit_plucker",
-    "circuits/bignum",
-    "circuits/big_bitvec",
-    "circuits/boolean",
-    "circuits/ec",
-    "circuits/ecdsa2",
-    "circuits/gf2_128",
-    "circuits/lookup",
-    "circuits/mac",
-    "circuits/mac_gf128",
-    "circuits/memcmp",
-    "circuits/polynomial",
-    "circuits/routing",
-    "circuits/sha256",
-    "circuits/sha256msg",
-    "compile/compiler",
-    "circuits/experimental",
-    "compile/logic",
-    "applications/mdoc_zk/circuits",
-    "core/proto",
-    "applications/mdoc_zk/runtime",
-    "applications/mdoc_zk/prover_only",
-    "applications/mdoc_zk/verifier_only",
-    "applications/mdoc_zk/proto",
-    "applications/mdoc_zk/compile",
-    "applications/mdoc_zk/testcases",
-    "applications/mdoc_zk/artifacts",
-    "util",
-    "runtime/random",
-    "runtime/algebra",
-    "runtime/proto",
-    "runtime/merkle",
-    "runtime/sumcheck",
-    "runtime/ligero",
-    "runtime/zk",
+[package]
+name = "longfellow-zk"
+version = "0.1.0"
+edition = "2021"
+description = "Longfellow Zero-Knowledge (Ligero + Sumcheck) proof system and ISO 18013-5 mdoc circuits"
+license = "Apache-2.0"
+repository = "https://github.com/google/longfellow-zk"
+exclude = [
+    "applications/mdoc_zk/artifacts/circuits/*",
+    "applications/mdoc_zk/artifacts/proofs/*",
+    "applications/mdoc_zk/prover_only/*",
+    "applications/mdoc_zk/verifier_only/*",
+    "*.vir",
+    "*.rlib",
 ]
 
-[workspace.lints.clippy]
+[features]
+default = ["verifier", "prover", "compiler", "mdoc"]
+verifier = []
+prover = []
+compiler = ["dep:bumpalo", "dep:num-bigint", "dep:num-traits", "dep:rustc-hash"]
+mdoc = ["dep:zstd"]
+testonly = ["verifier", "prover", "compiler", "dep:bumpalo", "dep:num-bigint", "dep:num-traits", "dep:rustc-hash"]
+force-32bit-limbs = []
+limb32 = ["force-32bit-limbs"]
+force-generic-arch = []
+
+[dependencies]
+aes = "0.8.4"
+bumpalo = { version = "3.16.0", optional = true }
+getrandom = "0.3"
+num-bigint = { version = "0.4", optional = true }
+num-traits = { version = "0.2", optional = true }
+rustc-hash = { version = "2.1.0", optional = true }
+sha2 = { version = "0.10.8", features = ["asm"] }
+zstd = { version = "0.13", optional = true }
+
+[dev-dependencies]
+criterion = "0.5"
+hex = "0.4.3"
+num-bigint = "0.4"
+num-traits = "0.2"
+serde_json = "1.0"
+
+[[bin]]
+name = "prover_only"
+path = "applications/mdoc_zk/prover_only/src/main.rs"
+required-features = ["prover", "mdoc"]
+
+[[bin]]
+name = "verifier_only"
+path = "applications/mdoc_zk/verifier_only/src/main.rs"
+required-features = ["verifier", "mdoc"]
+
+[[bin]]
+name = "convert_circuits"
+path = "applications/mdoc_zk/runtime/src/bin/convert_circuits.rs"
+required-features = ["compiler", "mdoc"]
+
+[[bench]]
+name = "p256_benchmark"
+path = "runtime/algebra/benches/p256_benchmark.rs"
+harness = false
+
+[[bench]]
+name = "q256_benchmark"
+path = "runtime/algebra/benches/q256_benchmark.rs"
+harness = false
+
+[[bench]]
+name = "fft_benchmark"
+path = "runtime/algebra/benches/fft_benchmark.rs"
+harness = false
+
+[[bench]]
+name = "rfft_benchmark"
+path = "runtime/algebra/benches/rfft_benchmark.rs"
+harness = false
+
+[[bench]]
+name = "lch14_benchmark"
+path = "runtime/algebra/benches/lch14_benchmark.rs"
+harness = false
+
+[[bench]]
+name = "reed_solomon_benchmark"
+path = "runtime/algebra/benches/reed_solomon_benchmark.rs"
+harness = false
+
+[[bench]]
+name = "sumcheck_bench"
+path = "runtime/sumcheck/benches/sumcheck_bench.rs"
+harness = false
+
+[[bench]]
+name = "mdoc_zk_bench_v7"
+path = "applications/mdoc_zk/runtime/benches/mdoc_zk_bench_v7.rs"
+harness = false
+required-features = ["prover", "verifier", "compiler", "mdoc", "testonly"]
+
+[[bench]]
+name = "mdoc_zk_bench_current"
+path = "applications/mdoc_zk/runtime/benches/mdoc_zk_bench_current.rs"
+harness = false
+required-features = ["prover", "verifier", "compiler", "mdoc", "testonly"]
+
+[lints.clippy]
 shadow_same = "warn"
 shadow_reuse = "warn"
 shadow_unrelated = "warn"
@@ -61,5 +119,3 @@ panic = "abort"
 [profile.dev]
 opt-level = 2
 lto = false
-
-

@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use circuits_bitvec::{BitvecIO, BitvecLogic};
-use circuits_boolean::BooleanIO;
-use compile_logic::LogicIO;
+use crate::circuits::bitvec::{BitvecIO, BitvecLogic};
+use crate::circuits::boolean::BooleanIO;
+use crate::compile::logic::LogicIO;
 
-use crate::{
+use crate::mdoc::circuits::{
     hash::{
         circuit::{AttrDerived, AttrGiven, AttrPreimageBytes, Derived, Given, MsoPreimageBytes},
         constants::{K_HASH_INDEX_BITS, K_TIMESTAMP_LEN},
@@ -34,19 +34,19 @@ pub fn allocate_given<L: LogicIO>(
     let boolean_io = BooleanIO::new(logic);
 
     let disclosed_attributes = (0..num_attrs)
-        .map(|_| crate::mso_attribute::circuit::DisclosedAttribute {
-            expected_name: crate::mso_attribute::circuit::AttrSlice {
+        .map(|_| crate::mdoc::circuits::mso_attribute::circuit::DisclosedAttribute {
+            expected_name: crate::mdoc::circuits::mso_attribute::circuit::AttrSlice {
                 data: std::array::from_fn(|_| bitvec_io.next::<8>(pos)),
                 len: bitvec_io.next::<K_ATTR_INDEX_BITS>(pos),
             },
-            expected_cbor_value: crate::mso_attribute::circuit::AttrSlice {
+            expected_cbor_value: crate::mdoc::circuits::mso_attribute::circuit::AttrSlice {
                 data: std::array::from_fn(|_| bitvec_io.next::<8>(pos)),
                 len: bitvec_io.next::<K_ATTR_INDEX_BITS>(pos),
             },
         })
         .collect();
 
-    let now: [circuits_bitvec::V8<L>; K_TIMESTAMP_LEN] =
+    let now: [crate::circuits::bitvec::V8<L>; K_TIMESTAMP_LEN] =
         std::array::from_fn(|_| bitvec_io.next::<8>(pos));
 
     let mac_e = [logic.next(pos), logic.next(pos)];
@@ -56,7 +56,7 @@ pub fn allocate_given<L: LogicIO>(
 
     let suppress_doc_type_check = boolean_io.next(pos);
 
-    let expected_doc_type = crate::mso_attribute::circuit::AttrSlice {
+    let expected_doc_type = crate::mdoc::circuits::mso_attribute::circuit::AttrSlice {
         data: std::array::from_fn(|_| bitvec_io.next::<8>(pos)),
         len: bitvec_io.next::<K_ATTR_INDEX_BITS>(pos),
     };
@@ -81,7 +81,7 @@ pub fn allocate_given<L: LogicIO>(
                 len: bitvec_io.next::<K_ATTR_INDEX_BITS>(pos),
             },
             mso_digest_offset_in_preimage: bitvec_io.next::<16>(pos),
-            field_locator: crate::mso_attribute::FieldLocator {
+            field_locator: crate::mdoc::circuits::mso_attribute::FieldLocator {
                 slot_position: std::array::from_fn(|_| bitvec_io.next::<K_ATTR_INDEX_BITS>(pos)),
                 length: std::array::from_fn(|_| bitvec_io.next::<K_ATTR_INDEX_BITS>(pos)),
                 permutation: std::array::from_fn(|_| bitvec_io.next::<2>(pos)),
@@ -122,11 +122,11 @@ pub fn allocate_derived<L: LogicIO, const MAX_MSO_BLOCKS: usize>(
 ) -> Derived<L> {
     let attribute_derived = (0..num_attrs)
         .map(|_| AttrDerived {
-            sha_derived: circuits_sha256msg::allocate_derived::<_, 2>(bv, pos),
+            sha_derived: crate::circuits::sha256msg::allocate_derived::<_, 2>(bv, pos),
         })
         .collect();
 
-    let sha_derived = circuits_sha256msg::allocate_derived::<_, MAX_MSO_BLOCKS>(bv, pos);
+    let sha_derived = crate::circuits::sha256msg::allocate_derived::<_, MAX_MSO_BLOCKS>(bv, pos);
 
     Derived {
         attribute_derived,

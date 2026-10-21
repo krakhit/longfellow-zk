@@ -12,8 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-pub(crate) mod private;
-pub(crate) mod public;
+pub(in crate::mdoc::runtime) mod public;
 
-pub(crate) use private::{push_witness_hash, push_witness_sig};
-pub(crate) use public::{push_modern_input_hash, push_modern_input_sig};
+pub(in crate::mdoc::runtime) use public::{push_modern_input_hash, push_modern_input_sig};
+
+cfg_prover! {
+    pub(in crate::mdoc::runtime) mod private;
+
+    pub(in crate::mdoc::runtime) use private::{push_witness_hash, push_witness_sig};
+}

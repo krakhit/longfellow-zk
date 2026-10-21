@@ -21,6 +21,10 @@ pub mod p256;
 pub mod q256;
 pub mod secp256r1;
 
-pub use core_algebra::{AlgebraicField, Curve, ElementOf};
+pub use crate::core::algebra::{AlgebraicField, Curve, ElementOf};
 pub use field::{CompileBinaryField, CompileField};
 pub use nat::CompileNat;
+
+#[cfg(test)]
+#[path = "../tests/all/mod.rs"]
+mod tests_all;

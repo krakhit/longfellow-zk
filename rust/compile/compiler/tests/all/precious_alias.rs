@@ -12,17 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use compile_algebra::{gf2_128::Gf2_128Field, p256::P256Field};
-use compile_eval::eval_circuit_fc;
-use compile_logic::{Logic, LogicIO};
-use core_algebra::AlgebraicField;
-use core_proto::FieldID;
-use runtime_algebra::{gf2_128::Gf2_128RuntimeField, p256::P256Field as RuntimeP256Field};
+use crate::compile::algebra::{gf2_128::Gf2_128Field, p256::P256Field};
+use crate::compile::eval::eval_circuit_fc;
+use crate::compile::logic::{Logic, LogicIO};
+use crate::core::algebra::AlgebraicField;
+use crate::core::proto::FieldID;
+use crate::runtime::algebra::{gf2_128::Gf2_128RuntimeField, p256::P256Field as RuntimeP256Field};
 
 #[test]
 fn test_precious_alias_in_prime_field() {
     let f = P256Field::new();
-    let (circuit, _, symbols) = compile_compiler::compile(&f, |logic| {
+    let (circuit, _, symbols) = crate::compile::compiler::compile(&f, |logic| {
         let x = logic.input(1);
         let square = logic.mul(&x, &x);
         let sum = logic.add(&square, &x);
@@ -60,7 +60,7 @@ fn test_precious_alias_in_prime_field() {
 #[test]
 fn test_precious_alias_cancels_in_binary_field() {
     let f = Gf2_128Field::new();
-    let (circuit, _, symbols) = compile_compiler::compile(&f, |logic| {
+    let (circuit, _, symbols) = crate::compile::compiler::compile(&f, |logic| {
         let x = logic.input(1);
         let square = logic.mul(&x, &x);
         let sum = logic.add(&square, &x);

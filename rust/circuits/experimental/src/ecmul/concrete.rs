@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use circuits_ec::concrete as ec_concrete;
-use core_algebra::{AlgebraicField, Curve, ElementOf, SupportsNatConversions};
+use crate::circuits::ec::concrete as ec_concrete;
+use crate::core::algebra::{AlgebraicField, Curve, ElementOf, SupportsNatConversions};
 use ec_concrete::{Pt2, Pt3};
 
 #[derive(Clone, Debug)]
@@ -71,33 +71,32 @@ pub fn derived<
     }
 }
 
-#[cfg(feature = "testonly")]
-impl<const W: usize, FR: runtime_algebra::field::RuntimeField<W>> ConcreteGiven<W, FR> {
+impl<const W: usize, FR: crate::runtime::algebra::field::RuntimeField<W>> ConcreteGiven<W, FR> {
     pub fn push_elements(&self, n: usize, fr: &FR, mut push: impl FnMut(FR::E)) {
         let mut dest = Vec::new();
         for i in 0..n {
             let bit_val = ((&self.exp >> i) & num_bigint::BigUint::from(1u32))
                 == num_bigint::BigUint::from(1u32);
-            circuits_boolean::concrete::push_bool(fr, bit_val, &mut dest);
+            crate::circuits::boolean::concrete::push_bool(fr, bit_val, &mut dest);
         }
-        circuits_ec::concrete::push_pt2(&self.a, &mut dest);
-        circuits_ec::concrete::push_pt2(&self.b, &mut dest);
+        crate::circuits::ec::concrete::push_pt2(&self.a, &mut dest);
+        crate::circuits::ec::concrete::push_pt2(&self.b, &mut dest);
         for e in dest {
             push(e);
         }
     }
 }
 
-#[cfg(feature = "testonly")]
-impl<const W: usize, FR: runtime_algebra::field::RuntimeField<W>> ConcreteDerived<W, FR> {
+impl<const W: usize, FR: crate::runtime::algebra::field::RuntimeField<W>> ConcreteDerived<W, FR> {
     pub fn push_elements(&self, mut push: impl FnMut(FR::E)) {
         let mut dest = Vec::new();
         for pt3 in &self.round {
-            circuits_ec::concrete::push_pt3(pt3, &mut dest);
+            crate::circuits::ec::concrete::push_pt3(pt3, &mut dest);
         }
-        compile_logic::concrete::push_eltw(self.zinv.clone(), &mut dest);
+        crate::compile::logic::concrete::push_eltw(self.zinv.clone(), &mut dest);
         for e in dest {
             push(e);
         }
     }
 }
+

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::RandomEngine;
+use crate::runtime::random::RandomEngine;
 
 /// A cryptographically secure random engine backed by the operating system's CSPRNG.
 #[derive(Clone, Default, Debug)]

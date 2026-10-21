@@ -12,12 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::field::RuntimeField;
+use crate::runtime::algebra::field::RuntimeField;
 
-pub(crate) struct AlgebraUtil;
+pub(in crate::runtime::algebra) struct AlgebraUtil;
 
 impl AlgebraUtil {
-    pub(crate) fn batch_inverse_arithmetic<const W: usize, F: RuntimeField<W>>(
+    pub(in crate::runtime::algebra) fn batch_inverse_arithmetic<
+        const W: usize,
+        F: RuntimeField<W>,
+    >(
         n: usize,
         a: &mut [F::E],
         f: &F,
@@ -52,7 +55,7 @@ impl AlgebraUtil {
 #[cfg(test)]
 mod tests {
     use super::AlgebraUtil;
-    use crate::{p256::P256Field, AlgebraicField};
+    use crate::runtime::algebra::{p256::P256Field, AlgebraicField};
 
     #[test]
     fn batch_inverse_rejects_invalid_bounds() {

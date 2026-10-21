@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use circuits_analog_adder::{AnalogAdder, FieldWrappingSum};
-use circuits_bitvec::{BitvecLogic, V32};
-use compile_logic::Logic;
+use crate::circuits::analog_adder::{AnalogAdder, FieldWrappingSum};
+use crate::circuits::bitvec::{BitvecLogic, V32};
+use crate::compile::logic::Logic;
 
 use super::constants::K;
 
@@ -33,7 +33,7 @@ pub struct Derived<L: Logic> {
 
 pub struct Sha256<'a, L: Logic> {
     logic: &'a L,
-    pub(crate) bv: BitvecLogic<'a, L>,
+    pub(in crate::circuits::sha256) bv: BitvecLogic<'a, L>,
 }
 
 impl<'a, L: Logic> Sha256<'a, L>

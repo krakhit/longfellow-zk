@@ -12,19 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use circuits_bitvec::{Bitvec, BitvecLogic, V256, V8};
-use circuits_boolean::Boolean;
-use circuits_memcmp::Memcmp;
-use circuits_routing::Routing;
-use circuits_sha256msg::Sha256Msg;
-use compile_logic::{Logic, LogicIO};
+use crate::circuits::bitvec::{Bitvec, BitvecLogic, V256, V8};
+use crate::circuits::boolean::Boolean;
+use crate::circuits::memcmp::Memcmp;
+use crate::circuits::routing::Routing;
+use crate::circuits::sha256msg::Sha256Msg;
+use crate::compile::logic::{Logic, LogicIO};
 
 use super::constants::{
     K_DEVICE_KEY_INFO_CHECK_CBOR, K_DOCTYPE_HEADER_CHECK_CBOR, K_HASH_INDEX_BITS, K_MAX_SHA_BLOCKS,
     K_MSO_PREIMAGE_LEN, K_TAG32, K_VALID_FROM_CHECK_CBOR, K_VALID_FROM_LEN,
     K_VALID_UNTIL_CHECK_CBOR, K_VALID_UNTIL_LEN, K_VALUE_DIGESTS_CHECK_CBOR,
 };
-use crate::{
+use crate::mdoc::circuits::{
     mso_attribute::{circuit::AttributeVerifier, constants::K_ATTR_PREIMAGE_LEN},
     traits::MdocHashCompileField,
 };
@@ -37,26 +37,26 @@ pub struct HashBytes<L: Logic, const N: usize> {
     pub len: HashIndex<L>,
 }
 
-pub type AttrPreimageBytes<L> = crate::mso_attribute::circuit::AttrSlice<L, K_ATTR_PREIMAGE_LEN>;
+pub type AttrPreimageBytes<L> = crate::mdoc::circuits::mso_attribute::circuit::AttrSlice<L, K_ATTR_PREIMAGE_LEN>;
 pub type MsoPreimageBytes<L> = HashBytes<L, K_MSO_PREIMAGE_LEN>;
 
 pub struct AttrGiven<L: Logic> {
     pub preimage: AttrPreimageBytes<L>,
     pub mso_digest_offset_in_preimage: HashIndex<L>,
-    pub field_locator: crate::mso_attribute::FieldLocator<L>,
+    pub field_locator: crate::mdoc::circuits::mso_attribute::FieldLocator<L>,
 }
 
-use crate::{hash::constants::K_TIMESTAMP_LEN, mso_attribute::circuit::DisclosedAttribute};
+use crate::mdoc::circuits::{hash::constants::K_TIMESTAMP_LEN, mso_attribute::circuit::DisclosedAttribute};
 
 pub struct AttrDerived<L: Logic> {
-    pub sha_derived: circuits_sha256msg::Derived<L>,
+    pub sha_derived: crate::circuits::sha256msg::Derived<L>,
 }
 
 pub struct Given<L: LogicIO> {
     pub disclosed_attributes: Vec<DisclosedAttribute<L>>,
     pub now: [V8<L>; K_TIMESTAMP_LEN],
-    pub suppress_doc_type_check: circuits_boolean::Bitw<L>,
-    pub expected_doc_type: crate::mso_attribute::circuit::AttrSlice<L, 32>,
+    pub suppress_doc_type_check: crate::circuits::boolean::Bitw<L>,
+    pub expected_doc_type: crate::mdoc::circuits::mso_attribute::circuit::AttrSlice<L, 32>,
     pub preimage: MsoPreimageBytes<L>,
     pub nblocks: V8<L>,
     pub issuer_sig_e: V256<L>,
@@ -76,20 +76,20 @@ pub struct Given<L: LogicIO> {
 
 pub struct Derived<L: LogicIO> {
     pub attribute_derived: Vec<AttrDerived<L>>,
-    pub sha_derived: circuits_sha256msg::Derived<L>,
+    pub sha_derived: crate::circuits::sha256msg::Derived<L>,
 }
 
 pub struct MdocHash<'a, L: LogicIO>
 where L::F: MdocHashCompileField
 {
-    pub(crate) logic: &'a L,
-    pub(crate) mac_circuit: circuits_mac_gf128::circuit::MAC<'a, L>,
-    pub(crate) shamsg_mso: Sha256Msg<'a, L, K_MAX_SHA_BLOCKS>,
-    pub(crate) routing: Routing<'a, L>,
-    pub(crate) boolean: Boolean<'a, L>,
-    pub(crate) bv: BitvecLogic<'a, L>,
-    pub(crate) cmp_helper: Memcmp<'a, L>,
-    pub(crate) attribute_verifier: AttributeVerifier<'a, L>,
+    pub(in crate::mdoc::circuits) logic: &'a L,
+    pub(in crate::mdoc::circuits) mac_circuit: crate::circuits::mac_gf128::circuit::MAC<'a, L>,
+    pub(in crate::mdoc::circuits) shamsg_mso: Sha256Msg<'a, L, K_MAX_SHA_BLOCKS>,
+    pub(in crate::mdoc::circuits) routing: Routing<'a, L>,
+    pub(in crate::mdoc::circuits) boolean: Boolean<'a, L>,
+    pub(in crate::mdoc::circuits) bv: BitvecLogic<'a, L>,
+    pub(in crate::mdoc::circuits) cmp_helper: Memcmp<'a, L>,
+    pub(in crate::mdoc::circuits) attribute_verifier: AttributeVerifier<'a, L>,
 }
 
 impl<'a, L: LogicIO> MdocHash<'a, L>
@@ -98,7 +98,7 @@ where L::F: MdocHashCompileField
     pub fn new(logic: &'a L, _num_attrs: usize) -> Self {
         Self {
             logic,
-            mac_circuit: circuits_mac_gf128::circuit::MAC::new(logic),
+            mac_circuit: crate::circuits::mac_gf128::circuit::MAC::new(logic),
             shamsg_mso: Sha256Msg::new(logic),
             routing: Routing::new(logic),
             boolean: Boolean::new(logic),
@@ -144,7 +144,7 @@ where L::F: MdocHashCompileField
             .zext::<{ K_HASH_INDEX_BITS }, 64>(&given.preimage.len);
         let nblocks_ext = self.bv.zext::<8, { K_MAX_SHA_BLOCKS }>(&given.nblocks);
 
-        let shamsg_given = circuits_sha256msg::circuit::Given {
+        let shamsg_given = crate::circuits::sha256msg::circuit::Given {
             padded_preimage: preimage.to_vec(),
             nblocks: nblocks_ext,
             length_bytes: preimage_len_64,
@@ -173,19 +173,19 @@ where L::F: MdocHashCompileField
         self.logic.assert_all(
             "assert_mac_tags",
             &[
-                self.mac_circuit.assert_mac(&circuits_mac_gf128::Given {
+                self.mac_circuit.assert_mac(&crate::circuits::mac_gf128::Given {
                     message: given.issuer_sig_e.clone(),
                     mac_av: given.mac_av.clone(),
                     mac_ap: given.mac_ap[0].clone(),
                     tag: given.mac_e.clone(),
                 }),
-                self.mac_circuit.assert_mac(&circuits_mac_gf128::Given {
+                self.mac_circuit.assert_mac(&crate::circuits::mac_gf128::Given {
                     message: given.device_pk.0.clone(),
                     mac_av: given.mac_av.clone(),
                     mac_ap: given.mac_ap[1].clone(),
                     tag: given.mac_device_pkx.clone(),
                 }),
-                self.mac_circuit.assert_mac(&circuits_mac_gf128::Given {
+                self.mac_circuit.assert_mac(&crate::circuits::mac_gf128::Given {
                     message: given.device_pk.1.clone(),
                     mac_av: given.mac_av.clone(),
                     mac_ap: given.mac_ap[2].clone(),
@@ -224,7 +224,7 @@ where L::F: MdocHashCompileField
         let value_check = self.logic.assert_mapi("value_bytes", 0..32, |i| {
             let i_wire = self
                 .bv
-                .of_u64::<{ crate::mso_attribute::constants::K_ATTR_INDEX_BITS }>(i as u64);
+                .of_u64::<{ crate::mdoc::circuits::mso_attribute::constants::K_ATTR_INDEX_BITS }>(i as u64);
             let in_bounds = self.bv.lt(&i_wire, &given.expected_doc_type.len);
             let active = self.boolean.andb(
                 &self.boolean.notb(&given.suppress_doc_type_check),
@@ -410,7 +410,7 @@ where L::F: MdocHashCompileField
                     &K_TAG32,
                 );
 
-                let verifier_given = crate::mso_attribute::circuit::Given {
+                let verifier_given = crate::mdoc::circuits::mso_attribute::circuit::Given {
                     attribute_preimage: attr_given.preimage.clone(),
                     field_locator: attr_given.field_locator.clone(),
                     disclosed_attribute: given.disclosed_attributes[i].clone(),

@@ -12,13 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-pub mod allocate;
-pub use allocate::allocate_given;
 pub mod circuit;
 pub use circuit::{CborByteDecoder, CborDecodeResult, Given};
-#[cfg(feature = "testonly")]
-pub mod evaluate;
-#[cfg(feature = "testonly")]
-pub use evaluate::evaluate_given;
-pub mod concrete;
-pub use concrete::{decode_one_v8, ConcreteGiven};
+
+cfg_testonly! {
+    pub mod allocate;
+    pub mod concrete;
+    pub mod evaluate;
+
+    pub use self::{
+        allocate::allocate_given,
+        concrete::{decode_one_v8, ConcreteGiven},
+        evaluate::evaluate_given,
+    };
+}
+

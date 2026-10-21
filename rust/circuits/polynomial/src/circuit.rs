@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use compile_logic::{Eltw, Logic};
+use crate::compile::logic::{Eltw, Logic};
 
 pub struct Polynomial<'a, L: Logic> {
     logic: &'a L,

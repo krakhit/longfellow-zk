@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use runtime_algebra::{
+use crate::runtime::algebra::{
     field::{AlgebraicField, RuntimeField},
     gf2_128::{Gf2_128, Gf2_128RuntimeField},
     lch14::*,
@@ -39,7 +39,7 @@ fn w_hat_ref(f: &Gf2_128RuntimeField, subfield: &BinarySubfield, i: usize, x: &G
 #[test]
 fn test_w_additivity() {
     let f = Gf2_128RuntimeField::new();
-    let subfield = BinarySubfield::new(&core_algebra::proto::GF2_16_BASIS_V1);
+    let subfield = BinarySubfield::new(&crate::core::algebra::proto::GF2_16_BASIS_V1);
     let r = 6;
     for i in 0..r {
         for x in 0..(1 << r) {
@@ -67,7 +67,7 @@ fn test_w_additivity() {
 #[test]
 fn test_w_recursion() {
     let f = Gf2_128RuntimeField::new();
-    let subfield = BinarySubfield::new(&core_algebra::proto::GF2_16_BASIS_V1);
+    let subfield = BinarySubfield::new(&crate::core::algebra::proto::GF2_16_BASIS_V1);
     let r = 6;
     for i in 0..r {
         let wibi = w_ref(&f, &subfield, i, &subfield.embed(1 << i));
@@ -83,7 +83,7 @@ fn test_w_recursion() {
 #[test]
 fn test_w_hat() {
     let f = Gf2_128RuntimeField::new();
-    let subfield = BinarySubfield::new(&core_algebra::proto::GF2_16_BASIS_V1);
+    let subfield = BinarySubfield::new(&crate::core::algebra::proto::GF2_16_BASIS_V1);
     let fft = Lch14::new(&f, &subfield);
     let dimension_subfield = subfield.dimension();
     // Limit i for fast test run
@@ -100,7 +100,7 @@ fn test_w_hat() {
 #[test]
 fn test_twiddle() {
     let f = Gf2_128RuntimeField::new();
-    let subfield = BinarySubfield::new(&core_algebra::proto::GF2_16_BASIS_V1);
+    let subfield = BinarySubfield::new(&crate::core::algebra::proto::GF2_16_BASIS_V1);
     let fft = Lch14::new(&f, &subfield);
     let l = 8;
     let mut tw = vec![f.zero(); 1 << (l - 1)];
@@ -116,7 +116,7 @@ fn test_twiddle() {
 #[test]
 fn test_fft_ifft_roundtrip() {
     let f = Gf2_128RuntimeField::new();
-    let subfield = BinarySubfield::new(&core_algebra::proto::GF2_16_BASIS_V1);
+    let subfield = BinarySubfield::new(&crate::core::algebra::proto::GF2_16_BASIS_V1);
     let fft = Lch14::new(&f, &subfield);
     let l = 6;
     let n = 1 << l;
@@ -136,7 +136,7 @@ fn test_fft_ifft_roundtrip() {
 #[test]
 fn test_bidirectional_fft() {
     let f = Gf2_128RuntimeField::new();
-    let subfield = BinarySubfield::new(&core_algebra::proto::GF2_16_BASIS_V1);
+    let subfield = BinarySubfield::new(&crate::core::algebra::proto::GF2_16_BASIS_V1);
     let fft = Lch14::new(&f, &subfield);
     let l = 6;
     let n = 1 << l;
@@ -168,7 +168,7 @@ fn test_bidirectional_fft() {
 #[test]
 fn test_bidirectional_fft_rejects_invalid_bounds() {
     let f = Gf2_128RuntimeField::new();
-    let subfield = BinarySubfield::new(&core_algebra::proto::GF2_16_BASIS_V1);
+    let subfield = BinarySubfield::new(&crate::core::algebra::proto::GF2_16_BASIS_V1);
     let fft = Lch14::new(&f, &subfield);
 
     let mut full = vec![f.zero(); 8];
@@ -222,7 +222,7 @@ fn eval_newton<const W: usize, F: RuntimeField<W>>(
 #[test]
 fn test_lch14_interpolation() {
     let f = Gf2_128RuntimeField::new();
-    let subfield = BinarySubfield::new(&core_algebra::proto::GF2_16_BASIS_V1);
+    let subfield = BinarySubfield::new(&crate::core::algebra::proto::GF2_16_BASIS_V1);
     let fft = Lch14::new(&f, &subfield);
 
     const L: usize = 5;
@@ -259,7 +259,7 @@ fn test_lch14_interpolation() {
 #[test]
 fn test_lch14_interpolator_rejects_invalid_dimensions() {
     let f = Gf2_128RuntimeField::new();
-    let subfield = BinarySubfield::new(&core_algebra::proto::GF2_16_BASIS_V1);
+    let subfield = BinarySubfield::new(&crate::core::algebra::proto::GF2_16_BASIS_V1);
     let factory = Lch14InterpolatorFactory::new(&f, &subfield);
     let capacity = 1 << subfield.dimension();
 
@@ -280,7 +280,7 @@ fn test_lch14_interpolator_rejects_invalid_dimensions() {
 #[test]
 fn test_lch14_interpolator_rejects_wrong_buffer_length() {
     let f = Gf2_128RuntimeField::new();
-    let subfield = BinarySubfield::new(&core_algebra::proto::GF2_16_BASIS_V1);
+    let subfield = BinarySubfield::new(&crate::core::algebra::proto::GF2_16_BASIS_V1);
     let interpolator = Lch14ReedSolomon::new(2, 4, &f, &subfield);
 
     for len in [3, 5] {

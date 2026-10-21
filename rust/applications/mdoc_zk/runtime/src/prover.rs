@@ -12,15 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use mdoc_zk_circuits::cbor::mdoc::{parse_mdoc, MdocParseError, ParsedMdoc};
-use runtime_algebra::{
+use crate::mdoc::circuits::cbor::mdoc::{parse_mdoc, MdocParseError, ParsedMdoc};
+use crate::runtime::algebra::{
     gf2_128::Gf2_128Field, lch14_reed_solomon::Lch14InterpolatorFactory, p256::P256Field,
     reed_solomon::FftInterpolatorFactory, secp256r1::Secp256r1, SupportsFFT,
 };
-use runtime_random::{RandomEngine, Transcript};
-use runtime_zk::ZkProver;
+use crate::runtime::random::{RandomEngine, Transcript};
+use crate::runtime::zk::ZkProver;
 
-use crate::{attribute::RequestedAttribute, MdocProverErrorCode, ZkSpecStruct};
+use crate::mdoc::runtime::{attribute::RequestedAttribute, MdocProverErrorCode, ZkSpecStruct};
 
 #[allow(clippy::too_many_arguments)]
 pub fn run_mdoc_prover(
@@ -34,7 +34,7 @@ pub fn run_mdoc_prover(
     now: &str,
     doc_type: &str,
 ) -> Result<Vec<u8>, MdocProverErrorCode> {
-    let mut rng = runtime_random::SecureRandomEngine::new();
+    let mut rng = crate::runtime::random::SecureRandomEngine::new();
     run_mdoc_prover_inner(
         zk_spec,
         circuits_compressed,
@@ -63,16 +63,16 @@ pub fn run_mdoc_prover_inner<RNG: RandomEngine>(
     rng: &mut RNG,
 ) -> Result<Vec<u8>, MdocProverErrorCode> {
     let version = zk_spec.version;
-    let (config_hash, config_sig) = crate::ligero_configs(zk_spec);
-    if !crate::is_supported_version(version) {
+    let (config_hash, config_sig) = crate::mdoc::runtime::ligero_configs(zk_spec);
+    if !crate::mdoc::runtime::is_supported_version(version) {
         return Err(MdocProverErrorCode::InvalidZkSpecVersion);
     }
-    if !crate::same_namespace(attrs) {
+    if !crate::mdoc::runtime::same_namespace(attrs) {
         return Err(MdocProverErrorCode::NamespacesMissing);
     }
     if version >= 8 {
         for a in attrs {
-            if !crate::circuit_supports(&a.cbor_value) {
+            if !crate::mdoc::runtime::circuit_supports(&a.cbor_value) {
                 return Err(MdocProverErrorCode::UnsupportedAttribute);
             }
         }
@@ -80,30 +80,30 @@ pub fn run_mdoc_prover_inner<RNG: RandomEngine>(
 
     let p256 = P256Field::new();
     let issuer_pk = (
-        crate::parse_pk_coordinate(pkx, &p256).map_err(|_| MdocProverErrorCode::InvalidInput)?,
-        crate::parse_pk_coordinate(pky, &p256).map_err(|_| MdocProverErrorCode::InvalidInput)?,
+        crate::mdoc::runtime::parse_pk_coordinate(pkx, &p256).map_err(|_| MdocProverErrorCode::InvalidInput)?,
+        crate::mdoc::runtime::parse_pk_coordinate(pky, &p256).map_err(|_| MdocProverErrorCode::InvalidInput)?,
     );
 
-    let mac_ap = crate::generate_mac_ap(rng);
+    let mac_ap = crate::mdoc::runtime::generate_mac_ap(rng);
 
     let mut tp = Transcript::new(transcript);
-    let p256_2 = runtime_algebra::fp2::Fp2Field::new(&p256);
+    let p256_2 = crate::runtime::algebra::fp2::Fp2Field::new(&p256);
     let omega = p256_2.omega();
     let omega_order = p256_2.omega_order();
     let make_interpolator_sig = FftInterpolatorFactory::new(&p256, &p256_2, omega, omega_order);
 
-    let q256 = runtime_algebra::Q256Field::new();
+    let q256 = crate::runtime::algebra::Q256Field::new();
     let secp256r1 = Secp256r1::new(&p256);
 
     let gf2 = Gf2_128Field::new();
     let sf_hash =
-        runtime_algebra::subfield::BinarySubfield::new(&core_algebra::proto::GF2_16_BASIS_V1);
+        crate::runtime::algebra::subfield::BinarySubfield::new(&crate::core::algebra::proto::GF2_16_BASIS_V1);
     let make_interpolator_hash = Lch14InterpolatorFactory::new(&gf2, &sf_hash);
 
-    let (c_sig, c_hash) = crate::proto::decompress_circuits(circuits_compressed, &p256, &gf2)
+    let (c_sig, c_hash) = crate::mdoc::runtime::proto::decompress_circuits(circuits_compressed, &p256, &gf2)
         .map_err(|_| MdocProverErrorCode::CircuitParsingFailure)?;
 
-    let parsed: ParsedMdoc<runtime_algebra::RuntimeNat<4>> =
+    let parsed: ParsedMdoc<crate::runtime::algebra::RuntimeNat<4>> =
         parse_mdoc(mdoc_bytes, transcript, doc_type).map_err(|err| match err {
             MdocParseError::TooBig => MdocProverErrorCode::TaggedMsoTooBig,
             _ => MdocProverErrorCode::MsoDecodingFailure,
@@ -115,17 +115,17 @@ pub fn run_mdoc_prover_inner<RNG: RandomEngine>(
         }
     }
 
-    let witness_hash = crate::push_witness_hash(version, &gf2, attrs, &parsed, &mac_ap)?;
-    let witness_sig = crate::push_witness_sig(
+    let witness_hash = crate::mdoc::runtime::push_witness_hash(version, &gf2, attrs, &parsed, &mac_ap)?;
+    let witness_sig = crate::mdoc::runtime::push_witness_sig(
         version, &p256, &q256, &secp256r1, &issuer_pk, &parsed, &mac_ap,
     )?;
 
-    let sf_sig = runtime_algebra::p256::P256Subfield::new(&p256);
+    let sf_sig = crate::runtime::algebra::p256::P256Subfield::new(&p256);
 
     let prover_hash = ZkProver::<2, _>::new(c_hash, config_hash);
     let (commit_hash, geom_hash) = prover_hash.commit(
         &witness_hash,
-        &runtime_zk::common::ZkContext {
+        &crate::runtime::zk::common::ZkContext {
             f: &gf2,
             make_interpolator: &make_interpolator_hash,
         },
@@ -137,7 +137,7 @@ pub fn run_mdoc_prover_inner<RNG: RandomEngine>(
     let prover_sig = ZkProver::<4, _>::new(c_sig, config_sig);
     let (commit_sig, geom_sig) = prover_sig.commit(
         &witness_sig,
-        &runtime_zk::common::ZkContext {
+        &crate::runtime::zk::common::ZkContext {
             f: &p256,
             make_interpolator: &make_interpolator_sig,
         },
@@ -148,7 +148,7 @@ pub fn run_mdoc_prover_inner<RNG: RandomEngine>(
 
     let av_val = tp.u128();
 
-    let macs = crate::push_macs(
+    let macs = crate::mdoc::runtime::push_macs(
         &gf2,
         version,
         &parsed.issuer_sig_digest,
@@ -156,7 +156,7 @@ pub fn run_mdoc_prover_inner<RNG: RandomEngine>(
         av_val,
         &mac_ap,
     );
-    let hash_pub_inputs = crate::push_input_hash(
+    let hash_pub_inputs = crate::mdoc::runtime::push_input_hash(
         version,
         &gf2,
         attrs,
@@ -166,7 +166,7 @@ pub fn run_mdoc_prover_inner<RNG: RandomEngine>(
         false,
         doc_type.as_bytes(),
     );
-    let sig_pub_inputs = crate::push_input_sig(
+    let sig_pub_inputs = crate::mdoc::runtime::push_input_sig(
         version,
         &p256,
         &issuer_pk,
@@ -181,7 +181,7 @@ pub fn run_mdoc_prover_inner<RNG: RandomEngine>(
             witness_hash,
             &commit_hash,
             &mut tp,
-            &runtime_zk::common::ZkContext {
+            &crate::runtime::zk::common::ZkContext {
                 f: &gf2,
                 make_interpolator: &make_interpolator_hash,
             },
@@ -197,7 +197,7 @@ pub fn run_mdoc_prover_inner<RNG: RandomEngine>(
             witness_sig,
             &commit_sig,
             &mut tp,
-            &runtime_zk::common::ZkContext {
+            &crate::runtime::zk::common::ZkContext {
                 f: &p256,
                 make_interpolator: &make_interpolator_sig,
             },
@@ -207,11 +207,11 @@ pub fn run_mdoc_prover_inner<RNG: RandomEngine>(
             MdocProverErrorCode::GeneralFailure
         })?;
 
-    let geom = crate::proto::MdocProofGeometry {
+    let geom = crate::mdoc::runtime::proto::MdocProofGeometry {
         geom_hash,
         geom_sig,
     };
-    let proof = crate::proto::MdocProof {
+    let proof = crate::mdoc::runtime::proto::MdocProof {
         macs,
         proof_hash,
         proof_sig,

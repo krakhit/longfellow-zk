@@ -14,14 +14,14 @@
 
 #![allow(dead_code)]
 
-use compile_algebra::CompileNat;
-use core_algebra::Nat;
-use mdoc_zk_circuits::hash::concrete::ConcreteGiven;
+use crate::{
+    compile::algebra::CompileNat, core::algebra::Nat, mdoc::circuits::hash::concrete::ConcreteGiven,
+};
 
 pub struct MdocHashCorruptor {
     pub name: String,
     pub expected_path: String,
-    pub corrupt: Box<dyn Fn(&mut ConcreteGiven)>,
+    pub corrupt: Box<dyn Fn(&mut ConcreteGiven<CompileNat<4>>)>,
 }
 
 pub fn all_mdoc_hash_corruptors() -> Vec<MdocHashCorruptor> {

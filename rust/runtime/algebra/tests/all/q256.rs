@@ -12,9 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use core_algebra::{AlgebraicField, SerializableField};
 use num_bigint::BigUint;
-use runtime_algebra::q256::{Q256Element, Q256Field};
+
+use crate::{
+    core::algebra::{AlgebraicField, SerializableField},
+    runtime::algebra::q256::{Q256Element, Q256Field},
+};
 
 fn to_biguint(field: &Q256Field, e: &Q256Element) -> BigUint {
     let bytes = field.to_bytes(e);

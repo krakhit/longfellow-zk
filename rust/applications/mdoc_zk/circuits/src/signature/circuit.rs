@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use circuits_bitvec::{BitvecLogic, V128, V256};
-use circuits_ecdsa2::{Derived as EcdsaDerived, EcdsaCircuit, Given as EcdsaGiven};
-use compile_algebra::Curve;
-use compile_logic::Eltw;
+use crate::circuits::bitvec::{BitvecLogic, V128, V256};
+use crate::circuits::ecdsa2::{Derived as EcdsaDerived, EcdsaCircuit, Given as EcdsaGiven};
+use crate::compile::algebra::Curve;
+use crate::compile::logic::Eltw;
 
-use crate::traits::MdocSigCompileField;
+use crate::mdoc::circuits::traits::MdocSigCompileField;
 
-pub struct Given<L: compile_logic::LogicIO> {
+pub struct Given<L: crate::compile::logic::LogicIO> {
     pub issuer_pk: (Eltw<L>, Eltw<L>),
     pub issuer_sig_e: V256<L>,
     pub issuer_sig_given: EcdsaGiven<L>,
@@ -33,29 +33,29 @@ pub struct Given<L: compile_logic::LogicIO> {
     pub mac_ap: [[V128<L>; 2]; 3],
 }
 
-pub struct Derived<L: compile_logic::Logic> {
+pub struct Derived<L: crate::compile::logic::Logic> {
     pub issuer_sig_derived: EcdsaDerived<L>,
     pub device_sig_derived: EcdsaDerived<L>,
 }
 
-pub struct MdocSignature<'a, const W: usize, C: Curve<W>, L: compile_logic::LogicIO<F = C::F>> {
-    pub(crate) logic: &'a L,
-    pub(crate) ecdsa: EcdsaCircuit<'a, W, C, L>,
-    pub(crate) mac_circuit: circuits_mac::circuit::MAC<'a, L>,
-    pub(crate) bv: BitvecLogic<'a, L>,
+pub struct MdocSignature<'a, const W: usize, C: Curve<W>, L: crate::compile::logic::LogicIO<F = C::F>> {
+    pub(in crate::mdoc::circuits) logic: &'a L,
+    pub(in crate::mdoc::circuits) ecdsa: EcdsaCircuit<'a, W, C, L>,
+    pub(in crate::mdoc::circuits) mac_circuit: crate::circuits::mac::circuit::MAC<'a, L>,
+    pub(in crate::mdoc::circuits) bv: BitvecLogic<'a, L>,
 }
 
 impl<'a, C, L, F> MdocSignature<'a, 4, C, L>
 where
     C: Curve<4, F = F, N = F::N>,
-    L: compile_logic::LogicIO<F = F>,
+    L: crate::compile::logic::LogicIO<F = F>,
     F: MdocSigCompileField,
 {
     pub fn new(logic: &'a L, curve: &'a C) -> Self {
         Self {
             logic,
             ecdsa: EcdsaCircuit::new(logic, curve),
-            mac_circuit: circuits_mac::circuit::MAC::new(logic),
+            mac_circuit: crate::circuits::mac::circuit::MAC::new(logic),
             bv: BitvecLogic::new(logic),
         }
     }
@@ -110,19 +110,19 @@ where
                 .assert_eq("device_pky_eq", &given.device_sig_given.pkxy.1, &device_pky),
             self.ecdsa
                 .assert_signature(&given.device_sig_given, &derived.device_sig_derived),
-            self.mac_circuit.assert_mac(&circuits_mac::circuit::Given {
+            self.mac_circuit.assert_mac(&crate::circuits::mac::circuit::Given {
                 message: given.issuer_sig_e.clone(),
                 mac_av: given.mac_av.clone(),
                 mac_ap: given.mac_ap[0].clone(),
                 tag: given.mac_e.clone(),
             }),
-            self.mac_circuit.assert_mac(&circuits_mac::circuit::Given {
+            self.mac_circuit.assert_mac(&crate::circuits::mac::circuit::Given {
                 message: given.device_pk.0.clone(),
                 mac_av: given.mac_av.clone(),
                 mac_ap: given.mac_ap[1].clone(),
                 tag: given.mac_device_pkx.clone(),
             }),
-            self.mac_circuit.assert_mac(&circuits_mac::circuit::Given {
+            self.mac_circuit.assert_mac(&crate::circuits::mac::circuit::Given {
                 message: given.device_pk.1.clone(),
                 mac_av: given.mac_av.clone(),
                 mac_ap: given.mac_ap[2].clone(),

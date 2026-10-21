@@ -12,36 +12,36 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use compile_algebra::p256::P256Field;
-use core_algebra::SerializableField;
-use core_proto::circuit::Circuit;
-use mdoc_zk_circuits::{
+use crate::compile::algebra::p256::P256Field;
+use crate::core::algebra::SerializableField;
+use crate::core::proto::circuit::Circuit;
+use crate::mdoc::circuits::{
     config::K_SIG_MAC_BIT_PLUCKER, signature::circuit::MdocSignature, MdocSigCompileField,
 };
-use runtime_algebra::SupportsFFT;
+use crate::runtime::algebra::SupportsFFT;
 
-use crate::{allocate_sig::allocate_sig, allocator::WireAllocator};
+use crate::mdoc::compile::{allocate_sig::allocate_sig, allocator::WireAllocator};
 
 pub fn mdoc_zk_circuits_signature<FC>(
     fc: &FC,
 ) -> (
     Circuit<FC>,
-    core_proto::circuit::CircuitGeometry,
-    compile_compiler::debug::CircuitDebugSymbols,
+    crate::core::proto::circuit::CircuitGeometry,
+    crate::compile::compiler::debug::CircuitDebugSymbols,
 )
 where
     FC: MdocSigCompileField,
 {
-    compile_compiler::compile(fc, |iologic| {
-        let bv = circuits_bitvec::BitvecLogic::new(&iologic);
-        let bitvec_io = circuits_bitvec::BitvecIO::new(&bv);
+    crate::compile::compiler::compile(fc, |iologic| {
+        let bv = crate::circuits::bitvec::BitvecLogic::new(&iologic);
+        let bitvec_io = crate::circuits::bitvec::BitvecIO::new(&bv);
         let plucker =
-            circuits_bit_plucker::BitPlucker::<_, { K_SIG_MAC_BIT_PLUCKER }>::new(&iologic);
+            crate::circuits::bit_plucker::BitPlucker::<_, { K_SIG_MAC_BIT_PLUCKER }>::new(&iologic);
 
         let mut allocator =
-            WireAllocator::new(&iologic, &bitvec_io, compile_logic::K_FIRST_WIRE_POSITION);
+            WireAllocator::new(&iologic, &bitvec_io, crate::compile::logic::K_FIRST_WIRE_POSITION);
 
-        let curve = compile_algebra::secp256r1::Secp256r1::new(fc);
+        let curve = crate::compile::algebra::secp256r1::Secp256r1::new(fc);
         let (given, derived, pub_inputs_count, subfield_boundary_val) =
             allocate_sig(&mut allocator, &plucker, &curve);
 
@@ -53,8 +53,8 @@ where
 
 pub fn generate_sig_circuit(
     p256_compile: &P256Field,
-    profile: crate::LigeroProfile,
-) -> Result<(Circuit<P256Field>, runtime_ligero::param::LigeroConfig), String> {
+    profile: crate::mdoc::compile::LigeroProfile,
+) -> Result<(Circuit<P256Field>, crate::runtime::ligero::param::LigeroConfig), String> {
     use std::fmt::Write;
 
     let start = std::time::Instant::now();
@@ -62,18 +62,18 @@ pub fn generate_sig_circuit(
 
     let duration = start.elapsed();
 
-    let segmented = compile_compiler::segment_circuit(p256_compile, &sig_circuit_comp);
+    let segmented = crate::compile::compiler::segment_circuit(p256_compile, &sig_circuit_comp);
     let (num_witness, num_quadratic_constraints) =
-        runtime_proto::witness_and_constraint_count(&segmented);
-    let p256 = runtime_algebra::p256::P256Field::new();
-    let p256_2 = runtime_algebra::fp2::Fp2Field::new(&p256);
-    let make_interpolator = runtime_algebra::reed_solomon::FftInterpolatorFactory::new(
+        crate::runtime::proto::witness_and_constraint_count(&segmented);
+    let p256 = crate::runtime::algebra::p256::P256Field::new();
+    let p256_2 = crate::runtime::algebra::fp2::Fp2Field::new(&p256);
+    let make_interpolator = crate::runtime::algebra::reed_solomon::FftInterpolatorFactory::new(
         &p256,
         &p256_2,
         p256_2.omega(),
         p256_2.omega_order(),
     );
-    let best_block_enc = runtime_ligero::optimize_geometry(
+    let best_block_enc = crate::runtime::ligero::optimize_geometry(
         num_witness,
         num_quadratic_constraints,
         profile.rateinv,
@@ -82,7 +82,7 @@ pub fn generate_sig_circuit(
         p256_compile.serialized_size_bytes(),
         &make_interpolator,
     );
-    let config = runtime_ligero::param::LigeroConfig {
+    let config = crate::runtime::ligero::param::LigeroConfig {
         rateinv: profile.rateinv,
         nreq: profile.nreq,
         block_enc: best_block_enc,

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use runtime_algebra::{
+use crate::runtime::algebra::{
     fft::fftb,
     field::SupportsU64Conversions,
     fp2::{Fp2Element, Fp2Field},

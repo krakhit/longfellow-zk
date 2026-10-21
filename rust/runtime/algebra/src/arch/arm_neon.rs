@@ -209,10 +209,10 @@ pub fn gf2_128_accum_reduce(acc: &Gf2_128Accum) -> Gf2_128 {
 
 #[inline(always)]
 pub fn cmovne<const N: usize>(
-    a: &mut [crate::limb::Limb; N],
-    x: crate::limb::Limb,
-    y: crate::limb::Limb,
-    b: &[crate::limb::Limb; N],
+    a: &mut [crate::runtime::algebra::limb::Limb; N],
+    x: crate::runtime::algebra::limb::Limb,
+    y: crate::runtime::algebra::limb::Limb,
+    b: &[crate::runtime::algebra::limb::Limb; N],
 ) {
     for i in 0..N {
         let mut ai = a[i];
@@ -234,15 +234,15 @@ pub fn cmovne<const N: usize>(
 
 #[inline(always)]
 pub fn cmovnz<const N: usize>(
-    a: &mut [crate::limb::Limb; N],
-    nz: crate::limb::Limb,
-    b: &[crate::limb::Limb; N],
+    a: &mut [crate::runtime::algebra::limb::Limb; N],
+    nz: crate::runtime::algebra::limb::Limb,
+    b: &[crate::runtime::algebra::limb::Limb; N],
 ) {
     cmovne(a, nz, 0, b);
 }
 pub use cmovnz as cmovzn;
 
 #[inline(always)]
-pub fn zero_but_you_dont_know_it() -> crate::limb::Limb {
-    0 as crate::limb::Limb
+pub fn zero_but_you_dont_know_it() -> crate::runtime::algebra::limb::Limb {
+    0 as crate::runtime::algebra::limb::Limb
 }

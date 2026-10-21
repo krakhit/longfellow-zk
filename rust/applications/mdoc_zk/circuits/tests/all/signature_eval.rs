@@ -12,20 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use compile_algebra::{p256::P256Field, secp256r1::Secp256r1};
-use compile_logic::eval::EvalLogic;
-use mdoc_zk_circuits::{
-    parse_test_data,
-    signature::{derived, given, signature_input_of_parsed_mdoc, MdocSignature, SignatureMac},
-};
-
 use super::mdoc_signature_corruptors;
+use crate::{
+    compile::{
+        algebra::{p256::P256Field, secp256r1::Secp256r1},
+        logic::eval::EvalLogic,
+    },
+    mdoc::circuits::{
+        parse_test_data,
+        signature::{derived, given, signature_input_of_parsed_mdoc, MdocSignature, SignatureMac},
+    },
+};
 
 fn test_signature_circuit_independent_eval_generic(f: &P256Field) {
     let curve = Secp256r1::new(f);
 
-    let (issuer_pk, parsed, _) = parse_test_data::<4, compile_algebra::CompileNat<4>>(
-        &mdoc_zk_testcases::vectors::TEST_DATA,
+    let (issuer_pk, parsed, _) = parse_test_data::<4, crate::compile::algebra::CompileNat<4>>(
+        &crate::mdoc::testcases::vectors::TEST_DATA,
     );
 
     let av_u128 = 0x112233445566778899aabbccddeeff00u128;
@@ -33,7 +36,7 @@ fn test_signature_circuit_independent_eval_generic(f: &P256Field) {
     let ap1_u128 = 0xfedcba9876543210fedcba9876543210u128;
     let ap_keys = [[ap0_u128, ap1_u128]; 3];
 
-    let tracker = compile_logic::tracker::AssertionTracker::new();
+    let tracker = crate::compile::logic::tracker::AssertionTracker::new();
     let lp256 = EvalLogic::new_with_tracker(f, &tracker);
     let sig_circuit = MdocSignature::new(&lp256, &curve);
 
@@ -42,21 +45,22 @@ fn test_signature_circuit_independent_eval_generic(f: &P256Field) {
         mac_av: av_u128,
         mac_ap: ap_keys,
     };
-    let fn_field = compile_algebra::q256::Q256Field::new();
+    let fn_field = crate::compile::algebra::q256::Q256Field::new();
     let given = given::<4, P256Field, _, _>(sig_input, mac_input, f, &fn_field, &curve);
     let derived = derived::<4, _, _, _>(f, &fn_field, &curve, &given).unwrap();
 
-    let wire_given = mdoc_zk_circuits::signature::evaluate::evaluate_given::<Secp256r1<_>, _, _>(
+    let wire_given = crate::mdoc::circuits::signature::evaluate::evaluate_given::<Secp256r1<_>, _, _>(
         &lp256,
-        &circuits_bitvec::BitvecLogic::new(&lp256),
+        &crate::circuits::bitvec::BitvecLogic::new(&lp256),
         &given,
         f,
     );
-    let wire_derived = mdoc_zk_circuits::signature::evaluate::evaluate_derived::<Secp256r1<_>, _, _>(
-        &lp256,
-        &circuits_bitvec::BitvecLogic::new(&lp256),
-        &derived,
-    );
+    let wire_derived =
+        crate::mdoc::circuits::signature::evaluate::evaluate_derived::<Secp256r1<_>, _, _>(
+            &lp256,
+            &crate::circuits::bitvec::BitvecLogic::new(&lp256),
+            &derived,
+        );
 
     let assertion = sig_circuit.assert_signatures_and_macs(&wire_given, &wire_derived);
     assertion.unwrap();
@@ -72,10 +76,10 @@ fn test_signature_circuit_independent_eval() {
 fn test_eval_mdoc_signature_shared_corruptors() {
     let f = P256Field::new();
     let curve = Secp256r1::new(&f);
-    let fn_field = compile_algebra::q256::Q256Field::new();
+    let fn_field = crate::compile::algebra::q256::Q256Field::new();
 
-    let (issuer_pk, parsed, _) = parse_test_data::<4, compile_algebra::CompileNat<4>>(
-        &mdoc_zk_testcases::vectors::TEST_DATA,
+    let (issuer_pk, parsed, _) = parse_test_data::<4, crate::compile::algebra::CompileNat<4>>(
+        &crate::mdoc::testcases::vectors::TEST_DATA,
     );
 
     let base_sig_input = signature_input_of_parsed_mdoc(&parsed, issuer_pk);
@@ -99,7 +103,7 @@ fn test_eval_mdoc_signature_shared_corruptors() {
 
     let corruptors = mdoc_signature_corruptors::all_mdoc_signature_corruptors::<P256Field>();
     for c in corruptors {
-        let tracker = compile_logic::tracker::AssertionTracker::new();
+        let tracker = crate::compile::logic::tracker::AssertionTracker::new();
         let lp256 = EvalLogic::new_with_tracker(&f, &tracker);
         let sig_circuit = MdocSignature::new(&lp256, &curve);
         let mut sig_input = base_sig_input.clone();
@@ -115,16 +119,17 @@ fn test_eval_mdoc_signature_shared_corruptors() {
             f_given(&mut given_val, &f);
         }
 
-        let wire_given = mdoc_zk_circuits::signature::evaluate::evaluate_given::<Secp256r1<_>, _, _>(
-            &lp256,
-            &circuits_bitvec::BitvecLogic::new(&lp256),
-            &given_val,
-            &f,
-        );
-        let wire_derived =
-            mdoc_zk_circuits::signature::evaluate::evaluate_derived::<Secp256r1<_>, _, _>(
+        let wire_given =
+            crate::mdoc::circuits::signature::evaluate::evaluate_given::<Secp256r1<_>, _, _>(
                 &lp256,
-                &circuits_bitvec::BitvecLogic::new(&lp256),
+                &crate::circuits::bitvec::BitvecLogic::new(&lp256),
+                &given_val,
+                &f,
+            );
+        let wire_derived =
+            crate::mdoc::circuits::signature::evaluate::evaluate_derived::<Secp256r1<_>, _, _>(
+                &lp256,
+                &crate::circuits::bitvec::BitvecLogic::new(&lp256),
                 &derived_val,
             );
 

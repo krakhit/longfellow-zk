@@ -12,14 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-pub mod allocate;
-pub mod circuit;
-pub use allocate::{allocate_derived, allocate_given};
-pub use circuit::{Derived, Given, Sha256};
-pub mod constants;
-#[cfg(feature = "testonly")]
-pub mod evaluate;
-#[cfg(feature = "testonly")]
-pub use evaluate::{evaluate_derived, evaluate_given};
 pub mod concrete;
+pub mod constants;
+
 pub use concrete::{derived, ConcreteDerived, ConcreteGiven};
+
+cfg_compiler! {
+    pub mod allocate;
+    pub mod circuit;
+
+    pub use self::{
+        allocate::{allocate_derived, allocate_given},
+        circuit::{Derived, Given, Sha256},
+    };
+}
+
+
+cfg_testonly! {
+    pub mod evaluate;
+    pub use evaluate::{evaluate_derived, evaluate_given};
+}
+
+#[cfg(test)]
+#[path = "../tests/all/mod.rs"]
+mod tests_all;

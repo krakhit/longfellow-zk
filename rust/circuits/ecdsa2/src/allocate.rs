@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use compile_logic::LogicIO;
+use crate::compile::logic::LogicIO;
 
 use super::circuit::{Derived, Given, Slicing};
 

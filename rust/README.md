@@ -53,26 +53,67 @@ workspace does not contain a separate C++ runtime for its new circuits.
 
 ---
 
+## Feature Profiles (`cfg`)
+
+The `longfellow-zk` crate uses Cargo features to support minimal builds tailored to specific deployment environments (such as a lightweight mobile verifier, a client prover, or an offline circuit compiler). By default, `default = ["verifier", "prover", "compiler", "mdoc"]` is enabled.
+
+### Cargo Features
+
+| Feature | Purpose | Included Modules & Capabilities |
+| :--- | :--- | :--- |
+| `verifier` | Proof verification runtime | Verifies Sumcheck, Ligero, and ZK proofs (`runtime::*::verifier`) and mDoc presentations (`mdoc::runtime::verifier`) against pre-compiled circuits. |
+| `prover` | Witness generation & proving runtime | Generates witnesses and produces Ligero + Sumcheck ZK proofs (`runtime::*::prover`, `mdoc::runtime::prover`), plus the `concrete` witness generators in `circuits::{ec, ecdsa2, mac, sha256, sha256msg}`. |
+| `compiler` | Symbolic circuit synthesis & serialization | Enables `compile::*` (`algebra`, `logic`, `compiler`, `proto`), all symbolic circuit definitions (`circuits::*`), and `mdoc::{compile, artifacts}`. Pulls in compiler-only dependencies (`bumpalo`, `num-bigint`, `num-traits`, `rustc-hash`). |
+| `mdoc` | ISO 18013-5 mDoc application layer | Enables `mdoc::{proto, circuits, runtime}` (and `mdoc::{compile, artifacts}` when combined with `compiler`), plus `zstd` circuit archive decompression. |
+| `testonly` | Shared test/benchmark support | Enables deterministic RNG (`DeterministicRng`), in-memory circuit evaluation (`compile::eval` and `evaluate` submodules), and static mDoc test vectors (`mdoc::testcases`). Automatically enables `verifier`, `prover`, and `compiler`. |
+
+### Internal `cfg_*!` Block Macros
+
+Inside [`src/lib.rs`](src/lib.rs), five crate-wide declarative macros group conditional items cleanly without repeating `#[cfg(...)]` attributes:
+
+- `cfg_verifier! { ... }` — `#[cfg(any(test, feature = "verifier"))]`
+- `cfg_prover! { ... }` — `#[cfg(any(test, feature = "prover"))]`
+- `cfg_compiler! { ... }` — `#[cfg(any(test, feature = "compiler"))]`
+- `cfg_prover_or_compiler! { ... }` — `#[cfg(any(test, feature = "prover", feature = "compiler"))]`
+- `cfg_testonly! { ... }` — `#[cfg(any(test, feature = "testonly"))]`
+
+Feature gates are hoisted as high as possible in the module tree (`src/lib.rs` and `applications/mdoc_zk/circuits/src/lib.rs`) so that submodules that are exclusively compiler-only or test-only do not need redundant inner `cfg_*!` blocks. Within each module file, unconditional declarations (`mod`, `use` / `pub use`, types, and functions) are listed first, followed by conditional declarations grouped into single `cfg_*! { ... }` blocks, and finally `#[cfg(test)]` unit-test modules at the bottom.
+
+---
+
 ## Building and Testing
 
 ### Requirements
 A current stable Rust toolchain.
 
-### Build the Workspace
+### Build Profiles
 ```bash
+# Default build (verifier + prover + compiler + mdoc)
 cargo build --release
+
+# Prover-only demo: proves the embedded test mDoc against the precompiled *legacy* v7
+# circuit (ZK_SPECS[0]; v8 circuits are only synthesised in `compiler` builds) and writes
+# ./mdoc_zk_proof.bin. Use `--circuit <path>` or LONGFELLOW_MDOC_CIRCUIT to override the
+# checked-in .lfa2 archive; see `--help`.
+cargo run --release --bin prover_only --no-default-features --features "prover,mdoc"
+
+# Verifier-only demo: verifies ./mdoc_zk_proof.bin (same circuit/override rules as above)
+cargo run --release --bin verifier_only --no-default-features --features "verifier,mdoc"
+
+# Offline circuit compiler build
+cargo build --release --no-default-features --features "compiler,mdoc"
 ```
 
 ### Run Tests
-To run all unit and integration tests across all workspace crates in release mode:
+To run all unit and integration tests in release mode:
 ```bash
 cargo test -r
 ```
 
 ### Run Benchmarks
-To run the end-to-end mDOC ZK performance benchmarks:
+To run the end-to-end mDoc ZK performance benchmarks:
 ```bash
-cargo bench -p mdoc-zk-runtime
+cargo bench --features testonly
 ```
 
 ---
@@ -80,3 +121,4 @@ cargo bench -p mdoc-zk-runtime
 ## License
 
 Licensed under the Apache License, Version 2.0. See [LICENSE](../LICENSE) for details.
+

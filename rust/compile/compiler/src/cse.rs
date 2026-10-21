@@ -14,10 +14,10 @@
 
 use std::cell::RefCell;
 
-use compile_algebra::field::CompileField;
+use crate::compile::algebra::field::CompileField;
 use rustc_hash::FxHashMap;
 
-use crate::{
+use crate::compile::compiler::{
     arena::CompilerArena,
     ir::{depth_expr, Expr, ExprNode, HashedExpr, RewriteT},
     node::Node,
@@ -83,7 +83,7 @@ impl<'a, F: CompileField> Cse<'a, F> {
     }
 }
 
-use crate::ir::RawAssertions;
+use crate::compile::compiler::ir::RawAssertions;
 
 impl<'a, F: CompileField> RewriteT<'a, F> for Cse<'a, F> {
     fn ok(&self) -> RawAssertions<'a, F> {
@@ -137,7 +137,7 @@ impl<'a, F: CompileField> RewriteT<'a, F> for Cse<'a, F> {
 
     fn with_assertions(
         &self,
-        assertions: &crate::ir::Assertions<'a, F>,
+        assertions: &crate::compile::compiler::ir::Assertions<'a, F>,
         x: &ExprNode<'a, F>,
     ) -> ExprNode<'a, F> {
         self.memo_expr(Expr::WithAssertions(assertions, *x))

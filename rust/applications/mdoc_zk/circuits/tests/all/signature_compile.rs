@@ -12,29 +12,33 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use compile_algebra::{p256::P256Field, secp256r1::Secp256r1};
-use core_algebra::{AlgebraicField, Nat, SupportsNatConversions};
-use mdoc_zk_circuits::{
-    config::K_ZSTD_LEVEL,
-    parse_test_data,
-    signature::{
-        derived, given, signature_input_of_parsed_mdoc, ConcreteDerived, ConcreteGiven,
-        MdocSignature, SignatureMac,
+use super::mdoc_signature_corruptors;
+use crate::{
+    compile::algebra::{p256::P256Field, secp256r1::Secp256r1},
+    core::algebra::{AlgebraicField, Nat, SupportsNatConversions},
+    mdoc::circuits::{
+        config::K_ZSTD_LEVEL,
+        parse_test_data,
+        signature::{
+            derived, given, signature_input_of_parsed_mdoc, ConcreteDerived, ConcreteGiven,
+            MdocSignature, SignatureMac,
+        },
+        MdocSigCompileField,
     },
-    MdocSigCompileField,
 };
 
-use super::mdoc_signature_corruptors;
-
-fn test_mdoc_zk_circuits_signature_generic(fc: &P256Field, _fr: &runtime_algebra::p256::P256Field) {
+fn test_mdoc_zk_circuits_signature_generic(
+    fc: &P256Field,
+    _fr: &crate::runtime::algebra::p256::P256Field,
+) {
     let curve_c = Secp256r1::new(fc);
-    let mut pos = compile_logic::K_FIRST_WIRE_POSITION;
+    let mut pos = crate::compile::logic::K_FIRST_WIRE_POSITION;
 
-    let (_circuit, stats, _symbols) = compile_compiler::compile(fc, |iologic| {
+    let (_circuit, stats, _symbols) = crate::compile::compiler::compile(fc, |iologic| {
         let mdoc_sig = MdocSignature::new(&iologic, &curve_c);
-        let bv = circuits_bitvec::BitvecLogic::new(&iologic);
-        let given_wires = mdoc_zk_circuits::signature::allocate_given(&iologic, &bv, &mut pos);
-        let derived_wires = mdoc_zk_circuits::signature::allocate_derived(&iologic, &mut pos);
+        let bv = crate::circuits::bitvec::BitvecLogic::new(&iologic);
+        let given_wires = crate::mdoc::circuits::signature::allocate_given(&iologic, &bv, &mut pos);
+        let derived_wires = crate::mdoc::circuits::signature::allocate_derived(&iologic, &mut pos);
 
         (
             mdoc_sig.assert_signatures_and_macs(&given_wires, &derived_wires),
@@ -44,7 +48,7 @@ fn test_mdoc_zk_circuits_signature_generic(fc: &P256Field, _fr: &runtime_algebra
     });
     assert_eq!(
         stats,
-        compile_eval::CircuitGeometry {
+        crate::compile::eval::CircuitGeometry {
             ninput: 4773,
             npublic_input: 1,
             noutput: 6,
@@ -59,13 +63,16 @@ fn test_mdoc_zk_circuits_signature_generic(fc: &P256Field, _fr: &runtime_algebra
 #[test]
 fn test_mdoc_zk_circuits_signature() {
     let fc = P256Field::new();
-    let fr = runtime_algebra::p256::P256Field::new();
+    let fr = crate::runtime::algebra::p256::P256Field::new();
     test_mdoc_zk_circuits_signature_generic(&fc, &fr);
 }
 
 fn mdoc_zk_circuits_signature_circuit<FC>(
     fc: &FC,
-) -> (compile_eval::Circuit<FC>, compile_eval::CircuitGeometry)
+) -> (
+    crate::compile::eval::Circuit<FC>,
+    crate::compile::eval::CircuitGeometry,
+)
 where FC: MdocSigCompileField {
     let (circuit, stats, _) = compile_signature_circuit(fc);
     (circuit, stats)
@@ -74,19 +81,19 @@ where FC: MdocSigCompileField {
 fn compile_signature_circuit<FC>(
     fc: &FC,
 ) -> (
-    compile_eval::Circuit<FC>,
-    compile_eval::CircuitGeometry,
-    compile_compiler::debug::CircuitDebugSymbols,
+    crate::compile::eval::Circuit<FC>,
+    crate::compile::eval::CircuitGeometry,
+    crate::compile::compiler::debug::CircuitDebugSymbols,
 )
 where FC: MdocSigCompileField {
     let curve_c = Secp256r1::new(fc);
-    let mut pos = compile_logic::K_FIRST_WIRE_POSITION;
+    let mut pos = crate::compile::logic::K_FIRST_WIRE_POSITION;
 
-    compile_compiler::compile(fc, |iologic| {
+    crate::compile::compiler::compile(fc, |iologic| {
         let mdoc_sig = MdocSignature::new(&iologic, &curve_c);
-        let bv = circuits_bitvec::BitvecLogic::new(&iologic);
-        let given_wires = mdoc_zk_circuits::signature::allocate_given(&iologic, &bv, &mut pos);
-        let derived_wires = mdoc_zk_circuits::signature::allocate_derived(&iologic, &mut pos);
+        let bv = crate::circuits::bitvec::BitvecLogic::new(&iologic);
+        let given_wires = crate::mdoc::circuits::signature::allocate_given(&iologic, &bv, &mut pos);
+        let derived_wires = crate::mdoc::circuits::signature::allocate_derived(&iologic, &mut pos);
 
         (
             mdoc_sig.assert_signatures_and_macs(&given_wires, &derived_wires),
@@ -121,7 +128,7 @@ fn push_u128_bits<F: AlgebraicField>(inputs: &mut Vec<F::E>, value: u128, f: &F)
 
 fn push_ecdsa_given<F: AlgebraicField>(
     inputs: &mut Vec<F::E>,
-    given: &circuits_ecdsa2::concrete::ConcreteGiven<F>,
+    given: &crate::circuits::ecdsa2::concrete::ConcreteGiven<F>,
 ) {
     inputs.push(given.pkxy.0.clone());
     inputs.push(given.pkxy.1.clone());
@@ -137,9 +144,9 @@ fn make_signature_inputs<F>(
     f: &F,
 ) -> Vec<F::E>
 where
-    F: runtime_algebra::field::RuntimeField<4> + SupportsNatConversions<4>,
+    F: crate::runtime::algebra::field::RuntimeField<4> + SupportsNatConversions<4>,
 {
-    let mut inputs = compile_eval::initial_inputs(f);
+    let mut inputs = crate::compile::eval::initial_inputs(f);
 
     inputs.push(given.issuer_sig_given.pkxy.0.clone());
     inputs.push(given.issuer_sig_given.pkxy.1.clone());
@@ -172,13 +179,13 @@ where
 #[test]
 fn test_compile_mdoc_signature_corruptors() {
     let fc = P256Field::new();
-    let fr = runtime_algebra::p256::P256Field::new();
-    let curve = runtime_algebra::secp256r1::Secp256r1::new(&fr);
-    let fn_field = runtime_algebra::Q256Field::new();
+    let fr = crate::runtime::algebra::p256::P256Field::new();
+    let curve = crate::runtime::algebra::secp256r1::Secp256r1::new(&fr);
+    let fn_field = crate::runtime::algebra::Q256Field::new();
     let (circuit, _, symbols) = compile_signature_circuit(&fc);
 
-    let (issuer_pk, parsed, _) = parse_test_data::<4, runtime_algebra::RuntimeNat<4>>(
-        &mdoc_zk_testcases::vectors::TEST_DATA,
+    let (issuer_pk, parsed, _) = parse_test_data::<4, crate::runtime::algebra::RuntimeNat<4>>(
+        &crate::mdoc::testcases::vectors::TEST_DATA,
     );
     let base_sig_input = signature_input_of_parsed_mdoc(&parsed, issuer_pk);
     let base_mac_input = SignatureMac {
@@ -197,19 +204,19 @@ fn test_compile_mdoc_signature_corruptors() {
         &curve,
     );
     let valid_derived = derived::<4, _, _, _>(&fr, &fn_field, &curve, &valid_given).unwrap();
-    compile_eval::eval_circuit_fc(
+    crate::compile::eval::eval_circuit_fc(
         &fc,
         &fr,
         &circuit,
         &symbols,
         &make_signature_inputs(&valid_given, &valid_derived, &fr),
-        compile_eval::FieldID::P256,
+        crate::compile::eval::FieldID::P256,
     )
     .unwrap()
     .assert_all_passed();
 
     for corruptor in mdoc_signature_corruptors::all_mdoc_signature_corruptors::<
-        runtime_algebra::p256::P256Field,
+        crate::runtime::algebra::p256::P256Field,
     >() {
         let mut sig_input = base_sig_input.clone();
         if let Some(corrupt_input) = &corruptor.corrupt_input {
@@ -222,13 +229,13 @@ fn test_compile_mdoc_signature_corruptors() {
             corrupt_given(&mut given, &fr);
         }
 
-        let result = compile_eval::eval_circuit_fc(
+        let result = crate::compile::eval::eval_circuit_fc(
             &fc,
             &fr,
             &circuit,
             &symbols,
             &make_signature_inputs(&given, &derived, &fr),
-            compile_eval::FieldID::P256,
+            crate::compile::eval::FieldID::P256,
         )
         .unwrap();
         let failed = result.failed_paths();
@@ -244,7 +251,7 @@ fn test_compile_mdoc_signature_corruptors() {
 
 #[test]
 fn test_serialize_and_verify_mdoc_signature_circuit() {
-    use core_proto::{writer::CircuitWriter, FieldID};
+    use crate::core::proto::{writer::CircuitWriter, FieldID};
 
     let p256_c = P256Field::new();
     let (circuit, _stats) = mdoc_zk_circuits_signature_circuit(&p256_c);

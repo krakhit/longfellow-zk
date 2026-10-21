@@ -12,13 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use core_algebra::SerializableField;
-use core_proto::circuit::Circuit;
-use runtime_algebra::{field::RuntimeField, ElementOf, SupportsSampling};
-use runtime_proto::RoundPoly;
-use runtime_random::{RandomEngine, Transcript};
-
-use crate::MAX_LOGW;
+use crate::{
+    core::{algebra::SerializableField, proto::circuit::Circuit},
+    runtime::{
+        algebra::{field::RuntimeField, ElementOf, SupportsSampling},
+        proto::RoundPoly,
+        random::{RandomEngine, Transcript},
+        sumcheck::MAX_LOGW,
+    },
+};
 
 /// Extension trait that adds sumcheck-specific helpers to the cryptographic Transcript.
 pub trait TranscriptSumcheck {
@@ -89,7 +91,7 @@ impl TranscriptSumcheck for Transcript {
             .raw
             .layers
             .iter()
-            .map(core_proto::Layer::num_terms)
+            .map(crate::core::proto::Layer::num_terms)
             .sum::<usize>();
         self.write0(nterms);
     }

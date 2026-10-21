@@ -12,9 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use compile_algebra::gf2_128::Gf2_128Field as UnoptField;
-use core_algebra::{AlgebraicField, SerializableField, SupportsU128Conversions};
-use runtime_algebra::{gf2_128::*, poly::InterpolationField, Subfield, SupportsSampling};
+use crate::{
+    compile::algebra::gf2_128::Gf2_128Field as UnoptField,
+    core::algebra::{AlgebraicField, SerializableField, SupportsU128Conversions},
+    runtime::algebra::{gf2_128::*, poly::InterpolationField, Subfield, SupportsSampling},
+};
 
 #[test]
 fn test_gf2_128_optimized_vs_unoptimized() {
@@ -149,7 +151,9 @@ fn test_serialization() {
     let bytes = field.to_bytes(&one);
     assert_eq!(bytes.len(), field.serialized_size_bytes());
 
-    let sf = runtime_algebra::subfield::BinarySubfield::new(&core_algebra::proto::GF2_16_BASIS_V1);
+    let sf = crate::runtime::algebra::subfield::BinarySubfield::new(
+        &crate::core::algebra::proto::GF2_16_BASIS_V1,
+    );
     let sub_bytes = sf.to_bytes(&one);
     assert_eq!(sub_bytes.len(), sf.serialized_size_bytes());
 }

@@ -12,13 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use util::ceil_log2;
-
 use super::CircuitReader;
 use crate::{
-    circuit::{Circuit, Layer, RawCircuit, TermDelta},
-    uleb::{read_uleb128_max4, read_uleb128_max4_u32},
-    SerializableField,
+    core::proto::{
+        circuit::{Circuit, Layer, RawCircuit, TermDelta},
+        uleb::{read_uleb128_max4, read_uleb128_max4_u32},
+        SerializableField,
+    },
+    util::ceil_log2,
 };
 
 pub(super) fn from_stream_lfc2_inner<R: std::io::BufRead, F: SerializableField>(
@@ -36,11 +37,11 @@ pub(super) fn from_stream_lfc2_inner<R: std::io::BufRead, F: SerializableField>(
         ));
     }
     let logv = ceil_log2(nv);
-    if !crate::sane_logw(logv) {
+    if !crate::core::proto::sane_logw(logv) {
         return Err(format!(
             "Circuit logv {} exceeds MAX_LOGW {} or usize bit width",
             logv,
-            crate::MAX_LOGW
+            crate::core::proto::MAX_LOGW
         ));
     }
     let nc = read_uleb128_max4(stream)?;
@@ -115,11 +116,11 @@ pub(super) fn from_stream_lfc2_inner<R: std::io::BufRead, F: SerializableField>(
     let mut total_terms = 0usize;
     for _ in 0..nl {
         let logw = read_uleb128_max4(stream)?;
-        if !crate::sane_logw(logw) {
+        if !crate::core::proto::sane_logw(logw) {
             return Err(format!(
                 "Layer logw {} exceeds MAX_LOGW {} or usize bit width",
                 logw,
-                crate::MAX_LOGW
+                crate::core::proto::MAX_LOGW
             ));
         }
         let nw = read_uleb128_max4(stream)?;
@@ -259,7 +260,7 @@ pub(super) fn from_stream_lfc2_inner<R: std::io::BufRead, F: SerializableField>(
     super::validate_raw_circuit(&raw)?;
 
     if enforce_circuit_id {
-        let computed_id = crate::circuit::compute_id(reader.f, &raw);
+        let computed_id = crate::core::proto::circuit::compute_id(reader.f, &raw);
         if computed_id != id {
             return Err("Circuit ID verification failed".to_string());
         }

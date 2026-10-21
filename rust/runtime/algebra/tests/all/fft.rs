@@ -1,4 +1,4 @@
-use core_algebra::{SerializableField, SupportsU64Conversions};
+use crate::core::algebra::{SerializableField, SupportsU64Conversions};
 // Copyright 2026 Google LLC.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,7 +12,7 @@ use core_algebra::{SerializableField, SupportsU64Conversions};
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-use runtime_algebra::{
+use crate::runtime::algebra::{
     fft::*,
     field::RuntimeField,
     fp2::{Fp2Element, Fp2Field},
@@ -47,7 +47,7 @@ impl SimplePrg {
     fn new() -> Self {
         Self { state: 42 }
     }
-    fn next<const W: usize, F: RuntimeField<W> + core_algebra::SupportsU64Conversions>(
+    fn next<const W: usize, F: RuntimeField<W> + crate::core::algebra::SupportsU64Conversions>(
         &mut self,
         f: &F,
     ) -> F::E {

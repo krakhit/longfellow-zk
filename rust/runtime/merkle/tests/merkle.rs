@@ -12,9 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use runtime_merkle::{commit, open, verify, verify_proof, Digest, MerkleError, MerkleHeap};
-use runtime_random::RandomEngine;
 use sha2::Digest as ShaDigest;
+
+use crate::runtime::{
+    merkle::{commit, open, verify, verify_proof, Digest, MerkleError, MerkleHeap},
+    random::RandomEngine,
+};
 
 struct FakeRng {
     counter: u8,

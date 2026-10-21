@@ -12,8 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use core_algebra::{AlgebraicField, SupportsU128Conversions};
-use runtime_algebra::gf2_128::{Gf2_128, Gf2_128RuntimeField};
+use crate::{
+    core::algebra::{AlgebraicField, SupportsU128Conversions},
+    runtime::algebra::gf2_128::{Gf2_128, Gf2_128RuntimeField},
+};
 
 fn solve_quadratic_equation(c: Gf2_128) -> Gf2_128 {
     let f = Gf2_128RuntimeField::new();

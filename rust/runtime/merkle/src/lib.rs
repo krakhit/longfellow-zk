@@ -17,9 +17,14 @@ pub mod heap;
 
 use std::fmt;
 
-pub use commitment::{commit, open, verify, MerkleCommitment};
+pub use commitment::verify;
 pub use heap::{merkle_heap_len, verify_proof, MerkleHeap};
-pub use runtime_proto::{Digest, MerkleNonce, MerkleProof};
+
+pub use crate::runtime::proto::{Digest, MerkleNonce, MerkleProof};
+
+cfg_prover! {
+    pub use commitment::{commit, open, MerkleCommitment};
+}
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum MerkleError {
@@ -66,3 +71,7 @@ impl fmt::Display for MerkleError {
 }
 
 impl std::error::Error for MerkleError {}
+
+#[cfg(test)]
+#[path = "../tests/merkle.rs"]
+mod tests_merkle;

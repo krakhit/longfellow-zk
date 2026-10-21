@@ -12,14 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::fp_generic::{FpGenericElement, FpGenericField};
+use crate::runtime::algebra::fp_generic::{FpGenericElement, FpGenericField};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub struct Q256Tag;
 
-pub type Q256Element = FpGenericElement<{ 4 * crate::LIMBS_PER_U64 }, Q256Tag>;
-pub type Q256Field =
-    FpGenericField<4, { 4 * crate::LIMBS_PER_U64 }, { 9 * crate::LIMBS_PER_U64 }, Q256Tag>;
+pub type Q256Element = FpGenericElement<{ 4 * crate::runtime::algebra::LIMBS_PER_U64 }, Q256Tag>;
+pub type Q256Field = FpGenericField<
+    4,
+    { 4 * crate::runtime::algebra::LIMBS_PER_U64 },
+    { 9 * crate::runtime::algebra::LIMBS_PER_U64 },
+    Q256Tag,
+>;
 
 const Q256_MODULUS: [u64; 4] = [
     0xf3b9cac2fc632551,

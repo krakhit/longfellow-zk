@@ -15,3 +15,7 @@
 mod circuit;
 
 pub use circuit::Gf2_128Mul;
+
+#[cfg(test)]
+#[path = "../tests/gf2_128.rs"]
+mod tests_gf2_128;

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use core_proto::archive::{CircuitArchive, CircuitArchiveBuilder, LFA2_MAGIC};
+use crate::core::proto::archive::{CircuitArchive, CircuitArchiveBuilder, LFA2_MAGIC};
 
 #[test]
 fn test_circuit_archive_lfa2_roundtrip() {
@@ -57,32 +57,36 @@ fn test_circuit_archive_lfa2_roundtrip() {
 
 #[test]
 fn test_circuit_archive_lfa1_roundtrip() {
-    use circuits_boolean::Boolean;
-    use compile_algebra::{gf2_128::Gf2_128Field, p256::P256Field};
-    use compile_logic::LogicIO;
-    use core_proto::writer::CircuitWriter;
+    use crate::{
+        circuits::boolean::Boolean,
+        compile::{
+            algebra::{gf2_128::Gf2_128Field, p256::P256Field},
+            logic::LogicIO,
+        },
+        core::proto::writer::CircuitWriter,
+    };
 
     let f256 = P256Field::new();
     let fgf2 = Gf2_128Field::new();
 
-    let (c_sig, _, _) = compile_compiler::compile(&f256, |iologic256| {
+    let (c_sig, _, _) = crate::compile::compiler::compile(&f256, |iologic256| {
         let boolean256 = Boolean::new(&iologic256);
         let a = iologic256.input(1);
         let ab = boolean256.of_eltw(a);
         (boolean256.assert_true("assert_a", &ab), 1, 0)
     });
 
-    let (c_hash, _, _) = compile_compiler::compile(&fgf2, |iologic_gf2| {
+    let (c_hash, _, _) = crate::compile::compiler::compile(&fgf2, |iologic_gf2| {
         let boolean_gf2 = Boolean::new(&iologic_gf2);
         let b = iologic_gf2.input(1);
         let bb = boolean_gf2.of_eltw(b);
         (boolean_gf2.assert_true("assert_b", &bb), 1, 0)
     });
 
-    let w_sig = CircuitWriter::new(&f256, core_proto::FieldID::P256);
+    let w_sig = CircuitWriter::new(&f256, crate::core::proto::FieldID::P256);
     let sig_bytes = w_sig.to_bytes_lfc1(&c_sig);
 
-    let w_hash = CircuitWriter::new(&fgf2, core_proto::FieldID::Gf2_128);
+    let w_hash = CircuitWriter::new(&fgf2, crate::core::proto::FieldID::Gf2_128);
     let hash_bytes = w_hash.to_bytes_lfc1(&c_hash);
 
     let mut builder = CircuitArchiveBuilder::new();
@@ -145,15 +149,19 @@ fn test_circuit_archive_lfa1_circuit_version_assertion() {
 
 #[test]
 fn test_circuit_archive_legacy_concatenated_stream() {
-    use circuits_boolean::Boolean;
-    use compile_algebra::{gf2_128::Gf2_128Field, p256::P256Field};
-    use compile_logic::LogicIO;
-    use core_proto::writer::CircuitWriter;
+    use crate::{
+        circuits::boolean::Boolean,
+        compile::{
+            algebra::{gf2_128::Gf2_128Field, p256::P256Field},
+            logic::LogicIO,
+        },
+        core::proto::writer::CircuitWriter,
+    };
 
     let f256 = P256Field::new();
     let fgf2 = Gf2_128Field::new();
 
-    let (c_sig, _, _) = compile_compiler::compile(&f256, |iologic256| {
+    let (c_sig, _, _) = crate::compile::compiler::compile(&f256, |iologic256| {
         let boolean256 = Boolean::new(&iologic256);
         let a = iologic256.input(1);
         let ab = boolean256.of_eltw(a);
@@ -161,17 +169,17 @@ fn test_circuit_archive_legacy_concatenated_stream() {
         (assertion256, 1, 0)
     });
 
-    let (c_hash, _, _) = compile_compiler::compile(&fgf2, |iologic_gf2| {
+    let (c_hash, _, _) = crate::compile::compiler::compile(&fgf2, |iologic_gf2| {
         let boolean_gf2 = Boolean::new(&iologic_gf2);
         let b = iologic_gf2.input(1);
         let bb = boolean_gf2.of_eltw(b);
         (boolean_gf2.assert_true("assert_b", &bb), 1, 0)
     });
 
-    let w_sig = CircuitWriter::new(&f256, core_proto::FieldID::P256);
+    let w_sig = CircuitWriter::new(&f256, crate::core::proto::FieldID::P256);
     let sig_bytes = w_sig.to_bytes_lfc1(&c_sig);
 
-    let w_hash = CircuitWriter::new(&fgf2, core_proto::FieldID::Gf2_128);
+    let w_hash = CircuitWriter::new(&fgf2, crate::core::proto::FieldID::Gf2_128);
     let hash_bytes = w_hash.to_bytes_lfc1(&c_hash);
 
     let mut concatenated = Vec::new();

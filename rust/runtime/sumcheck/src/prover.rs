@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use core_algebra::ElementOf;
-use runtime_algebra::{poly::InterpolationField, SupportsSampling};
-use runtime_random::Transcript;
+use crate::core::algebra::ElementOf;
+use crate::runtime::algebra::{poly::InterpolationField, SupportsSampling};
+use crate::runtime::random::Transcript;
 
-use crate::{
+use crate::runtime::sumcheck::{
     hquad::HQuad,
     poly::{Poly, QuadRoundPoly, QuadWirePoly},
     proof::{LayerProof, SumcheckProof, MAX_LOGW},
@@ -29,9 +29,7 @@ struct Bindings<const W: usize, F: InterpolationField<W>> {
     challenges: [Vec<ElementOf<F>>; 2],
 }
 
-pub struct SumcheckProofAux<const W: usize, F: InterpolationField<W>> {
-    pub bound_quad: Vec<ElementOf<F>>,
-}
+pub use crate::runtime::sumcheck::SumcheckProofAux;
 
 impl<const W: usize, F: InterpolationField<W>> SumcheckProofAux<W, F> {
     pub fn new(num_layers: usize, f: &F) -> Self {
@@ -44,7 +42,7 @@ impl<const W: usize, F: InterpolationField<W>> SumcheckProofAux<W, F> {
 pub fn prove<const W: usize, F: InterpolationField<W> + SupportsSampling<W>>(
     in_layers: Vec<Vec<ElementOf<F>>>,
     pad: &SumcheckProof<W, F>,
-    circuit: &core_proto::circuit::Circuit<F>,
+    circuit: &crate::core::proto::circuit::Circuit<F>,
     transcript: &mut Transcript,
     f: &F,
 ) -> (SumcheckProof<W, F>, SumcheckProofAux<W, F>) {
@@ -70,7 +68,7 @@ pub fn prove<const W: usize, F: InterpolationField<W> + SupportsSampling<W>>(
 pub fn prove_core<const W: usize, F: InterpolationField<W> + SupportsSampling<W>>(
     mut in_layers: Vec<Vec<ElementOf<F>>>,
     pad: &SumcheckProof<W, F>,
-    circuit: &core_proto::circuit::Circuit<F>,
+    circuit: &crate::core::proto::circuit::Circuit<F>,
     transcript: &mut Transcript,
     f: &F,
 ) -> (SumcheckProof<W, F>, SumcheckProofAux<W, F>) {
@@ -78,7 +76,7 @@ pub fn prove_core<const W: usize, F: InterpolationField<W> + SupportsSampling<W>
     // each layer's wire vector to contain at least one 0 to simplify the implementation
     // and avoid handling the empty vec case in downstream binding functions.
     for wires in &mut in_layers {
-        *wires = crate::dense::normalize(std::mem::take(wires), f);
+        *wires = crate::runtime::sumcheck::dense::normalize(std::mem::take(wires), f);
     }
     let (_copy_challenges, challenges_0) = transcript.begin_circuit(f);
     let mut bindings = Bindings {
@@ -153,7 +151,7 @@ fn layer<const W: usize, F: InterpolationField<W> + SupportsSampling<W>>(
     [ElementOf<F>; 2],
     ElementOf<F>,
 ) {
-    assert!(crate::sane_logw(logw), "logw must be sane");
+    assert!(crate::runtime::sumcheck::sane_logw(logw), "logw must be sane");
     assert!(
         wires.len() as u64 <= (1u64 << logw),
         "size of wires {} exceeds 2^logw {}",
@@ -178,7 +176,7 @@ fn layer<const W: usize, F: InterpolationField<W> + SupportsSampling<W>>(
             let wh_other_hand = &w[other_hand];
 
             let wh_size = wh_hand.len();
-            runtime_algebra::blas::clear(&mut qw[..wh_size], f);
+            crate::runtime::algebra::blas::clear(&mut qw[..wh_size], f);
 
             if hand == 0 {
                 for i in 0..hquad.hc.len() {
@@ -219,9 +217,9 @@ fn layer<const W: usize, F: InterpolationField<W> + SupportsSampling<W>>(
             // w[0], leaving w[1] as the sole owner of the original buffer. All
             // subsequent halvings across both hands then happen in-place!
             if let Some(v) = std::rc::Rc::get_mut(&mut w[hand]) {
-                crate::dense::bind(v, &round_challenge, f);
+                crate::runtime::sumcheck::dense::bind(v, &round_challenge, f);
             } else {
-                let bound_v = crate::dense::bind_out_of_place(&w[hand], &round_challenge, f);
+                let bound_v = crate::runtime::sumcheck::dense::bind_out_of_place(&w[hand], &round_challenge, f);
                 w[hand] = std::rc::Rc::new(bound_v);
             }
             hquad.bind_h(&round_challenge, hand, f);
@@ -229,8 +227,8 @@ fn layer<const W: usize, F: InterpolationField<W> + SupportsSampling<W>>(
     }
 
     let next_claims = [
-        crate::dense::as_scalar::<W, F>(&w[0]),
-        crate::dense::as_scalar::<W, F>(&w[1]),
+        crate::runtime::sumcheck::dense::as_scalar::<W, F>(&w[0]),
+        crate::runtime::sumcheck::dense::as_scalar::<W, F>(&w[1]),
     ];
 
     let hquad_scalar = hquad.scalar();
@@ -270,8 +268,8 @@ fn layer<const W: usize, F: InterpolationField<W> + SupportsSampling<W>>(
 fn sample_round_challenge<const W: usize, F: InterpolationField<W> + SupportsSampling<W>>(
     transcript: &mut Transcript,
     unpadded_poly: &Poly<3, W, F>,
-    pad_poly: &crate::proof::RoundPoly<W, F>,
-    round_polys: &mut Vec<crate::proof::RoundPoly<W, F>>,
+    pad_poly: &crate::runtime::sumcheck::proof::RoundPoly<W, F>,
+    round_polys: &mut Vec<crate::runtime::sumcheck::proof::RoundPoly<W, F>>,
     challenges: &mut Vec<ElementOf<F>>,
     f: &F,
 ) -> ElementOf<F> {

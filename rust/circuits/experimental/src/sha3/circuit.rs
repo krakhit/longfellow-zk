@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use circuits_bitvec::{BitvecLogic, V64};
-use compile_logic::Logic;
+use crate::circuits::bitvec::{BitvecLogic, V64};
+use crate::compile::logic::Logic;
 
 use super::constants::{ROTC, ROUNDC};
 
@@ -28,7 +28,7 @@ pub struct Derived<L: Logic> {
 }
 
 pub struct Sha3<'a, L: Logic> {
-    pub(crate) logic: &'a L,
+    pub(in crate::circuits::experimental) logic: &'a L,
     pub bv: BitvecLogic<'a, L>,
 }
 
@@ -145,7 +145,7 @@ impl<'a, L: Logic> Sha3<'a, L> {
 
     pub fn assert_keccak_f_1600(&self, states: &[State<L>]) -> L::Assertions {
         assert_eq!(states.len(), 25);
-        let boolean = circuits_boolean::Boolean::new(self.logic);
+        let boolean = crate::circuits::boolean::Boolean::new(self.logic);
         self.logic.assert_mapi("assert_keccak_f_1600", 0..24, |t| {
             let next_expected_without_iota = self.round_without_iota(&states[t]);
             let mut rhs = states[t + 1].clone();
@@ -171,7 +171,7 @@ impl<'a, L: Logic> Sha3<'a, L> {
         let mut curr = std::array::from_fn(|x| {
             std::array::from_fn(|y| self.bv.from_fn(|idx| self.bv.b(a_init[x][y].bit(idx))))
         });
-        let boolean = circuits_boolean::Boolean::new(self.logic);
+        let boolean = crate::circuits::boolean::Boolean::new(self.logic);
         let assertion = self
             .logic
             .assert_mapi("assert_keccak_f_1600_sliced", 0..24, |t| {

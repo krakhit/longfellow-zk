@@ -12,9 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-pub mod allocate;
-pub use allocate::*;
 pub mod circuit;
 pub use circuit::{Derived, Given, MAC};
-pub mod concrete;
-pub use concrete::*;
+
+cfg_testonly! {
+    pub mod allocate;
+    pub mod concrete;
+
+    pub use self::{allocate::*, concrete::*};
+}
+
+#[cfg(test)]
+#[path = "../tests/mac_gf128.rs"]
+mod tests_mac_gf128;
+

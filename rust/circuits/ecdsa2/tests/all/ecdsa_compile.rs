@@ -12,18 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use circuits_ecdsa2::{derived, given, EcdsaCircuit};
-use compile_algebra::{
+use crate::circuits::ecdsa2::{derived, given, EcdsaCircuit};
+use crate::compile::algebra::{
     field::{CompilePrimeField, SupportsNatConversions},
     p256::P256Field,
     secp256r1::Secp256r1,
     Curve,
 };
-use compile_compiler::{compile, dump_stats};
-use compile_eval::FieldID;
-use compile_logic::K_FIRST_WIRE_POSITION;
-use core_algebra::{Nat, SerializableField};
-use runtime_algebra::field::RuntimeField;
+use crate::compile::compiler::{compile, dump_stats};
+use crate::compile::eval::FieldID;
+use crate::compile::logic::K_FIRST_WIRE_POSITION;
+use crate::core::algebra::{Nat, SerializableField};
+use crate::runtime::algebra::field::RuntimeField;
 
 use super::test_support;
 
@@ -50,11 +50,11 @@ fn char_to_digit(c: u8) -> u8 {
 }
 
 fn make_inputs<const W: usize, FR: RuntimeField<W> + SerializableField>(
-    given: &circuits_ecdsa2::concrete::ConcreteGiven<FR>,
-    derived: &circuits_ecdsa2::concrete::ConcreteDerived<FR>,
+    given: &crate::circuits::ecdsa2::concrete::ConcreteGiven<FR>,
+    derived: &crate::circuits::ecdsa2::concrete::ConcreteDerived<FR>,
     fr: &FR,
 ) -> Vec<FR::E> {
-    let mut inputs = compile_eval::initial_inputs(fr);
+    let mut inputs = crate::compile::eval::initial_inputs(fr);
     inputs.push(given.pkxy.0.clone());
     inputs.push(given.pkxy.1.clone());
     inputs.push(given.e.clone());
@@ -88,10 +88,10 @@ fn test_compile_ecdsa_generic<
     FC: CompilePrimeField
         + SupportsNatConversions<W>
         + SerializableField
-        + core_algebra::HasLookupPoints
-        + core_algebra::SupportsU64Conversions,
-    FR: RuntimeField<W> + SerializableField + SupportsNatConversions<W> + core_algebra::HasLookupPoints,
-    Fn: core_algebra::AlgebraicField + SupportsNatConversions<W, N = FR::N>,
+        + crate::core::algebra::HasLookupPoints
+        + crate::core::algebra::SupportsU64Conversions,
+    FR: RuntimeField<W> + SerializableField + SupportsNatConversions<W> + crate::core::algebra::HasLookupPoints,
+    Fn: crate::core::algebra::AlgebraicField + SupportsNatConversions<W, N = FR::N>,
     CC: Curve<W, F = FC, N = FC::N>,
     CR: Curve<W, F = FR, N = FR::N>,
 >(
@@ -121,8 +121,8 @@ fn test_compile_ecdsa_generic<
         let mut pos = K_FIRST_WIRE_POSITION;
 
         let ecdsa = EcdsaCircuit::new(&iologic, curve_c);
-        let circuit_given = circuits_ecdsa2::allocate_given_wires(&iologic, &mut pos);
-        let circuit_derived = circuits_ecdsa2::allocate_derived_wires(&iologic, &mut pos);
+        let circuit_given = crate::circuits::ecdsa2::allocate_given_wires(&iologic, &mut pos);
+        let circuit_derived = crate::circuits::ecdsa2::allocate_derived_wires(&iologic, &mut pos);
 
         (
             ecdsa.assert_signature(&circuit_given, &circuit_derived),
@@ -135,7 +135,7 @@ fn test_compile_ecdsa_generic<
 
     let inputs = make_inputs(&concrete_given_r, &concrete_derived_r, fr);
 
-    compile_eval::eval_circuit_fc(fc, fr, &circuit, &symbols, &inputs, FieldID::P256)
+    crate::compile::eval::eval_circuit_fc(fc, fr, &circuit, &symbols, &inputs, FieldID::P256)
         .unwrap()
         .assert_all_passed();
 }
@@ -144,9 +144,9 @@ fn test_compile_ecdsa_generic<
 fn test_compile_ecdsa() {
     let fc = P256Field::new();
     let curve_c = Secp256r1::new(&fc);
-    let fr = runtime_algebra::p256::P256Field::new();
-    let curve_r = runtime_algebra::secp256r1::Secp256r1::new(&fr);
-    let fn_field = runtime_algebra::Q256Field::new();
+    let fr = crate::runtime::algebra::p256::P256Field::new();
+    let curve_r = crate::runtime::algebra::secp256r1::Secp256r1::new(&fr);
+    let fn_field = crate::runtime::algebra::Q256Field::new();
     test_compile_ecdsa_generic::<4, _, _, _, _, _>(&curve_c, &fc, &curve_r, &fr, &fn_field);
 }
 
@@ -155,15 +155,15 @@ fn test_compile_ecdsa_signature_tampering_generic<
     FC: CompilePrimeField
         + SupportsNatConversions<W>
         + SerializableField
-        + core_algebra::HasLookupPoints
-        + core_algebra::SupportsU64Conversions,
+        + crate::core::algebra::HasLookupPoints
+        + crate::core::algebra::SupportsU64Conversions,
     FR: RuntimeField<W>
         + SerializableField
         + SupportsNatConversions<W>
-        + core_algebra::HasLookupPoints
+        + crate::core::algebra::HasLookupPoints
         + Clone
         + 'static,
-    FnR: core_algebra::AlgebraicField + SupportsNatConversions<W, N = FR::N>,
+    FnR: crate::core::algebra::AlgebraicField + SupportsNatConversions<W, N = FR::N>,
     CC: Curve<W, F = FC, N = FC::N>,
     CR: Curve<W, F = FR, N = FR::N>,
 >(
@@ -188,8 +188,8 @@ fn test_compile_ecdsa_signature_tampering_generic<
         let mut pos = K_FIRST_WIRE_POSITION;
 
         let ecdsa = EcdsaCircuit::new(&iologic, curve_c);
-        let circuit_given = circuits_ecdsa2::allocate_given_wires(&iologic, &mut pos);
-        let circuit_derived = circuits_ecdsa2::allocate_derived_wires(&iologic, &mut pos);
+        let circuit_given = crate::circuits::ecdsa2::allocate_given_wires(&iologic, &mut pos);
+        let circuit_derived = crate::circuits::ecdsa2::allocate_derived_wires(&iologic, &mut pos);
 
         (
             ecdsa.assert_signature(&circuit_given, &circuit_derived),
@@ -202,7 +202,7 @@ fn test_compile_ecdsa_signature_tampering_generic<
     {
         let inputs = make_inputs(&concrete_given, &concrete_derived, fr);
         let eval_res =
-            compile_eval::eval_circuit_fc(fc, fr, &circuit, &symbols, &inputs, FieldID::P256)
+            crate::compile::eval::eval_circuit_fc(fc, fr, &circuit, &symbols, &inputs, FieldID::P256)
                 .unwrap();
         eval_res.assert_all_passed();
     }
@@ -215,7 +215,7 @@ fn test_compile_ecdsa_signature_tampering_generic<
         (c.corrupt)(&mut g, &mut cd);
         let inputs = make_inputs(&g, &cd, fr);
         let eval_res =
-            compile_eval::eval_circuit_fc(fc, fr, &circuit, &symbols, &inputs, FieldID::P256)
+            crate::compile::eval::eval_circuit_fc(fc, fr, &circuit, &symbols, &inputs, FieldID::P256)
                 .unwrap();
         assert!(
             eval_res.is_err(),
@@ -236,9 +236,9 @@ fn test_compile_ecdsa_signature_tampering_generic<
 fn test_compile_ecdsa_signature_tampering() {
     let fc = P256Field::new();
     let curve_c = Secp256r1::new(&fc);
-    let fr = runtime_algebra::p256::P256Field::new();
-    let curve_r = runtime_algebra::secp256r1::Secp256r1::new(&fr);
-    let fn_field = runtime_algebra::Q256Field::new();
+    let fr = crate::runtime::algebra::p256::P256Field::new();
+    let curve_r = crate::runtime::algebra::secp256r1::Secp256r1::new(&fr);
+    let fn_field = crate::runtime::algebra::Q256Field::new();
     test_compile_ecdsa_signature_tampering_generic::<4, _, _, _, _, _>(
         &curve_c, &fc, &curve_r, &fr, &fn_field,
     );

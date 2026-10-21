@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use compile_algebra::field::CompileField;
-use compile_logic::AssertionScope;
-use core_proto::circuit::{Circuit, CircuitGeometry};
+use crate::compile::algebra::field::CompileField;
+use crate::compile::logic::AssertionScope;
+use crate::core::proto::circuit::{Circuit, CircuitGeometry};
 
-use crate::{
+use crate::compile::compiler::{
     arena::CompilerArena,
     logic_impl::{CompilerAssertions, CompilerLogic},
 };
@@ -27,39 +27,39 @@ pub fn compile<'a, F, Build>(
 ) -> (
     Circuit<F>,
     CircuitGeometry,
-    crate::debug::CircuitDebugSymbols,
+    crate::compile::compiler::debug::CircuitDebugSymbols,
 )
 where
-    F: CompileField + core_algebra::SerializableField,
+    F: CompileField + crate::core::algebra::SerializableField,
     Build: for<'src> FnOnce(CompilerLogic<'src, F>) -> (CompilerAssertions<'src, F>, usize, usize),
 {
-    let source_arena = crate::arena::CompilerArena::new();
+    let source_arena = crate::compile::compiler::arena::CompilerArena::new();
     let source_tracker = AssertionScope::new();
 
     let (circuit, info, symbols) = {
         let source_logic = CompilerLogic::new(&source_arena, f, &source_tracker);
         let (assertions, npublic_input, subfield_boundary) = build(source_logic);
         let arena1 = CompilerArena::new();
-        let simplified = crate::assertion::rewrite(&arena1, f, assertions.items, &source_tracker);
+        let simplified = crate::compile::compiler::assertion::rewrite(&arena1, f, assertions.items, &source_tracker);
 
         // Source arena can be dropped after rewriting source assertions into arena1.
         drop(source_arena);
 
         // Pass 2: copy rewrite into arena2 (inserts term copies and depth alignment)
         let arena2 = CompilerArena::new();
-        let copy_propagated = crate::copy::rewrite(&arena2, f, simplified);
+        let copy_propagated = crate::compile::compiler::copy::rewrite(&arena2, f, simplified);
 
         // Safe Rust: drop arena1 immediately after Pass 2!
         drop(arena1);
 
         // Pass 3: ir_to_quad rewrite into owned QuadCircuit representation
         let (quad_circuit, quad_asserts) =
-            crate::ir_to_quad::rewrite(&arena2, f, copy_propagated, &source_tracker);
+            crate::compile::compiler::ir_to_quad::rewrite(&arena2, f, copy_propagated, &source_tracker);
 
         // Safe Rust: drop arena2 immediately after Pass 3!
         drop(arena2);
 
-        let (circuit, info, symbols) = crate::scheduler::schedule(
+        let (circuit, info, symbols) = crate::compile::compiler::scheduler::schedule(
             f,
             quad_circuit,
             &quad_asserts,
@@ -76,7 +76,7 @@ where
     (circuit, info, symbols)
 }
 
-pub fn dump_stats<F: CompileField + core_algebra::SerializableField>(
+pub fn dump_stats<F: CompileField + crate::core::algebra::SerializableField>(
     name: &str,
     _circuit: &Circuit<F>,
     info: &CircuitGeometry,

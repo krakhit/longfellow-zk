@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use circuits_sha256msg::concrete::{ConcreteDerived, ConcreteGiven};
+use crate::circuits::sha256msg::concrete::{ConcreteDerived, ConcreteGiven};
 
 #[allow(dead_code)]
 pub struct Sha256MsgCorruptor {

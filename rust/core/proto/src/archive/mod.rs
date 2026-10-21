@@ -184,12 +184,12 @@ impl CircuitArchive {
     }
 }
 
-pub(crate) fn read_utf8_string<R: BufRead>(
+pub(in crate::core::proto) fn read_utf8_string<R: BufRead>(
     stream: &mut R,
     max_len: usize,
     field_name: &str,
 ) -> Result<String, String> {
-    let len = crate::uleb::read_uleb128(stream)?;
+    let len = crate::core::proto::uleb::read_uleb128(stream)?;
     if len > max_len {
         return Err(format!(
             "Excessive {field_name} string length: {len} > {max_len}"

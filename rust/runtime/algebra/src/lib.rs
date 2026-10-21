@@ -26,16 +26,15 @@ pub mod mem;
 pub mod middle_product;
 pub mod nat;
 pub mod p256;
-pub(crate) mod permutations;
+pub(in crate::runtime::algebra) mod permutations;
 pub mod poly;
 pub mod q256;
 pub mod reed_solomon;
 pub mod rfft;
 pub mod secp256r1;
 pub mod subfield;
-pub(crate) mod utility;
+pub(in crate::runtime::algebra) mod utility;
 
-pub use core_algebra::{AlgebraicField, Curve as RuntimeCurve, ElementOf};
 pub use field::{
     RuntimeBinaryField, RuntimeField, SupportsFFT, SupportsQuadraticExtension, SupportsSampling,
 };
@@ -50,10 +49,16 @@ pub use q256::{Q256Element, Q256Field};
 pub use secp256r1::Secp256r1 as RuntimeSecp256r1;
 pub use subfield::Subfield;
 
+pub use crate::core::algebra::{AlgebraicField, Curve as RuntimeCurve, ElementOf};
+
 /// Stable trait alias bundling requirements for zero-knowledge proving.
 pub trait ZkField<const W: usize>:
-    InterpolationField<W> + core_algebra::SerializableField + SupportsSampling<W>
+    InterpolationField<W> + crate::core::algebra::SerializableField + SupportsSampling<W>
 {
 }
-impl<const W: usize, F> ZkField<W> for F where F: InterpolationField<W> + core_algebra::SerializableField + SupportsSampling<W>
+impl<const W: usize, F> ZkField<W> for F where F: InterpolationField<W> + crate::core::algebra::SerializableField + SupportsSampling<W>
 {}
+
+#[cfg(test)]
+#[path = "../tests/all/mod.rs"]
+mod tests_all;

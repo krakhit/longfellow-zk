@@ -18,16 +18,17 @@ use std::{
     marker::PhantomData,
 };
 
-use core_algebra::{
-    AlgebraicField, BareField, HasLookupPoints, SerializableField, SupportsNatConversions,
-    SupportsU64Conversions,
-};
-
 use crate::{
-    field::{RuntimeField, RuntimeSerializableField, SupportsSampling},
-    limb::{accum, accum_modular, lt, maybe_minus_m, maybe_plus_m, mul_accum, sub_limb},
-    poly::InterpolationField,
-    Limb, RuntimeNat,
+    core::algebra::{
+        AlgebraicField, BareField, HasLookupPoints, SerializableField, SupportsNatConversions,
+        SupportsU64Conversions,
+    },
+    runtime::algebra::{
+        field::{RuntimeField, RuntimeSerializableField, SupportsSampling},
+        limb::{accum, accum_modular, lt, maybe_minus_m, maybe_plus_m, mul_accum, sub_limb},
+        poly::InterpolationField,
+        Limb, RuntimeNat,
+    },
 };
 
 /// A trait defining the arithmetic strategy for a prime field of limb width `L`.
@@ -151,7 +152,7 @@ impl<const W: usize, const L: usize, const ACCUM_L: usize, Tag, S: MontgomeryStr
         assert!(W > 0, "field width must contain at least one word");
         assert_eq!(
             L,
-            W.checked_mul(crate::LIMBS_PER_U64)
+            W.checked_mul(crate::runtime::algebra::LIMBS_PER_U64)
                 .expect("field limb count overflow"),
             "field limb count must match its serialized word width"
         );
@@ -167,25 +168,25 @@ impl<const W: usize, const L: usize, const ACCUM_L: usize, Tag, S: MontgomeryStr
             "field and accumulator exceed the reduction scratch space"
         );
 
-        let modulo = crate::words64_to_limbs(&modulo_words);
+        let modulo = crate::runtime::algebra::words64_to_limbs(&modulo_words);
         assert!(
-            modulo[0] & 1 == 1 && !crate::limb::is_one_slice(&modulo),
+            modulo[0] & 1 == 1 && !crate::runtime::algebra::limb::is_one_slice(&modulo),
             "Montgomery modulus must be odd and greater than one"
         );
         let mut neg_modulo = [0 as Limb; L];
-        crate::limb::sub_limb(&mut neg_modulo, &modulo);
+        crate::runtime::algebra::limb::sub_limb(&mut neg_modulo, &modulo);
         let m_prime = compute_m_prime(modulo[0]);
         let r2 = compute_r2(&neg_modulo);
         let r = compute_r(&neg_modulo);
         let mut accum_scale = FpGenericElement(r2, PhantomData);
-        for _ in 0..((ACCUM_L - 2 * L) * crate::LIMB_BITS) {
+        for _ in 0..((ACCUM_L - 2 * L) * crate::runtime::algebra::LIMB_BITS) {
             let mut res = accum_scale.0;
             accum_modular(&mut res, &accum_scale.0, &neg_modulo);
             accum_scale.0 = res;
         }
 
-        let mut raw_half_limbs = crate::limb::shr_1(&modulo);
-        crate::limb::propagate_carry(&mut raw_half_limbs, 0, true);
+        let mut raw_half_limbs = crate::runtime::algebra::limb::shr_1(&modulo);
+        crate::runtime::algebra::limb::propagate_carry(&mut raw_half_limbs, 0, true);
         let raw_half = FpGenericElement(raw_half_limbs, PhantomData);
 
         Self {
@@ -228,8 +229,8 @@ impl<const W: usize, const L: usize, const ACCUM_L: usize, Tag, S: MontgomeryStr
 
     fn of_scalar(&self, n: u64) -> FpGenericElement<L, Tag> {
         let mut standard = [0 as Limb; L];
-        let n_limbs = crate::u64_to_limbs(n);
-        for i in 0..crate::LIMBS_PER_U64 {
+        let n_limbs = crate::runtime::algebra::u64_to_limbs(n);
+        for i in 0..crate::runtime::algebra::LIMBS_PER_U64 {
             if i < L {
                 standard[i] = n_limbs[i];
             }
@@ -241,7 +242,7 @@ impl<const W: usize, const L: usize, const ACCUM_L: usize, Tag, S: MontgomeryStr
         let lsb = a.0[0] & 1;
         let mut carry = 0;
         for i in (0..L).rev() {
-            let new_carry = a.0[i] << (crate::LIMB_BITS - 1);
+            let new_carry = a.0[i] << (crate::runtime::algebra::LIMB_BITS - 1);
             a.0[i] = (a.0[i] >> 1) | carry;
             carry = new_carry;
         }
@@ -268,7 +269,7 @@ fn compute_m_prime(m0: Limb) -> Limb {
 fn compute_r2<const L: usize>(negm: &[Limb; L]) -> [Limb; L] {
     let mut x = [0 as Limb; L];
     x[0] = 1;
-    for _ in 0..(2 * crate::LIMB_BITS * L) {
+    for _ in 0..(2 * crate::runtime::algebra::LIMB_BITS * L) {
         let mut next_x = x;
         accum_modular(&mut next_x, &x, negm);
         x = next_x;
@@ -280,7 +281,7 @@ fn compute_r2<const L: usize>(negm: &[Limb; L]) -> [Limb; L] {
 fn compute_r<const L: usize>(negm: &[Limb; L]) -> [Limb; L] {
     let mut x = [0 as Limb; L];
     x[0] = 1;
-    for _ in 0..(crate::LIMB_BITS * L) {
+    for _ in 0..(crate::runtime::algebra::LIMB_BITS * L) {
         let mut next_x = x;
         accum_modular(&mut next_x, &x, negm);
         x = next_x;
@@ -305,12 +306,12 @@ fn montgomery_mul<const L: usize>(
     let mut t = [0 as Limb; 33];
     if L > 0 {
         let window0 = &mut t[0..L + 2];
-        crate::limb::mul_accum_zero(window0, 0, a[0], b);
+        crate::runtime::algebra::limb::mul_accum_zero(window0, 0, a[0], b);
         reduction_step(window0, 0, modulo, m_prime);
         for i in 1..L {
             t[i + L + 1] = 0;
             let window_step = &mut t[i..i + L + 2];
-            crate::limb::mul_accum(window_step, 0, a[i], b);
+            crate::runtime::algebra::limb::mul_accum(window_step, 0, a[i], b);
             reduction_step(window_step, 0, modulo, m_prime);
         }
     }
@@ -380,13 +381,13 @@ impl<const W: usize, const L: usize, const ACCUM_L: usize, Tag, S: MontgomeryStr
             if (a_limbs[0] & 1) == 0 {
                 let mut carry = 0;
                 for i in (0..L).rev() {
-                    let new_carry = a_limbs[i] << (crate::LIMB_BITS - 1);
+                    let new_carry = a_limbs[i] << (crate::runtime::algebra::LIMB_BITS - 1);
                     a_limbs[i] = (a_limbs[i] >> 1) | carry;
                     carry = new_carry;
                 }
                 self.byhalf(&mut u);
             } else {
-                if crate::limb::lt(&a_limbs, &b_limbs) {
+                if crate::runtime::algebra::limb::lt(&a_limbs, &b_limbs) {
                     std::mem::swap(&mut a_limbs, &mut b_limbs);
                     std::mem::swap(&mut u, &mut v);
                 }
@@ -398,7 +399,7 @@ impl<const W: usize, const L: usize, const ACCUM_L: usize, Tag, S: MontgomeryStr
                 }
                 let mut carry = 0;
                 for i in (0..L).rev() {
-                    let new_carry = a_limbs[i] << (crate::LIMB_BITS - 1);
+                    let new_carry = a_limbs[i] << (crate::runtime::algebra::LIMB_BITS - 1);
                     a_limbs[i] = (a_limbs[i] >> 1) | carry;
                     carry = new_carry;
                 }
@@ -432,7 +433,7 @@ impl<const W: usize, const L: usize, const ACCUM_L: usize, Tag, S: MontgomeryStr
         );
         let standard = self.to_standard(e);
         let bytes = dst;
-        const LIMB_BYTES: usize = crate::LIMB_BITS / 8;
+        const LIMB_BYTES: usize = crate::runtime::algebra::LIMB_BITS / 8;
         let len = bytes.len();
         for (i, limb) in standard.iter().enumerate() {
             let limb_bytes = limb.to_le_bytes();
@@ -450,7 +451,7 @@ impl<const W: usize, const L: usize, const ACCUM_L: usize, Tag, S: MontgomeryStr
         if bytes.len() != self.serialized_size_bytes() {
             return Err("Invalid size".to_string());
         }
-        const LIMB_BYTES: usize = crate::LIMB_BITS / 8;
+        const LIMB_BYTES: usize = crate::runtime::algebra::LIMB_BITS / 8;
         let mut limbs = [0 as Limb; L];
         for (i, limb) in limbs.iter_mut().enumerate().take(L) {
             let start = i * LIMB_BYTES;
@@ -481,11 +482,11 @@ impl<const W: usize, const L: usize, const ACCUM_L: usize, Tag, S: MontgomeryStr
 {
     fn to_words64(&self, e: &Self::E) -> [u64; W] {
         let limbs = self.to_standard(e);
-        crate::limbs_to_words64(&limbs)
+        crate::runtime::algebra::limbs_to_words64(&limbs)
     }
 
     fn words64_to_element(&self, words: &[u64; W]) -> Result<Self::E, String> {
-        let limbs = crate::words64_to_limbs(words);
+        let limbs = crate::runtime::algebra::words64_to_limbs(words);
         if !lt(&limbs, &self.modulo) {
             return Err("Out of bounds".to_string());
         }
@@ -499,7 +500,7 @@ impl<const W: usize, const L: usize, const ACCUM_L: usize, Tag, S: MontgomeryStr
     type N = RuntimeNat<W>;
 
     fn reduce_nat(&self, n: &Self::N) -> Self::E {
-        let limbs = crate::words64_to_limbs(n.limbs());
+        let limbs = crate::runtime::algebra::words64_to_limbs(n.limbs());
         if lt(&limbs, &self.modulo) {
             return self.to_montgomery(&limbs);
         }
@@ -608,7 +609,7 @@ impl<const W: usize, const L: usize, const ACCUM_L: usize, Tag, S: MontgomeryStr
             for (word, chunk) in words.iter_mut().zip(buf.chunks_exact(8)) {
                 *word = u64::from_le_bytes(chunk.try_into().unwrap());
             }
-            let res = crate::words64_to_limbs(&words);
+            let res = crate::runtime::algebra::words64_to_limbs(&words);
             if lt(&res, &self.modulo) {
                 return self.to_montgomery(&res);
             }

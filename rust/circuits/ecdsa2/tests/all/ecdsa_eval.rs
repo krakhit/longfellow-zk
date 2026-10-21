@@ -12,16 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use circuits_ecdsa2::{derived, evaluate_derived, evaluate_given, given, EcdsaCircuit};
-use compile_algebra::{
+use crate::circuits::ecdsa2::{derived, evaluate_derived, evaluate_given, given, EcdsaCircuit};
+use crate::compile::algebra::{
     field::{CompileField, CompilePrimeField, SupportsNatConversions},
     p256::P256Field,
     q256::Q256Field,
     secp256r1::Secp256r1,
     Curve,
 };
-use compile_logic::eval::EvalLogic;
-use core_algebra::Nat;
+use crate::compile::logic::eval::EvalLogic;
+use crate::core::algebra::Nat;
 
 use super::test_support;
 
@@ -51,8 +51,8 @@ fn test_ecdsa_secp256r1_generic<
     const W: usize,
     F: CompilePrimeField
         + SupportsNatConversions<W>
-        + core_algebra::HasLookupPoints
-        + core_algebra::SupportsU64Conversions,
+        + crate::core::algebra::HasLookupPoints
+        + crate::core::algebra::SupportsU64Conversions,
     FnR: CompileField + SupportsNatConversions<W, N = F::N>,
     C: Curve<W, F = F, N = F::N>,
 >(
@@ -77,7 +77,7 @@ fn test_ecdsa_secp256r1_generic<
     let concrete_derived = derived(curve, &pkxy_r, &e_val, &r_val, &s_val, f, fn_field);
 
     type L<'a, F> = EvalLogic<'a, F>;
-    let tracker = compile_logic::scope::AssertionScope::new();
+    let tracker = crate::compile::logic::scope::AssertionScope::new();
     let logic = L::new(f, &tracker);
 
     let circuit_given = evaluate_given(&concrete_given, &logic);
@@ -101,8 +101,8 @@ fn test_ecdsa_signature_tampering_generic<
     const W: usize,
     F: CompilePrimeField
         + SupportsNatConversions<W>
-        + core_algebra::HasLookupPoints
-        + core_algebra::SupportsU64Conversions
+        + crate::core::algebra::HasLookupPoints
+        + crate::core::algebra::SupportsU64Conversions
         + Clone
         + 'static,
     FnR: CompileField + SupportsNatConversions<W, N = F::N>,
@@ -123,7 +123,7 @@ fn test_ecdsa_signature_tampering_generic<
 
     for c in corruptors {
         type L<'a, F> = EvalLogic<'a, F>;
-        let tracker = compile_logic::scope::AssertionScope::new();
+        let tracker = crate::compile::logic::scope::AssertionScope::new();
         let logic = L::new(f, &tracker);
         let ecdsa = EcdsaCircuit::new(&logic, curve);
         let mut g = concrete_given.clone();
@@ -154,8 +154,8 @@ fn test_sign_and_verify_ecdsa_generic<
     const W: usize,
     F: CompilePrimeField
         + SupportsNatConversions<W>
-        + core_algebra::HasLookupPoints
-        + core_algebra::SupportsU64Conversions,
+        + crate::core::algebra::HasLookupPoints
+        + crate::core::algebra::SupportsU64Conversions,
     FnR: CompileField + SupportsNatConversions<W, N = F::N>,
     C: Curve<W, F = F, N = F::N>,
 >(
@@ -164,7 +164,7 @@ fn test_sign_and_verify_ecdsa_generic<
     fn_field: &FnR,
 ) {
     type L<'a, F> = EvalLogic<'a, F>;
-    let tracker = compile_logic::scope::AssertionScope::new();
+    let tracker = crate::compile::logic::scope::AssertionScope::new();
     let logic = L::new(f, &tracker);
 
     // Private key and nonce

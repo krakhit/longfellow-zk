@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use compile_algebra::p256::P256Field;
-use compile_compiler::quad::{QuadCircuit, WExpr};
+use crate::compile::algebra::p256::P256Field;
+use crate::compile::compiler::quad::{QuadCircuit, WExpr};
 
 #[test]
 fn test_quad_circuits_instantiation() {

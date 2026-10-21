@@ -12,9 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use core_algebra::{AlgebraicField, SupportsU64Conversions};
 use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
-use runtime_algebra::{fp2::Fp2Field, p256::P256Field, SupportsFFT};
+use longfellow_zk::{
+    core::algebra::{AlgebraicField, SupportsU64Conversions},
+    runtime::algebra::{fp2::Fp2Field, p256::P256Field, SupportsFFT},
+};
 
 fn bench_rfft(c: &mut Criterion) {
     let p256 = P256Field::new();
@@ -35,7 +37,7 @@ fn bench_rfft(c: &mut Criterion) {
         group.bench_with_input(BenchmarkId::from_parameter(n), &n, |bench, _| {
             bench.iter(|| {
                 let mut ar_mut = ar.clone();
-                runtime_algebra::rfft::r2hc(&mut ar_mut, &omega, omega_order, &fp2);
+                longfellow_zk::runtime::algebra::rfft::r2hc(&mut ar_mut, &omega, omega_order, &fp2);
                 ar_mut
             });
         });

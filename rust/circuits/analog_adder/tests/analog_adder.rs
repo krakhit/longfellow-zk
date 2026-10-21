@@ -12,21 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use circuits_analog_adder::{AnalogAdder, FieldWrappingSum};
-use circuits_bitvec::{Bitvec, BitvecIO, BitvecLogic};
-use compile_algebra::{field::CompileField, gf2_128::Gf2_128Field, p256::P256Field};
-use compile_logic::{eval::EvalLogic, Logic};
-use core_algebra::SerializableField;
+use crate::circuits::analog_adder::{AnalogAdder, FieldWrappingSum};
+use crate::circuits::bitvec::{Bitvec, BitvecIO, BitvecLogic};
+use crate::compile::algebra::{field::CompileField, gf2_128::Gf2_128Field, p256::P256Field};
+use crate::compile::logic::{eval::EvalLogic, Logic};
+use crate::core::algebra::SerializableField;
 
 fn test_compile_for_field<F: CompileField + FieldWrappingSum + SerializableField>(
     f: &F,
     name: &str,
 ) {
-    let (circuit, stats, _symbols) = compile_compiler::compile(f, |iologic| {
+    let (circuit, stats, _symbols) = crate::compile::compiler::compile(f, |iologic| {
         let bv = BitvecLogic::new(&iologic);
         let bitvec_io = BitvecIO::new(&bv);
 
-        let mut pos = compile_logic::K_FIRST_WIRE_POSITION;
+        let mut pos = crate::compile::logic::K_FIRST_WIRE_POSITION;
         let addends: Vec<Bitvec<_, 32>> = (0..7).map(|_| bitvec_io.next(&mut pos)).collect();
         let expected: Bitvec<_, 32> = bitvec_io.next(&mut pos);
 
@@ -34,7 +34,7 @@ fn test_compile_for_field<F: CompileField + FieldWrappingSum + SerializableField
         (f.assert_wrapping_sum(&adder, &expected, &[&addends]), 1, 0)
     });
 
-    compile_compiler::dump_stats(name, &circuit, &stats);
+    crate::compile::compiler::dump_stats(name, &circuit, &stats);
 }
 
 #[test]
@@ -132,7 +132,7 @@ fn test_assert_sum_7_addends_fail_for_logic<F: CompileField + FieldWrappingSum>(
 #[test]
 fn test_analog_adder_evaluation() {
     let f_prime = P256Field::new();
-    let tracker_prime = compile_logic::scope::AssertionScope::new();
+    let tracker_prime = crate::compile::logic::scope::AssertionScope::new();
     type LPrime<'a> = EvalLogic<'a, P256Field>;
     let l_prime = LPrime::new(&f_prime, &tracker_prime);
     test_assert_sum_correct_for_logic(&l_prime);
@@ -141,7 +141,7 @@ fn test_analog_adder_evaluation() {
     test_assert_sum_7_addends_fail_for_logic(&l_prime);
 
     let f_bin = Gf2_128Field::new();
-    let tracker_bin = compile_logic::scope::AssertionScope::new();
+    let tracker_bin = crate::compile::logic::scope::AssertionScope::new();
     type LBin<'a> = EvalLogic<'a, Gf2_128Field>;
     let l_binary = LBin::new(&f_bin, &tracker_bin);
     test_assert_sum_correct_for_logic(&l_binary);

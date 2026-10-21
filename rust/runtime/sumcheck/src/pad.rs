@@ -12,8 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use runtime_algebra::{ElementOf, RuntimeField};
-use runtime_random::RandomEngine;
+use crate::runtime::{
+    algebra::{ElementOf, RuntimeField},
+    random::RandomEngine,
+};
 
 /// Padding for a single round of sumcheck (masks for p0 and p2 evals for both hands).
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -69,7 +71,7 @@ impl<T> LayerPad<T> {
     /// Samples concrete random field element masks for a single circuit layer.
     pub fn sample<
         const W: usize,
-        F: RuntimeField<W> + runtime_algebra::SupportsSampling<W>,
+        F: RuntimeField<W> + crate::runtime::algebra::SupportsSampling<W>,
         R: RandomEngine,
     >(
         logw: usize,

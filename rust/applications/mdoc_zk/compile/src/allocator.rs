@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use circuits_bit_plucker::BitPlucker;
-use circuits_bitvec::{BitvecIO, V128, V256, V32, V8};
-use compile_algebra::field::CompileField;
-use compile_compiler::CompilerLogic;
-use compile_logic::{Eltw, LogicIO};
+use crate::circuits::bit_plucker::BitPlucker;
+use crate::circuits::bitvec::{BitvecIO, V128, V256, V32, V8};
+use crate::compile::algebra::field::CompileField;
+use crate::compile::compiler::CompilerLogic;
+use crate::compile::logic::{Eltw, LogicIO};
 
 pub struct WireAllocator<'l, 'a, FC: CompileField> {
     pub iologic: &'l CompilerLogic<'a, FC>,
@@ -43,7 +43,7 @@ impl<'l, 'a, FC: CompileField> WireAllocator<'l, 'a, FC> {
 
     pub fn allocate_bitvec<const N: usize>(
         &mut self,
-    ) -> circuits_bitvec::Bitvec<CompilerLogic<'a, FC>, N> {
+    ) -> crate::circuits::bitvec::Bitvec<CompilerLogic<'a, FC>, N> {
         self.bitvec_io.next::<N>(&mut self.pos)
     }
 

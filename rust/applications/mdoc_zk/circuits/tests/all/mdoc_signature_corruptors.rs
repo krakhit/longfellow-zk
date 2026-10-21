@@ -14,8 +14,10 @@
 
 #![allow(dead_code)]
 
-use core_algebra::{AlgebraicField, Nat, SupportsNatConversions};
-use mdoc_zk_circuits::signature::concrete::ConcreteGiven;
+use crate::{
+    core::algebra::{AlgebraicField, Nat, SupportsNatConversions},
+    mdoc::circuits::signature::concrete::ConcreteGiven,
+};
 
 pub struct MdocSignatureCorruptor<F>
 where F: AlgebraicField + SupportsNatConversions<4>
@@ -25,7 +27,7 @@ where F: AlgebraicField + SupportsNatConversions<4>
     pub corrupt_input: Option<
         Box<
             dyn Fn(
-                &mut mdoc_zk_circuits::signature::SignatureInput<
+                &mut crate::mdoc::circuits::signature::SignatureInput<
                     <F as SupportsNatConversions<4>>::N,
                 >,
             ),

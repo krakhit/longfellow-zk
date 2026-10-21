@@ -12,7 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-pub mod circuit;
-pub use circuit::BitPlucker;
 pub mod concrete;
+
 pub use concrete::encoding_point;
+
+cfg_compiler! {
+    pub mod circuit;
+    pub use circuit::BitPlucker;
+}
+
+#[cfg(test)]
+#[path = "../tests/all/mod.rs"]
+mod tests_all;

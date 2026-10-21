@@ -13,7 +13,7 @@
 // limitations under the License.
 
 use super::CircuitWriter;
-use crate::{
+use crate::core::proto::{
     circuit::Circuit,
     uleb::{serialize_uleb128_max4, serialize_uleb128_max4_u32},
     SerializableField,
@@ -48,7 +48,10 @@ pub(super) fn to_bytes_lfc2<F: SerializableField>(
 
     // Serialize each layer
     for layer in &sc_c.raw.layers {
-        assert!(crate::sane_logw(layer.logw), "layer logw must be sane");
+        assert!(
+            crate::core::proto::sane_logw(layer.logw),
+            "layer logw must be sane"
+        );
         serialize_uleb128_max4(&mut bytes, layer.logw);
         serialize_uleb128_max4(&mut bytes, layer.nw);
 

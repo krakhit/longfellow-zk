@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use circuits_bitvec::{Bitvec, BitvecLogic, V8};
-use circuits_boolean::{Bitw, Boolean};
-use compile_logic::Logic;
+use crate::circuits::bitvec::{Bitvec, BitvecLogic, V8};
+use crate::circuits::boolean::{Bitw, Boolean};
+use crate::compile::logic::Logic;
 
 pub struct Given<L: Logic> {
     pub v: V8<L>,
@@ -44,7 +44,7 @@ pub struct CborDecodeResult<L: Logic, const N: usize> {
 
 pub struct CborByteDecoder<'a, L: Logic> {
     boolean: Boolean<'a, L>,
-    pub(crate) bv: BitvecLogic<'a, L>,
+    pub(in crate::mdoc::circuits) bv: BitvecLogic<'a, L>,
 }
 
 impl<'a, L: Logic> CborByteDecoder<'a, L> {

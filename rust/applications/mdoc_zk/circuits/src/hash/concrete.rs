@@ -12,11 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use compile_algebra::CompileNat;
-use core_algebra::Nat;
+use crate::core::algebra::Nat;
 
 use super::constants::K_MSO_PREIMAGE_LEN;
-use crate::mso_attribute::concrete::FieldLocator as MsoFieldLocator;
+use crate::mdoc::circuits::mso_attribute::concrete::FieldLocator as MsoFieldLocator;
 
 #[derive(Clone, Debug)]
 pub struct AttrInput {
@@ -34,7 +33,7 @@ pub struct HashMac {
 }
 
 #[derive(Clone, Debug)]
-pub struct HashInput<N = CompileNat<4>> {
+pub struct HashInput<N> {
     pub attrs: Vec<AttrInput>,
     pub now: Vec<u8>,
     pub suppress_doc_type_check: bool,
@@ -69,11 +68,11 @@ pub struct AttrGiven {
 
 #[derive(Clone, Debug)]
 pub struct AttrDerived {
-    pub sha_derived: circuits_sha256msg::concrete::ConcreteDerived,
+    pub sha_derived: crate::circuits::sha256msg::concrete::ConcreteDerived,
 }
 
 #[derive(Clone, Debug)]
-pub struct ConcreteGiven<N = CompileNat<4>> {
+pub struct ConcreteGiven<N> {
     pub hash_input: HashInput<N>,
     pub mac_input: HashMac,
     pub mac_e: [u128; 2],
@@ -93,7 +92,7 @@ pub struct ConcreteGiven<N = CompileNat<4>> {
 #[derive(Clone, Debug)]
 pub struct ConcreteDerived {
     pub attribute_derived: Vec<AttrDerived>,
-    pub sha_derived: circuits_sha256msg::concrete::ConcreteDerived,
+    pub sha_derived: crate::circuits::sha256msg::concrete::ConcreteDerived,
 }
 
 pub fn compute_mac_tags<const W: usize, N: Nat<W>>(
@@ -108,17 +107,17 @@ pub fn compute_mac_tags<const W: usize, N: Nat<W>>(
         padded
     };
 
-    let mac_e = circuits_mac::concrete::compute_tag(
+    let mac_e = crate::circuits::mac::concrete::compute_tag(
         &nat_to_32bytes(&hash_input.issuer_sig_e),
         mac_input.mac_av,
         &mac_input.mac_ap[0],
     );
-    let mac_device_pkx = circuits_mac::concrete::compute_tag(
+    let mac_device_pkx = crate::circuits::mac::concrete::compute_tag(
         &nat_to_32bytes(&hash_input.device_pk.0),
         mac_input.mac_av,
         &mac_input.mac_ap[1],
     );
-    let mac_device_pky = circuits_mac::concrete::compute_tag(
+    let mac_device_pky = crate::circuits::mac::concrete::compute_tag(
         &nat_to_32bytes(&hash_input.device_pk.1),
         mac_input.mac_av,
         &mac_input.mac_ap[2],
@@ -133,9 +132,9 @@ pub fn given<const W: usize, N: Nat<W>>(
 ) -> ConcreteGiven<N> {
     let (mac_e, mac_device_pkx, mac_device_pky) = compute_mac_tags::<W, N>(&hash_input, &mac_input);
 
-    let cose_sha_wit = circuits_sha256msg::concrete::given(
+    let cose_sha_wit = crate::circuits::sha256msg::concrete::given(
         &hash_input.cbor_mso,
-        &circuits_sha256::constants::INITIAL,
+        &crate::circuits::sha256::constants::INITIAL,
         super::constants::K_MAX_SHA_BLOCKS,
     )
     .unwrap();
@@ -146,9 +145,9 @@ pub fn given<const W: usize, N: Nat<W>>(
 
     let mut attribute_given = Vec::with_capacity(hash_input.attrs.len());
     for a in &hash_input.attrs {
-        let attr_sha_wit = circuits_sha256msg::concrete::given(
+        let attr_sha_wit = crate::circuits::sha256msg::concrete::given(
             &a.cbor_issuer_signed_item,
-            &circuits_sha256::constants::INITIAL,
+            &crate::circuits::sha256::constants::INITIAL,
             2,
         )
         .unwrap();
@@ -200,20 +199,20 @@ pub fn given<const W: usize, N: Nat<W>>(
 }
 
 pub fn derived<const W: usize, N: Nat<W>>(given: &ConcreteGiven<N>) -> ConcreteDerived {
-    let cose_sha_derived = circuits_sha256msg::concrete::ConcreteDerived {
-        sha_derived: circuits_sha256msg::concrete::sha256_msg_derived(
+    let cose_sha_derived = crate::circuits::sha256msg::concrete::ConcreteDerived {
+        sha_derived: crate::circuits::sha256msg::concrete::sha256_msg_derived(
             &given.preimage.value,
-            &circuits_sha256::constants::INITIAL,
+            &crate::circuits::sha256::constants::INITIAL,
             super::constants::K_MAX_SHA_BLOCKS,
         ),
     };
 
     let mut attribute_witnesses = Vec::with_capacity(given.attribute_given.len());
     for ag in &given.attribute_given {
-        let attr_sha_derived = circuits_sha256msg::concrete::ConcreteDerived {
-            sha_derived: circuits_sha256msg::concrete::sha256_msg_derived(
+        let attr_sha_derived = crate::circuits::sha256msg::concrete::ConcreteDerived {
+            sha_derived: crate::circuits::sha256msg::concrete::sha256_msg_derived(
                 &ag.padded_preimage,
-                &circuits_sha256::constants::INITIAL,
+                &crate::circuits::sha256::constants::INITIAL,
                 2,
             ),
         };
@@ -229,7 +228,7 @@ pub fn derived<const W: usize, N: Nat<W>>(given: &ConcreteGiven<N>) -> ConcreteD
 }
 
 pub fn hash_input_of_parsed_mdoc<const W: usize, N: Nat<W>>(
-    parsed: &crate::cbor::mdoc::ParsedMdoc<N>,
+    parsed: &crate::mdoc::circuits::cbor::mdoc::ParsedMdoc<N>,
     req_attr_ids: &[&[u8]],
     now: &str,
 ) -> HashInput<N> {
@@ -243,7 +242,7 @@ pub fn hash_input_of_parsed_mdoc<const W: usize, N: Nat<W>>(
                 )
             });
             AttrInput {
-                expected_name: crate::cbor::encode_cbor_string(&a.name),
+                expected_name: crate::mdoc::circuits::cbor::encode_cbor_string(&a.name),
                 expected_cbor_value: a.cbor_value.clone(),
                 cbor_issuer_signed_item: a.cbor_issuer_signed_item.clone(),
                 mso_digest_offset_in_preimage: a.mso_digest_offset_in_preimage,
@@ -269,8 +268,7 @@ pub fn hash_input_of_parsed_mdoc<const W: usize, N: Nat<W>>(
 }
 
 impl ConcreteDerived {
-    #[cfg(feature = "testonly")]
-    pub fn push_derived<const W: usize, FR: runtime_algebra::field::RuntimeField<W>>(
+    pub fn push_derived<const W: usize, FR: crate::runtime::algebra::field::RuntimeField<W>>(
         &self,
         fr: &FR,
         mut push: impl FnMut(FR::E),
@@ -281,3 +279,4 @@ impl ConcreteDerived {
         self.sha_derived.push_derived(fr, &mut push);
     }
 }
+

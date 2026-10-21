@@ -16,7 +16,7 @@ pub mod lfc1;
 pub mod lfc2;
 
 use super::{FieldID, SerializableField};
-use crate::circuit::Circuit;
+use crate::core::proto::circuit::Circuit;
 
 pub struct CircuitWriter<'a, F> {
     f: &'a F,

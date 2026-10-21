@@ -12,17 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use circuits_bit_plucker::{encoding_point, BitPlucker};
-use circuits_boolean::Boolean;
-use compile_algebra::{
-    field::{CompileField, SupportsU64Conversions},
-    gf2_128::Gf2_128Field,
-    p256::P256Field,
+use crate::{
+    circuits::{
+        bit_plucker::{encoding_point, BitPlucker},
+        boolean::Boolean,
+    },
+    compile::{
+        algebra::{
+            field::{CompileField, SupportsU64Conversions},
+            gf2_128::Gf2_128Field,
+            p256::P256Field,
+        },
+        logic::{eval::EvalLogic, Logic},
+    },
 };
-use compile_logic::{eval::EvalLogic, Logic};
 
-fn compare_bool<L: Logic>(boolean: &Boolean<L>, want: bool, got: &circuits_boolean::Bitw<L>)
-where compile_logic::Eltw<L>: PartialEq + std::fmt::Debug {
+fn compare_bool<L: Logic>(
+    boolean: &Boolean<L>,
+    want: bool,
+    got: &crate::circuits::boolean::Bitw<L>,
+) where
+    crate::compile::logic::Eltw<L>: PartialEq + std::fmt::Debug,
+{
     let got_val = boolean.as_eltw(got);
     let want_val = boolean.as_eltw(&boolean.konst(want));
     assert_eq!(got_val, want_val);
@@ -31,9 +42,9 @@ where compile_logic::Eltw<L>: PartialEq + std::fmt::Debug {
 fn compare_bitvec<L: Logic, const N: usize>(
     boolean: &Boolean<L>,
     want: u64,
-    got: &circuits_bitvec::Bitvec<L, N>,
+    got: &crate::circuits::bitvec::Bitvec<L, N>,
 ) where
-    compile_logic::Eltw<L>: PartialEq + std::fmt::Debug,
+    crate::compile::logic::Eltw<L>: PartialEq + std::fmt::Debug,
 {
     for i in 0..N {
         let want_bit = ((want >> i) & 1) == 1;
@@ -42,7 +53,7 @@ fn compare_bitvec<L: Logic, const N: usize>(
 }
 
 fn run_bit_plucker_eval_tests<const W: usize, F: CompileField>(f: &F) {
-    let tracker = compile_logic::scope::AssertionScope::new();
+    let tracker = crate::compile::logic::scope::AssertionScope::new();
     type L<'a, F> = EvalLogic<'a, F>;
     let l = L::new(f, &tracker);
     let boolean = Boolean::new(&l);
@@ -77,7 +88,7 @@ fn run_bit_plucker_invalid_points_test<const W: usize, F: CompileField + Support
     f: &F,
     max_test_range: usize,
 ) {
-    let tracker = compile_logic::scope::AssertionScope::new();
+    let tracker = crate::compile::logic::scope::AssertionScope::new();
     type L<'a, F> = EvalLogic<'a, F>;
     let l = L::new(f, &tracker);
     let boolean = Boolean::new(&l);
@@ -107,7 +118,7 @@ fn run_bit_plucker_invalid_points_test<const W: usize, F: CompileField + Support
             if bit_eltw
                 .assertions
                 .values()
-                .any(|s| matches!(s, compile_logic::scope::AssertionStatus::Failed(_)))
+                .any(|s| matches!(s, crate::compile::logic::scope::AssertionStatus::Failed(_)))
             {
                 has_error = true;
             }

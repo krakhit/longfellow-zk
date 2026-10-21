@@ -14,12 +14,15 @@
 
 use std::io::Result;
 
-use core_algebra::{ElementOf, SerializableField};
-use runtime_algebra::{field::RuntimeField, Subfield};
-
 use crate::{
-    ligero::{LigeroCommitment, LigeroGeometry, LigeroProof},
-    sumcheck::{SumcheckProof, SumcheckProofGeometry},
+    core::algebra::{ElementOf, SerializableField},
+    runtime::{
+        algebra::{field::RuntimeField, Subfield},
+        proto::{
+            ligero::{LigeroCommitment, LigeroGeometry, LigeroProof},
+            sumcheck::{SumcheckProof, SumcheckProofGeometry},
+        },
+    },
 };
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -70,9 +73,9 @@ impl<const W: usize, F: RuntimeField<W> + SerializableField> ZkProof<W, F> {
         f: &F,
         sf: &SF,
     ) -> Result<Self> {
-        let root_bytes = crate::util::read_bytes_32(bytes)?;
+        let root_bytes = crate::runtime::proto::util::read_bytes_32(bytes)?;
         let com = LigeroCommitment {
-            root: crate::Digest { data: root_bytes },
+            root: crate::runtime::proto::Digest { data: root_bytes },
         };
 
         let sumcheck_proof = SumcheckProof::read(bytes, &geom.sc_geom, f)?;
@@ -90,7 +93,7 @@ impl<const W: usize, F: RuntimeField<W> + SerializableField> ZkProof<W, F> {
 /// taking into account the private/public witness splits and ZK padding variables.
 #[must_use]
 pub fn witness_and_constraint_count<F: SerializableField>(
-    circuit: &core_proto::circuit::Circuit<F>,
+    circuit: &crate::core::proto::circuit::Circuit<F>,
 ) -> (usize, usize) {
     assert!(
         circuit.raw.ninput >= circuit.raw.npublic_input,

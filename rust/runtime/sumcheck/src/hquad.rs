@@ -12,9 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use runtime_algebra::RuntimeField;
-
-use crate::dense::{affine_interpolation, affine_interpolation_nz_z, affine_interpolation_z_nz};
+use crate::runtime::{
+    algebra::RuntimeField,
+    sumcheck::dense::{affine_interpolation, affine_interpolation_nz_z, affine_interpolation_z_nz},
+};
 
 /// two "hand" variables
 #[derive(Clone, Copy)]
@@ -37,10 +38,10 @@ pub struct HQuad<const W: usize, F: RuntimeField<W>> {
     pub vc: Vec<F::E>,
 }
 
-impl<const W: usize, F: RuntimeField<W> + core_algebra::SerializableField> HQuad<W, F> {
+impl<const W: usize, F: RuntimeField<W> + crate::core::algebra::SerializableField> HQuad<W, F> {
     #[allow(clippy::too_many_arguments)]
     pub fn bind_g(
-        layer: &core_proto::circuit::Layer<F>,
+        layer: &crate::core::proto::circuit::Layer<F>,
         constants: &[F::E],
         logv: usize,
         nv: usize,
@@ -53,8 +54,11 @@ impl<const W: usize, F: RuntimeField<W> + core_algebra::SerializableField> HQuad
         let cap = layer.nterms_after_bind_g();
         let mut hc: Vec<HCorner> = Vec::with_capacity(cap);
         let mut vc: Vec<F::E> = Vec::with_capacity(cap);
-        assert!(crate::sane_logw(logv), "logv must be sane");
-        let dot = crate::eq::eq2(logv, nv, g0, g1, alpha, f);
+        assert!(
+            crate::runtime::sumcheck::sane_logw(logv),
+            "logv must be sane"
+        );
+        let dot = crate::runtime::sumcheck::eq::eq2(logv, nv, g0, g1, alpha, f);
         let mut prev_h0 = !0u32;
         let mut prev_h1 = !0u32;
         layer.for_each_term(

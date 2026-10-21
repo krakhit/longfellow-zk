@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use circuits_ec::{evaluate_pt2, evaluate_pt3};
-use compile_algebra::field::{CompileField, SupportsNatConversions};
-use compile_logic::Logic;
+use crate::circuits::ec::{evaluate_pt2, evaluate_pt3};
+use crate::compile::algebra::field::{CompileField, SupportsNatConversions};
+use crate::compile::logic::Logic;
 
 use super::{
     circuit::{Derived, Given, Slicing},

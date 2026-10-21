@@ -12,12 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use core_algebra::ElementOf;
-use runtime_algebra::SupportsSampling;
-use runtime_proto::Digest;
-use runtime_random::{RandomEngine, Transcript};
-
-use crate::param::{LigeroCommitment, LigeroParam};
+use crate::{
+    core::algebra::ElementOf,
+    runtime::{
+        algebra::SupportsSampling,
+        ligero::param::{LigeroCommitment, LigeroParam},
+        proto::Digest,
+        random::{RandomEngine, Transcript},
+    },
+};
 
 pub trait TranscriptLigero {
     fn write_commitment(&mut self, commitment: &LigeroCommitment);

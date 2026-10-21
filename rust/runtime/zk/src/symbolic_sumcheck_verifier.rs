@@ -12,26 +12,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use core_proto::circuit::Circuit;
-use runtime_algebra::{ElementOf, RuntimeField, ZkField};
-use runtime_ligero::param::LigeroLinearConstraint;
-use runtime_random::{RandomEngine, Transcript};
-use runtime_sumcheck::{proof::SumcheckProof, transcript::TranscriptSumcheck, SumcheckProofAux};
+use crate::{
+    core::proto::circuit::Circuit,
+    runtime::{
+        algebra::{ElementOf, RuntimeField, ZkField},
+        ligero::param::LigeroLinearConstraint,
+        random::{RandomEngine, Transcript},
+        sumcheck::{proof::SumcheckProof, transcript::TranscriptSumcheck, SumcheckProofAux},
+        zk::expression::Expression,
+    },
+};
 
-use crate::expression::Expression;
-
-pub(crate) struct ClaimsState<const W: usize, F: RuntimeField<W>> {
+pub(in crate::runtime::zk) struct ClaimsState<const W: usize, F: RuntimeField<W>> {
     pub logv: usize,
     pub nv: usize,
     pub claim: [Expression<W, F>; 2],
     pub hc: [Vec<ElementOf<F>>; 2],
 }
 
-pub(crate) fn symbolic_sumcheck_round<const W: usize, F: ZkField<W>>(
+pub(in crate::runtime::zk) fn symbolic_sumcheck_round<const W: usize, F: ZkField<W>>(
     mut claim: Expression<W, F>,
     round_pad: &[usize; 2],
-    hp: &runtime_proto::RoundPoly<W, F>,
-    lagrange_basis: &runtime_sumcheck::LagrangeBasis<3, W, F>,
+    hp: &crate::runtime::proto::RoundPoly<W, F>,
+    lagrange_basis: &crate::runtime::sumcheck::LagrangeBasis<3, W, F>,
     transcript: &mut Transcript,
     f: &F,
 ) -> (Expression<W, F>, ElementOf<F>) {
@@ -61,12 +64,12 @@ fn verify_layer<const W: usize, F: ZkField<W>>(
     a: &mut Vec<LigeroLinearConstraint<W, F>>,
     b: &mut Vec<ElementOf<F>>,
     claims_state: &mut ClaimsState<W, F>,
-    pad: &crate::circuit_pad::LayerPad,
-    clr: &core_proto::circuit::Layer<F>,
-    plr: &runtime_sumcheck::proof::LayerProof<W, F>,
+    pad: &crate::runtime::zk::circuit_pad::LayerPad,
+    clr: &crate::core::proto::circuit::Layer<F>,
+    plr: &crate::runtime::sumcheck::proof::LayerProof<W, F>,
     aux: Option<&SumcheckProofAux<W, F>>,
     constants: &[ElementOf<F>],
-    lagrange_basis: &runtime_sumcheck::LagrangeBasis<3, W, F>,
+    lagrange_basis: &crate::runtime::sumcheck::LagrangeBasis<3, W, F>,
     transcript: &mut Transcript,
     f: &F,
 ) {
@@ -137,7 +140,7 @@ fn input_constraint<const W: usize, F: ZkField<W>>(
     alpha: ElementOf<F>,
     f: &F,
 ) {
-    let eq = runtime_sumcheck::eq::eq2(
+    let eq = crate::runtime::sumcheck::eq::eq2(
         claims_state.logv,
         num_inputs,
         &claims_state.hc[0],
@@ -146,7 +149,7 @@ fn input_constraint<const W: usize, F: ZkField<W>>(
         f,
     );
 
-    let pub_binding = runtime_algebra::blas::dot(
+    let pub_binding = crate::runtime::algebra::blas::dot(
         &eq[..num_public_inputs],
         &pub_inputs[..num_public_inputs],
         f,
@@ -224,8 +227,8 @@ pub fn symbolic_sumcheck_verifier_core<const W: usize, F: ZkField<W>>(
 
     let logw_layers: Vec<usize> = circuit.raw.layers.iter().map(|l| l.logw()).collect();
     let circuit_pad =
-        crate::circuit_pad::CircuitPad::generate_indices(&logw_layers, &mut pad_index);
-    let lagrange_basis = runtime_sumcheck::LagrangeBasis::<3, W, F>::new(f);
+        crate::runtime::zk::circuit_pad::CircuitPad::generate_indices(&logw_layers, &mut pad_index);
+    let lagrange_basis = crate::runtime::sumcheck::LagrangeBasis::<3, W, F>::new(f);
 
     for ly in 0..circuit.raw.layers.len() {
         verify_layer(
@@ -264,7 +267,7 @@ pub fn symbolic_sumcheck_verifier_core<const W: usize, F: ZkField<W>>(
 }
 
 fn bind_quad<const W: usize, F: ZkField<W>>(
-    clr: &core_proto::circuit::Layer<F>,
+    clr: &crate::core::proto::circuit::Layer<F>,
     constants: &[ElementOf<F>],
     claims: &ClaimsState<W, F>,
     alpha: &ElementOf<F>,
@@ -272,7 +275,7 @@ fn bind_quad<const W: usize, F: ZkField<W>>(
     hc: &[Vec<ElementOf<F>>; 2],
     f: &F,
 ) -> ElementOf<F> {
-    let mut equad = runtime_sumcheck::hquad::HQuad::bind_g(
+    let mut equad = crate::runtime::sumcheck::hquad::HQuad::bind_g(
         clr,
         constants,
         claims.logv,

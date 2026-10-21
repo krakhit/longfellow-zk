@@ -12,26 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use circuits_bitvec::BitvecLogic;
-use compile_algebra::Curve;
+use crate::circuits::bitvec::BitvecLogic;
+use crate::compile::algebra::Curve;
 
 use super::{
     circuit::{Derived, Given},
     concrete::{ConcreteDerived, ConcreteGiven},
 };
-use crate::traits::MdocSigCompileField;
+use crate::mdoc::circuits::traits::MdocSigCompileField;
 
-fn eval_v128<L: compile_logic::LogicIO>(
+fn eval_v128<L: crate::compile::logic::LogicIO>(
     bv: &BitvecLogic<L>,
     val: u128,
-) -> circuits_bitvec::V128<L> {
-    let boolean = circuits_boolean::Boolean::new(bv.logic());
+) -> crate::circuits::bitvec::V128<L> {
+    let boolean = crate::circuits::boolean::Boolean::new(bv.logic());
     bv.from_fn::<128, _>(|idx| {
         let bit_val = (val.checked_shr(idx as u32).unwrap_or(0) & 1) == 1;
         boolean.konst(bit_val)
     })
 }
-pub fn evaluate_given<C, L: compile_logic::LogicIO<F = F>, F: MdocSigCompileField>(
+pub fn evaluate_given<C, L: crate::compile::logic::LogicIO<F = F>, F: MdocSigCompileField>(
     logic: &L,
     bv: &BitvecLogic<L>,
     given: &ConcreteGiven<F, F::N>,
@@ -44,16 +44,16 @@ where
         logic.konst(&f.reduce_nat(&given.sig_input.issuer_pk.0)),
         logic.konst(&f.reduce_nat(&given.sig_input.issuer_pk.1)),
     );
-    let big_bv = circuits_big_bitvec::BigBitvec::new(bv.logic());
+    let big_bv = crate::circuits::big_bitvec::BigBitvec::new(bv.logic());
     let issuer_sig_e = big_bv.of_nat::<4, 256, F>(&given.sig_input.issuer_sig_e);
-    let issuer_sig_given = circuits_ecdsa2::evaluate_given(&given.issuer_sig_given, logic);
+    let issuer_sig_given = crate::circuits::ecdsa2::evaluate_given(&given.issuer_sig_given, logic);
 
     let device_pk = (
         big_bv.of_nat::<4, 256, F>(&given.sig_input.device_pk.0),
         big_bv.of_nat::<4, 256, F>(&given.sig_input.device_pk.1),
     );
     let device_sig_e = big_bv.of_nat::<4, 256, F>(&given.sig_input.device_sig_e);
-    let device_sig_given = circuits_ecdsa2::evaluate_given(&given.device_sig_given, logic);
+    let device_sig_given = crate::circuits::ecdsa2::evaluate_given(&given.device_sig_given, logic);
 
     let mac_e = [eval_v128(bv, given.mac_e[0]), eval_v128(bv, given.mac_e[1])];
     let mac_device_pkx = [
@@ -88,7 +88,7 @@ where
     }
 }
 
-pub fn evaluate_derived<C, L: compile_logic::LogicIO<F = F>, F: MdocSigCompileField>(
+pub fn evaluate_derived<C, L: crate::compile::logic::LogicIO<F = F>, F: MdocSigCompileField>(
     logic: &L,
     _bv: &BitvecLogic<L>,
     derived: &ConcreteDerived<F>,
@@ -96,8 +96,8 @@ pub fn evaluate_derived<C, L: compile_logic::LogicIO<F = F>, F: MdocSigCompileFi
 where
     C: Curve<4, F = F, N = F::N>,
 {
-    let issuer_sig_derived = circuits_ecdsa2::evaluate_derived(&derived.issuer_sig_derived, logic);
-    let device_sig_derived = circuits_ecdsa2::evaluate_derived(&derived.device_sig_derived, logic);
+    let issuer_sig_derived = crate::circuits::ecdsa2::evaluate_derived(&derived.issuer_sig_derived, logic);
+    let device_sig_derived = crate::circuits::ecdsa2::evaluate_derived(&derived.device_sig_derived, logic);
 
     Derived {
         issuer_sig_derived,

@@ -14,33 +14,61 @@
 
 #[must_use]
 pub fn load_circuit_lfa1(hash: &str) -> Vec<u8> {
-    let path_lfa1 = format!("{}/circuits/{}.lfa1", env!("CARGO_MANIFEST_DIR"), hash);
+    let path_lfa1 = format!(
+        "{}/applications/mdoc_zk/artifacts/circuits/{}.lfa1",
+        env!("CARGO_MANIFEST_DIR"),
+        hash
+    );
     if let Ok(bytes) = std::fs::read(&path_lfa1) {
         return bytes;
     }
-    let path_lfc1 = format!("{}/circuits/{}.lfc1", env!("CARGO_MANIFEST_DIR"), hash);
+    let path_lfc1 = format!(
+        "{}/applications/mdoc_zk/artifacts/circuits/{}.lfc1",
+        env!("CARGO_MANIFEST_DIR"),
+        hash
+    );
     if let Ok(bytes) = std::fs::read(&path_lfc1) {
         return bytes;
     }
-    let path_v1 = format!("{}/circuits/{}.v1", env!("CARGO_MANIFEST_DIR"), hash);
+    let path_v1 = format!(
+        "{}/applications/mdoc_zk/artifacts/circuits/{}.v1",
+        env!("CARGO_MANIFEST_DIR"),
+        hash
+    );
     if let Ok(bytes) = std::fs::read(&path_v1) {
         return bytes;
     }
-    let path = format!("{}/circuits/{}", env!("CARGO_MANIFEST_DIR"), hash);
+    let path = format!(
+        "{}/applications/mdoc_zk/artifacts/circuits/{}",
+        env!("CARGO_MANIFEST_DIR"),
+        hash
+    );
     std::fs::read(&path).unwrap_or_else(|_| panic!("Failed to read lfa1 archive file at {path}"))
 }
 
 #[must_use]
 pub fn load_circuit_lfa2(hash: &str) -> Vec<u8> {
-    let path_lfa2 = format!("{}/circuits/{}.lfa2", env!("CARGO_MANIFEST_DIR"), hash);
+    let path_lfa2 = format!(
+        "{}/applications/mdoc_zk/artifacts/circuits/{}.lfa2",
+        env!("CARGO_MANIFEST_DIR"),
+        hash
+    );
     if let Ok(bytes) = std::fs::read(&path_lfa2) {
         return bytes;
     }
-    let path_lfc2 = format!("{}/circuits/{}.lfc2", env!("CARGO_MANIFEST_DIR"), hash);
+    let path_lfc2 = format!(
+        "{}/applications/mdoc_zk/artifacts/circuits/{}.lfc2",
+        env!("CARGO_MANIFEST_DIR"),
+        hash
+    );
     if let Ok(bytes) = std::fs::read(&path_lfc2) {
         return bytes;
     }
-    let path_v2 = format!("{}/circuits/{}.v2", env!("CARGO_MANIFEST_DIR"), hash);
+    let path_v2 = format!(
+        "{}/applications/mdoc_zk/artifacts/circuits/{}.v2",
+        env!("CARGO_MANIFEST_DIR"),
+        hash
+    );
     std::fs::read(&path_v2)
         .unwrap_or_else(|_| panic!("Failed to read lfa2 archive file at {path_v2}"))
 }
@@ -67,14 +95,18 @@ pub fn load_circuit_v2(hash: &str) -> Vec<u8> {
 
 #[must_use]
 pub fn load_prior_proof(hash: &str) -> Vec<u8> {
-    let path = format!("{}/proofs/{}.bin", env!("CARGO_MANIFEST_DIR"), hash);
+    let path = format!(
+        "{}/applications/mdoc_zk/artifacts/proofs/{}.bin",
+        env!("CARGO_MANIFEST_DIR"),
+        hash
+    );
     std::fs::read(&path).unwrap_or_else(|_| panic!("Failed to read proof file at {path}"))
 }
 
 #[must_use]
 pub fn load_prior_sig_witness(hash: &str) -> Vec<u8> {
     let path = format!(
-        "{}/proofs/{}_sig_witness.bin",
+        "{}/applications/mdoc_zk/artifacts/proofs/{}_sig_witness.bin",
         env!("CARGO_MANIFEST_DIR"),
         hash
     );
@@ -84,7 +116,7 @@ pub fn load_prior_sig_witness(hash: &str) -> Vec<u8> {
 #[must_use]
 pub fn load_prior_hash_witness(hash: &str) -> Vec<u8> {
     let path = format!(
-        "{}/proofs/{}_hash_witness.bin",
+        "{}/applications/mdoc_zk/artifacts/proofs/{}_hash_witness.bin",
         env!("CARGO_MANIFEST_DIR"),
         hash
     );

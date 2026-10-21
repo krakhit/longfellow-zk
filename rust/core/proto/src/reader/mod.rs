@@ -16,7 +16,7 @@ pub mod lfc1;
 pub mod lfc2;
 
 use super::{FieldID, SerializableField};
-use crate::circuit::{Circuit, RawCircuit};
+use crate::core::proto::circuit::{Circuit, RawCircuit};
 
 // Reader hardening constants: dimensioned for 5 million max wires and 20 million max terms
 pub(super) const MAX_WIRES: usize = 5_000_000;
@@ -131,7 +131,7 @@ impl<'a, F: SerializableField> CircuitReader<'a, F> {
         stream
             .read_exact(&mut parsed_id)
             .map_err(|e| format!("Failed to read circuit_id: {e}"))?;
-        let computed_id = crate::circuit::compute_id(self.f, raw);
+        let computed_id = crate::core::proto::circuit::compute_id(self.f, raw);
         if parsed_id != computed_id {
             return Err(format!(
                 "Circuit ID mismatch: expected {computed_id:?}, got {parsed_id:?}"

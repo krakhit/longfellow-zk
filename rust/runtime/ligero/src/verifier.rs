@@ -12,13 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use core_algebra::ElementOf;
-use runtime_algebra::{blas, Interpolator, InterpolatorFactory, RuntimeField, SupportsSampling};
-use runtime_proto::LigeroProof;
-use runtime_random::Transcript;
+use crate::core::algebra::ElementOf;
+use crate::runtime::algebra::{blas, Interpolator, InterpolatorFactory, RuntimeField, SupportsSampling};
+use crate::runtime::proto::LigeroProof;
+use crate::runtime::random::Transcript;
 use sha2::digest::Update;
 
-use crate::{
+use crate::runtime::ligero::{
     common::{inner_product_vector, layout_aext_into},
     param::{LigeroCommitment, LigeroLinearConstraint, LigeroParam, LigeroQuadraticConstraint},
     transcript::TranscriptLigero,
@@ -45,7 +45,7 @@ impl<'a> LigeroVerifier<'a> {
     #[allow(clippy::too_many_arguments)]
     pub fn verify<
         const W: usize,
-        F: RuntimeField<W> + core_algebra::SerializableField + SupportsSampling<W>,
+        F: RuntimeField<W> + crate::core::algebra::SerializableField + SupportsSampling<W>,
         IF: InterpolatorFactory<W, F>,
     >(
         &mut self,
@@ -53,7 +53,7 @@ impl<'a> LigeroVerifier<'a> {
         commitment: &LigeroCommitment,
         proof: &LigeroProof<W, F>,
         linear_constraints: &[LigeroLinearConstraint<W, F>],
-        hash_of_ligero_statement: &runtime_merkle::Digest,
+        hash_of_ligero_statement: &crate::runtime::merkle::Digest,
         quadratic_constraints: &[LigeroQuadraticConstraint],
         make_interpolator: &IF,
         f: &F,
@@ -216,13 +216,13 @@ impl<'a> LigeroVerifier<'a> {
         yp
     }
 
-    fn merkle_check<const W: usize, F: RuntimeField<W> + core_algebra::SerializableField>(
+    fn merkle_check<const W: usize, F: RuntimeField<W> + crate::core::algebra::SerializableField>(
         &self,
         idx: &[usize],
         commitment: &LigeroCommitment,
         proof: &LigeroProof<W, F>,
         f: &F,
-    ) -> Result<(), runtime_merkle::MerkleError> {
+    ) -> Result<(), crate::runtime::merkle::MerkleError> {
         let len = f.serialized_size_bytes();
         let mut updhash = |r: usize, _col_idx: usize, sha: &mut sha2::Sha256| {
             let mut buf = [0u8; 128];
@@ -233,7 +233,7 @@ impl<'a> LigeroVerifier<'a> {
             }
         };
 
-        runtime_merkle::verify(
+        crate::runtime::merkle::verify(
             self.param.block_enc - self.param.dblock,
             &commitment.root,
             idx,
@@ -244,7 +244,7 @@ impl<'a> LigeroVerifier<'a> {
 
     fn low_degree_check<
         const W: usize,
-        F: RuntimeField<W> + core_algebra::SerializableField,
+        F: RuntimeField<W> + crate::core::algebra::SerializableField,
         IF: InterpolatorFactory<W, F>,
     >(
         &self,
@@ -278,7 +278,7 @@ impl<'a> LigeroVerifier<'a> {
 
     fn dot_check<
         const W: usize,
-        F: RuntimeField<W> + core_algebra::SerializableField,
+        F: RuntimeField<W> + crate::core::algebra::SerializableField,
         IF: InterpolatorFactory<W, F>,
     >(
         &self,
@@ -324,7 +324,7 @@ impl<'a> LigeroVerifier<'a> {
 
     fn quadratic_check<
         const W: usize,
-        F: RuntimeField<W> + core_algebra::SerializableField,
+        F: RuntimeField<W> + crate::core::algebra::SerializableField,
         IF: InterpolatorFactory<W, F>,
     >(
         &self,

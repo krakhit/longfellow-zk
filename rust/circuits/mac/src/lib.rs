@@ -12,13 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-pub mod allocate;
-pub mod circuit;
-pub use allocate::allocate_given;
-pub use circuit::{Given, MAC};
-#[cfg(feature = "testonly")]
-pub mod evaluate;
-#[cfg(feature = "testonly")]
-pub use evaluate::evaluate_given;
 pub mod concrete;
 pub use concrete::{compute_tag, given, ConcreteGiven};
+
+cfg_compiler! {
+    pub mod allocate;
+    pub mod circuit;
+
+    pub use self::{
+        allocate::allocate_given,
+        circuit::{Given, MAC},
+    };
+}
+
+
+cfg_testonly! {
+    pub mod evaluate;
+    pub use evaluate::evaluate_given;
+}
+
+#[cfg(test)]
+#[path = "../tests/all/mod.rs"]
+mod tests_all;

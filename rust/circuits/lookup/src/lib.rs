@@ -14,3 +14,7 @@
 
 pub mod circuit;
 pub use circuit::{Lookup, Table};
+
+#[cfg(test)]
+#[path = "../tests/lookup.rs"]
+mod tests_lookup;

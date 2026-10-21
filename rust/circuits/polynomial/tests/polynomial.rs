@@ -12,20 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use circuits_polynomial::Polynomial;
-use compile_algebra::{
+use crate::circuits::polynomial::Polynomial;
+use crate::compile::algebra::{
     field::{SupportsNatConversions, SupportsU64Conversions},
     p256::P256Field,
 };
-use compile_logic::{Logic, LogicIO};
+use crate::compile::logic::{Logic, LogicIO};
 
 #[test]
 fn test_compile_polynomial() {
     let f = P256Field::new();
-    let (circuit, stats, _symbols) = compile_compiler::compile(&f, |iologic| {
+    let (circuit, stats, _symbols) = crate::compile::compiler::compile(&f, |iologic| {
         let p = Polynomial::new(&iologic);
 
-        let mut pos = compile_logic::K_FIRST_WIRE_POSITION;
+        let mut pos = crate::compile::logic::K_FIRST_WIRE_POSITION;
         let cc: Vec<_> = (0..5).map(|_| iologic.next(&mut pos)).collect();
         let x = iologic.next(&mut pos);
 
@@ -33,11 +33,11 @@ fn test_compile_polynomial() {
         (iologic.assert0("poly_res", &res), 1, 0)
     });
 
-    compile_compiler::dump_stats("polynomial_eval_compile", &circuit, &stats);
+    crate::compile::compiler::dump_stats("polynomial_eval_compile", &circuit, &stats);
 }
 
-use compile_algebra::{field::CompileField, interpolation::eval_monomial};
-use compile_logic::eval::EvalLogic;
+use crate::compile::algebra::{field::CompileField, interpolation::eval_monomial};
+use crate::compile::logic::eval::EvalLogic;
 
 fn test_polynomial_evaluation_generic<
     const W: usize,
@@ -45,7 +45,7 @@ fn test_polynomial_evaluation_generic<
 >(
     f: &F,
 ) {
-    let tracker = compile_logic::scope::AssertionScope::new();
+    let tracker = crate::compile::logic::scope::AssertionScope::new();
     let iologic = EvalLogic::new(f, &tracker);
     let p = Polynomial::new(&iologic);
 

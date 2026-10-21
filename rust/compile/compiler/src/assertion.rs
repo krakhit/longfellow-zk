@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use compile_algebra::field::CompileField;
-use compile_logic::scope::AssertionScope;
+use crate::compile::algebra::field::CompileField;
+use crate::compile::logic::scope::AssertionScope;
 
-use crate::{
+use crate::compile::compiler::{
     algsimp::AlgebraicRewriter,
     arena::CompilerArena,
     cse::Cse,
@@ -114,7 +114,7 @@ pub fn strip_all<'src, 'dst, F: CompileField>(
     };
 
     // Perform initial walk from source assertions to destination arena.
-    let stripped_slice = crate::ir::walk(arena, assertions, &rewriter);
+    let stripped_slice = crate::compile::compiler::ir::walk(arena, assertions, &rewriter);
     let new_sub_exprs = rewriter.collected.replace(Vec::new());
 
     if new_sub_exprs.is_empty() {
@@ -126,7 +126,7 @@ pub fn strip_all<'src, 'dst, F: CompileField>(
 
     loop {
         let unique_items = dedup_assertions(arena, &current_items, tracker);
-        let next_stripped = crate::ir::walk(arena, unique_items, &rewriter);
+        let next_stripped = crate::compile::compiler::ir::walk(arena, unique_items, &rewriter);
         let next_sub_exprs = rewriter.collected.replace(Vec::new());
 
         if next_sub_exprs.is_empty() {
@@ -153,6 +153,6 @@ pub fn rewrite<'src, 'dst, F: CompileField>(
     let stripped = strip_all(arena, assertions, tracker);
     let cse = Cse::new(arena);
     let algebraic = AlgebraicRewriter::new(f, cse);
-    let rewritten = crate::ir::walk(arena, stripped, &algebraic);
+    let rewritten = crate::compile::compiler::ir::walk(arena, stripped, &algebraic);
     dedup_assertions(arena, rewritten, tracker)
 }

@@ -12,15 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use core_proto::writer::CircuitWriter;
-use mdoc_zk_runtime::proto::decompress_circuits;
+use longfellow_zk::{
+    core::proto::writer::CircuitWriter, mdoc::runtime::proto::decompress_circuits,
+};
 
 fn main() {
-    let p256 = runtime_algebra::p256::P256Field::new();
-    let gf2 = runtime_algebra::gf2_128::Gf2_128Field::new();
-    let circuits_dir = format!("{}/../artifacts/circuits", env!("CARGO_MANIFEST_DIR"));
+    let p256 = longfellow_zk::runtime::algebra::p256::P256Field::new();
+    let gf2 = longfellow_zk::runtime::algebra::gf2_128::Gf2_128Field::new();
+    let circuits_dir = format!(
+        "{}/applications/mdoc_zk/artifacts/circuits",
+        env!("CARGO_MANIFEST_DIR")
+    );
 
-    for hash in mdoc_zk_artifacts::all_circuit_hashes() {
+    for hash in longfellow_zk::mdoc::artifacts::all_circuit_hashes() {
         let path_unversioned = format!("{circuits_dir}/{hash}");
         let bytes_in = std::fs::read(&path_unversioned).unwrap_or_else(|_| {
             let path_lfa1 = format!("{circuits_dir}/{hash}.lfa1");
@@ -33,20 +37,20 @@ fn main() {
         let old_sig_deltas = count_unique_deltas(&c_sig.raw.layers);
         let old_hash_deltas = count_unique_deltas(&c_hash.raw.layers);
 
-        let writer_sig = CircuitWriter::new(&p256, core_proto::FieldID::P256);
+        let writer_sig = CircuitWriter::new(&p256, longfellow_zk::core::proto::FieldID::P256);
         let sig_lfc1_bytes = writer_sig.to_bytes_lfc1(&c_sig);
-        let compressed_sig = compile_compiler::segment_circuit(&p256, &c_sig);
+        let compressed_sig = longfellow_zk::compile::compiler::segment_circuit(&p256, &c_sig);
         let sig_lfc2_bytes = writer_sig.to_bytes_lfc2(&compressed_sig);
 
-        let writer_hash = CircuitWriter::new(&gf2, core_proto::FieldID::Gf2_128);
+        let writer_hash = CircuitWriter::new(&gf2, longfellow_zk::core::proto::FieldID::Gf2_128);
         let hash_lfc1_bytes = writer_hash.to_bytes_lfc1(&c_hash);
-        let compressed_hash = compile_compiler::segment_circuit(&gf2, &c_hash);
+        let compressed_hash = longfellow_zk::compile::compiler::segment_circuit(&gf2, &c_hash);
         let hash_lfc2_bytes = writer_hash.to_bytes_lfc2(&compressed_hash);
 
         let new_sig_deltas = count_unique_deltas(&compressed_sig.raw.layers);
         let new_hash_deltas = count_unique_deltas(&compressed_hash.raw.layers);
 
-        let mut builder1 = core_proto::archive::CircuitArchiveBuilder::new();
+        let mut builder1 = longfellow_zk::core::proto::archive::CircuitArchiveBuilder::new();
         builder1.set_created_at("");
         builder1.set_author("");
         builder1.set_generator_tool("");
@@ -57,16 +61,17 @@ fn main() {
         let uncompressed_lfa1 = archive1.to_bytes_lfa1();
         let bytes_lfa1 = zstd::encode_all(
             &uncompressed_lfa1[..],
-            mdoc_zk_circuits::config::K_ZSTD_LEVEL,
+            longfellow_zk::mdoc::circuits::config::K_ZSTD_LEVEL,
         )
         .expect("compress lfa1");
         std::fs::write(format!("{circuits_dir}/{hash}.lfa1"), &bytes_lfa1).expect("write .lfa1");
 
-        let version = mdoc_zk_runtime::zk_spec::find_zk_spec_by_hex("longfellow-libzk-v1", hash)
-            .map(|s| s.version as u32)
-            .unwrap_or(0);
+        let version =
+            longfellow_zk::mdoc::runtime::zk_spec::find_zk_spec_by_hex("longfellow-libzk-v1", hash)
+                .map(|s| s.version as u32)
+                .unwrap_or(0);
 
-        let mut builder2 = core_proto::archive::CircuitArchiveBuilder::new();
+        let mut builder2 = longfellow_zk::core::proto::archive::CircuitArchiveBuilder::new();
         builder2.set_circuit_version(version);
         builder2.set_created_at("2026-07-15T00:00:00Z");
         builder2.set_author("Google LLC");
@@ -78,7 +83,7 @@ fn main() {
         let uncompressed_lfa2 = archive2.to_bytes_lfa2();
         let bytes_lfa2 = zstd::encode_all(
             &uncompressed_lfa2[..],
-            mdoc_zk_circuits::config::K_ZSTD_LEVEL,
+            longfellow_zk::mdoc::circuits::config::K_ZSTD_LEVEL,
         )
         .expect("compress lfa2");
         std::fs::write(format!("{circuits_dir}/{hash}.lfa2"), &bytes_lfa2).expect("write .lfa2");
@@ -98,7 +103,9 @@ fn main() {
     }
 }
 
-fn count_unique_deltas<F: core_proto::SerializableField>(layers: &[core_proto::Layer<F>]) -> usize {
+fn count_unique_deltas<F: longfellow_zk::core::proto::SerializableField>(
+    layers: &[longfellow_zk::core::proto::Layer<F>],
+) -> usize {
     let mut unique = std::collections::HashSet::new();
     for l in layers {
         l.for_each_delta(|&d| {

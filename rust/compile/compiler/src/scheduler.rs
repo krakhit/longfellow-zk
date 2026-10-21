@@ -12,15 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use compile_algebra::field::CompileField;
-use core_algebra::ElementOf;
-use core_proto::circuit::{
+use crate::compile::algebra::field::CompileField;
+use crate::core::algebra::ElementOf;
+use crate::core::proto::circuit::{
     canonical_term, compare_term, compute_id, Circuit, CircuitGeometry, Layer, RawCircuit, Term,
     TermDelta,
 };
-use util::ceil_log2;
+use crate::util::ceil_log2;
 
-use crate::quad::{QuadCircuit, WExpr};
+use crate::compile::compiler::quad::{QuadCircuit, WExpr};
 
 // Assert that all nodes in the circuit are needed
 fn assert_all_needed<F: CompileField>(nodes: &[WExpr<F>]) {
@@ -110,13 +110,13 @@ fn materialize_assertions<F: CompileField>(
     }
 }
 
-struct RenamedTerm<F: CompileField + core_algebra::SerializableField> {
+struct RenamedTerm<F: CompileField + crate::core::algebra::SerializableField> {
     k: ElementOf<F>,
     rlop0: usize,
     rlop1: usize,
 }
 
-impl<F: CompileField + core_algebra::SerializableField> RenamedTerm<F> {
+impl<F: CompileField + crate::core::algebra::SerializableField> RenamedTerm<F> {
     fn compare(&self, other: &Self, f: &F) -> std::cmp::Ordering {
         self.rlop1
             .cmp(&other.rlop1)
@@ -125,12 +125,12 @@ impl<F: CompileField + core_algebra::SerializableField> RenamedTerm<F> {
     }
 }
 
-struct RenamedNode<F: CompileField + core_algebra::SerializableField> {
+struct RenamedNode<F: CompileField + crate::core::algebra::SerializableField> {
     original_node_index: usize,
     rlterms: Vec<RenamedTerm<F>>,
 }
 
-impl<F: CompileField + core_algebra::SerializableField> RenamedNode<F> {
+impl<F: CompileField + crate::core::algebra::SerializableField> RenamedNode<F> {
     fn compare(&self, other: &Self, f: &F) -> std::cmp::Ordering {
         let mut ia = self.rlterms.len();
         let mut ib = other.rlterms.len();
@@ -156,7 +156,7 @@ impl<F: CompileField + core_algebra::SerializableField> RenamedNode<F> {
     }
 }
 
-fn assign_wire_ids<F: CompileField + core_algebra::SerializableField>(
+fn assign_wire_ids<F: CompileField + crate::core::algebra::SerializableField>(
     f: &F,
     nodes: &[WExpr<F>],
     nodes_by_depth: &[Vec<usize>],
@@ -230,7 +230,7 @@ fn assign_wire_ids<F: CompileField + core_algebra::SerializableField>(
     ids
 }
 
-fn collect_quads<F: CompileField + core_algebra::SerializableField>(
+fn collect_quads<F: CompileField + crate::core::algebra::SerializableField>(
     nodes: &[WExpr<F>],
     nodes_by_depth: &[Vec<usize>],
     max_depth: usize,
@@ -272,7 +272,7 @@ fn collect_quads<F: CompileField + core_algebra::SerializableField>(
     (terms_in_layer, nwires_in_layer)
 }
 
-fn check_connectivity<F: CompileField + core_algebra::SerializableField>(
+fn check_connectivity<F: CompileField + crate::core::algebra::SerializableField>(
     f: &F,
     ninput: usize,
     noutput: usize,
@@ -351,7 +351,7 @@ fn validate_and_count_inputs<F: CompileField>(nodes: &[WExpr<F>]) -> usize {
     }
 }
 
-use compile_logic::scope::AssertionId;
+use crate::compile::logic::scope::AssertionId;
 
 fn extract_debug_symbols<F: CompileField>(
     nodes: &[WExpr<F>],
@@ -359,8 +359,8 @@ fn extract_debug_symbols<F: CompileField>(
     wire_ids: &[WireId],
     depth: &[usize],
     max_depth: usize,
-    tracker: compile_logic::scope::AssertionScope,
-) -> crate::debug::CircuitDebugSymbols {
+    tracker: crate::compile::logic::scope::AssertionScope,
+) -> crate::compile::compiler::debug::CircuitDebugSymbols {
     let mut sym_list = Vec::new();
     for &(quad_idx, id) in quad_asserts {
         if quad_idx < nodes.len() {
@@ -374,28 +374,28 @@ fn extract_debug_symbols<F: CompileField>(
                     let layer = max_depth
                         .checked_sub(depth[target_idx])
                         .expect("assertion target is deeper than the circuit");
-                    let wire = crate::debug::WireRef::new(layer, wid);
-                    sym_list.push(crate::debug::AssertionSymbol::new(wire, id));
+                    let wire = crate::compile::compiler::debug::WireRef::new(layer, wid);
+                    sym_list.push(crate::compile::compiler::debug::AssertionSymbol::new(wire, id));
                 }
             }
         }
     }
     sym_list.sort_by_key(|s| (s.wire.layer, s.wire.index));
-    crate::debug::CircuitDebugSymbols::new(sym_list, tracker)
+    crate::compile::compiler::debug::CircuitDebugSymbols::new(sym_list, tracker)
 }
 
 /// Transform the Quad circuit into a structured multi-layered Circuit with debug symbol extraction.
-pub(crate) fn schedule<F: CompileField + core_algebra::SerializableField>(
+pub(in crate::compile::compiler) fn schedule<F: CompileField + crate::core::algebra::SerializableField>(
     f: &F,
     c: QuadCircuit<F>,
     quad_asserts: &[(usize, AssertionId)],
     npublic_input: usize,
     subfield_boundary: usize,
-    tracker: compile_logic::scope::AssertionScope,
+    tracker: crate::compile::logic::scope::AssertionScope,
 ) -> (
     Circuit<F>,
     CircuitGeometry,
-    crate::debug::CircuitDebugSymbols,
+    crate::compile::compiler::debug::CircuitDebugSymbols,
 ) {
     let mut nodes = c.nodes;
     let nassertions = nodes
@@ -467,7 +467,7 @@ pub(crate) fn schedule<F: CompileField + core_algebra::SerializableField>(
         .collect();
 
     let nwires = nwires_in_layer.iter().sum();
-    let total_terms = c_layers.iter().map(core_proto::Layer::num_terms).sum();
+    let total_terms = c_layers.iter().map(crate::core::proto::Layer::num_terms).sum();
 
     let info = CircuitGeometry {
         ninput,

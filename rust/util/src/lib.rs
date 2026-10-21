@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-pub mod array;
-pub mod memoize;
 pub mod morton;
 
 /// Computes the ceiling of the base-2 logarithm: ceil(log2(n)).
@@ -26,3 +24,12 @@ pub fn ceil_log2(n: usize) -> usize {
         _ => (n - 1).ilog2() as usize + 1,
     }
 }
+
+cfg_compiler! {
+    pub mod array;
+    pub mod memoize;
+}
+
+#[cfg(test)]
+#[path = "../tests/all/mod.rs"]
+mod tests_all;

@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use circuits_bitvec::BitvecLogic;
-use compile_logic::Logic;
+use crate::circuits::bitvec::BitvecLogic;
+use crate::compile::logic::Logic;
 
 use super::{circuit::Given as WireGiven, concrete::ConcreteGiven};
 

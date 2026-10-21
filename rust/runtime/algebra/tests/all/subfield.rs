@@ -12,8 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use core_algebra::{AlgebraicField, SupportsU128Conversions};
-use runtime_algebra::{gf2_128::Gf2_128RuntimeField, subfield::BinarySubfield, Subfield};
+use crate::{
+    core::algebra::{AlgebraicField, SupportsU128Conversions},
+    runtime::algebra::{gf2_128::Gf2_128RuntimeField, subfield::BinarySubfield, Subfield},
+};
 
 struct SimpleRng(u64);
 impl SimpleRng {
@@ -33,7 +35,7 @@ impl SimpleRng {
 #[test]
 fn test_runtime_subfield_gf2_16() {
     let f = Gf2_128RuntimeField::new();
-    let subfield = BinarySubfield::new(&core_algebra::proto::GF2_16_BASIS_V1); // GF(2^16) -> 65536 elements
+    let subfield = BinarySubfield::new(&crate::core::algebra::proto::GF2_16_BASIS_V1); // GF(2^16) -> 65536 elements
 
     let n = 65536;
     let mut elements = Vec::with_capacity(n);
@@ -92,8 +94,8 @@ fn test_runtime_subfield_gf2_16() {
 
 #[test]
 fn test_subfield_gf2_128() {
-    use runtime_algebra::subfield::BinarySubfield;
-    let sf = BinarySubfield::new(&core_algebra::proto::GF2_16_BASIS_V1);
+    use crate::runtime::algebra::subfield::BinarySubfield;
+    let sf = BinarySubfield::new(&crate::core::algebra::proto::GF2_16_BASIS_V1);
 
     let f = Gf2_128RuntimeField::new();
     let zero = f.zero();
@@ -118,13 +120,13 @@ fn test_binary_subfield_requires_byte_aligned_dimension() {
 #[test]
 #[should_panic(expected = "sampling callback returned an unexpected number of bytes")]
 fn test_subfield_sampling_rejects_wrong_byte_count() {
-    let subfield = BinarySubfield::new(&core_algebra::proto::GF2_16_BASIS_V1);
+    let subfield = BinarySubfield::new(&crate::core::algebra::proto::GF2_16_BASIS_V1);
     subfield.sample(|requested| vec![0; requested + 1]);
 }
 
 #[test]
 fn test_gf2_16_basis_v1_properties() {
-    let sf_basis = core_algebra::proto::GF2_16_BASIS_V1;
+    let sf_basis = crate::core::algebra::proto::GF2_16_BASIS_V1;
 
     // 1. Ensure exactly 16 elements
     assert_eq!(sf_basis.len(), 16);
@@ -171,7 +173,7 @@ fn test_gf2_16_basis_v1_properties() {
 #[test]
 fn test_subfield_closed_under_multiplication() {
     let f = Gf2_128RuntimeField::new();
-    let sf = BinarySubfield::new(&core_algebra::proto::GF2_16_BASIS_V1);
+    let sf = BinarySubfield::new(&crate::core::algebra::proto::GF2_16_BASIS_V1);
 
     assert!(sf.contains(&f.one()), "subfield must contain one");
 

@@ -12,13 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use compile_algebra::{
+use crate::compile::algebra::{
     field::{CompileField, SupportsNatConversions},
     p256::P256Field,
 };
-use compile_compiler::{arena::CompilerArena, ir::Expr, CompilerLogic};
-use compile_logic::{scope::AssertionScope, Logic, LogicIO};
-use core_algebra::Nat;
+use crate::compile::compiler::{arena::CompilerArena, ir::Expr, CompilerLogic};
+use crate::compile::logic::{scope::AssertionScope, Logic, LogicIO};
+use crate::core::algebra::Nat;
 
 fn run_test<const W: usize, F: CompileField + SupportsNatConversions<W>>(field: &F) {
     let arena = CompilerArena::new();
@@ -61,7 +61,7 @@ fn test_precious_sum_behavior() {
         let expr = l.add(&precious_sum, &w3);
         let assert_expr = l.assert0("test_case_1", &expr);
         let items_ref = arena.alloc_slice(assert_expr.items);
-        let rewritten = compile_compiler::assertion::rewrite(&arena, &f, items_ref, &tracker);
+        let rewritten = crate::compile::compiler::assertion::rewrite(&arena, &f, items_ref, &tracker);
         assert_eq!(rewritten.len(), 1);
         let rewritten_node = rewritten[0].expr;
 
@@ -107,7 +107,7 @@ fn test_precious_sum_behavior() {
         let expr = l.mul(&w3, &precious_sum);
         let assert_expr = l.assert0("test_case_2", &expr);
         let items_ref = arena.alloc_slice(assert_expr.items);
-        let rewritten = compile_compiler::assertion::rewrite(&arena, &f, items_ref, &tracker);
+        let rewritten = crate::compile::compiler::assertion::rewrite(&arena, &f, items_ref, &tracker);
         assert_eq!(rewritten.len(), 1);
         let rewritten_node = rewritten[0].expr;
 
@@ -148,7 +148,7 @@ fn test_precious_sum_behavior() {
         let precious_val = l.precious(&w1);
         let assert_expr = l.assert0("test_case_3", &precious_val);
         let items_ref = arena.alloc_slice(assert_expr.items);
-        let rewritten = compile_compiler::assertion::rewrite(&arena, &f, items_ref, &tracker);
+        let rewritten = crate::compile::compiler::assertion::rewrite(&arena, &f, items_ref, &tracker);
         assert_eq!(rewritten.len(), 1);
         let rewritten_node = rewritten[0].expr;
         match &rewritten_node.v {
@@ -177,7 +177,7 @@ fn test_compiler_assertion_path_and_simplification() {
     assert_eq!(root.items.len(), 2);
 
     let items_ref = arena.alloc_slice(root.items);
-    let simplified = compile_compiler::assertion::rewrite(&arena, &f, items_ref, &tracker);
+    let simplified = crate::compile::compiler::assertion::rewrite(&arena, &f, items_ref, &tracker);
     assert_eq!(simplified.len(), 2);
 }
 
@@ -195,7 +195,7 @@ fn test_assertion_paths_do_not_expand_through_shared_groups() {
         assert_eq!(assertion.items.len(), 1);
     }
 
-    let (_, info, symbols) = compile_compiler::compile(&f, |logic| {
+    let (_, info, symbols) = crate::compile::compiler::compile(&f, |logic| {
         let cx = logic.input(1);
         let assert = logic.assert0("leaf", &cx);
         let mut root = logic.assert_all("shared", &[assert]);
@@ -223,7 +223,7 @@ fn test_duplicate_assertion_paths_keep_first_path() {
 
     assert_eq!(root.items.len(), 2);
 
-    let (_, info, symbols) = compile_compiler::compile(&f, |logic| {
+    let (_, info, symbols) = crate::compile::compiler::compile(&f, |logic| {
         let cx = logic.input(1);
         let cfirst = logic.assert0("first", &cx);
         let csecond = logic.assert0("second", &cx);

@@ -15,7 +15,7 @@
 //! Reference implementation of GF(2^128) using a u128 backing store
 //! and naive bitwise multiplication / reduction.
 
-use crate::field::{
+use crate::core::algebra::field::{
     AlgebraicField, BareField, HasLookupPoints, SerializableField, SupportsU128Conversions,
 };
 

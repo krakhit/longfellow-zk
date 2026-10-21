@@ -12,11 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use compile_algebra::CompileNat;
-use core_algebra::Nat;
-use mdoc_zk_circuits::parse_test_data;
-use mdoc_zk_runtime::{
-    provider, req_attr, run_mdoc_prover_inner, run_mdoc_verifier_inner, RequestedAttribute,
+use crate::{
+    compile::algebra::CompileNat,
+    core::algebra::Nat,
+    mdoc::{
+        circuits::parse_test_data,
+        runtime::{
+            provider, req_attr, run_mdoc_prover_inner, run_mdoc_verifier_inner, RequestedAttribute,
+        },
+    },
 };
 
 struct TestCircuits {
@@ -25,21 +29,21 @@ struct TestCircuits {
 
 impl TestCircuits {
     fn compile_all() -> Self {
-        let first_spec = &mdoc_zk_runtime::CURRENT_ZK_SPECS[0];
-        let hash_profile = mdoc_zk_compile::LigeroProfile {
+        let first_spec = &crate::mdoc::runtime::CURRENT_ZK_SPECS[0];
+        let hash_profile = crate::mdoc::compile::LigeroProfile {
             rateinv: first_spec.ligero_hash.rateinv,
             nreq: first_spec.ligero_hash.nreq,
         };
-        let sig_profile = mdoc_zk_compile::LigeroProfile {
+        let sig_profile = crate::mdoc::compile::LigeroProfile {
             rateinv: first_spec.ligero_sig.rateinv,
             nreq: first_spec.ligero_sig.nreq,
         };
-        let results = mdoc_zk_compile::compile_all_circuits(hash_profile, sig_profile);
+        let results = crate::mdoc::compile::compile_all_circuits(hash_profile, sig_profile);
         let mut circuits = std::collections::HashMap::new();
         for (idx, res) in results.into_iter().enumerate() {
             let nattrs = idx + 1;
             let (lfa_bytes, config_sig, config_hash) = res.expect("Failed to compile circuit");
-            let spec = &mdoc_zk_runtime::CURRENT_ZK_SPECS[nattrs - 1];
+            let spec = &crate::mdoc::runtime::CURRENT_ZK_SPECS[nattrs - 1];
             assert_eq!(
                 config_hash, spec.ligero_hash,
                 "Hash Ligero config mismatch for nattrs={nattrs}"
@@ -48,9 +52,11 @@ impl TestCircuits {
                 config_sig, spec.ligero_sig,
                 "Signature Ligero config mismatch for nattrs={nattrs}"
             );
-            let archive = core_proto::archive::CircuitArchive::from_bytes(&lfa_bytes).unwrap();
+            let archive =
+                crate::core::proto::archive::CircuitArchive::from_bytes(&lfa_bytes).unwrap();
             let compressed =
-                zstd::encode_all(&lfa_bytes[..], mdoc_zk_circuits::config::K_ZSTD_LEVEL).unwrap();
+                zstd::encode_all(&lfa_bytes[..], crate::mdoc::circuits::config::K_ZSTD_LEVEL)
+                    .unwrap();
             circuits.insert(
                 nattrs,
                 provider::ProvidedCircuit {
@@ -71,15 +77,15 @@ impl TestCircuits {
 
 fn run_current_mdoc_flow(test_circuits: &TestCircuits) {
     let (issuer_pk, parsed, now) =
-        parse_test_data::<4, CompileNat<4>>(&mdoc_zk_testcases::vectors::TEST_DATA);
+        parse_test_data::<4, CompileNat<4>>(&crate::mdoc::testcases::vectors::TEST_DATA);
     let req_attrs: Vec<RequestedAttribute> = parsed
         .attrs
         .iter()
         .map(|a| req_attr("org.iso.18013.5.1", &a.name, &a.cbor_value))
         .collect();
 
-    let mdoc_bytes = mdoc_zk_testcases::vectors::TEST_DATA.mdoc;
-    let transcript = mdoc_zk_testcases::vectors::TEST_DATA.transcript;
+    let mdoc_bytes = crate::mdoc::testcases::vectors::TEST_DATA.mdoc;
+    let transcript = crate::mdoc::testcases::vectors::TEST_DATA.transcript;
     let doc_type = "org.iso.18013.5.1.mDL";
 
     let pubkey_x_string = format!(
@@ -93,7 +99,7 @@ fn run_current_mdoc_flow(test_circuits: &TestCircuits) {
 
     let provided = test_circuits.get(req_attrs.len()).unwrap();
 
-    let mut rng = runtime_random::DeterministicRng::new(42);
+    let mut rng = crate::runtime::random::DeterministicRng::new(42);
     let zkproof = run_mdoc_prover_inner(
         &provided.spec,
         &provided.compressed,
@@ -130,7 +136,7 @@ fn run_current_mdoc_flow(test_circuits: &TestCircuits) {
 
 fn run_current_mdoc_subset_flow(test_circuits: &TestCircuits) {
     let (issuer_pk, parsed, now) =
-        parse_test_data::<4, CompileNat<4>>(&mdoc_zk_testcases::vectors::TEST_DATA);
+        parse_test_data::<4, CompileNat<4>>(&crate::mdoc::testcases::vectors::TEST_DATA);
     let req_attrs: Vec<RequestedAttribute> = parsed
         .attrs
         .iter()
@@ -138,8 +144,8 @@ fn run_current_mdoc_subset_flow(test_circuits: &TestCircuits) {
         .map(|a| req_attr("org.iso.18013.5.1", &a.name, &a.cbor_value))
         .collect();
 
-    let mdoc_bytes = mdoc_zk_testcases::vectors::TEST_DATA.mdoc;
-    let transcript = mdoc_zk_testcases::vectors::TEST_DATA.transcript;
+    let mdoc_bytes = crate::mdoc::testcases::vectors::TEST_DATA.mdoc;
+    let transcript = crate::mdoc::testcases::vectors::TEST_DATA.transcript;
     let doc_type = "org.iso.18013.5.1.mDL";
 
     let pubkey_x_string = format!(
@@ -153,7 +159,7 @@ fn run_current_mdoc_subset_flow(test_circuits: &TestCircuits) {
 
     let provided = test_circuits.get(req_attrs.len()).unwrap();
 
-    let mut rng = runtime_random::DeterministicRng::new(42);
+    let mut rng = crate::runtime::random::DeterministicRng::new(42);
     let zkproof = run_mdoc_prover_inner(
         &provided.spec,
         &provided.compressed,
@@ -189,7 +195,7 @@ fn run_current_mdoc_subset_flow(test_circuits: &TestCircuits) {
 }
 
 fn run_current_mdoc_all_positive_cases(test_circuits: &TestCircuits) {
-    for case in mdoc_zk_testcases::vectors::ALL_TEST_CASES {
+    for case in crate::mdoc::testcases::vectors::ALL_TEST_CASES {
         if case.name.starts_with("fail-") {
             continue;
         }
@@ -210,12 +216,12 @@ fn run_current_mdoc_all_positive_cases(test_circuits: &TestCircuits) {
             .map(|a| req_attr(ns, &a.name, &a.cbor_value))
             .collect();
 
-        if !mdoc_zk_runtime::same_namespace(&req_attrs) {
+        if !crate::mdoc::runtime::same_namespace(&req_attrs) {
             continue;
         }
         if req_attrs
             .iter()
-            .any(|a| !mdoc_zk_runtime::circuit_supports(&a.cbor_value))
+            .any(|a| !crate::mdoc::runtime::circuit_supports(&a.cbor_value))
         {
             continue;
         }
@@ -224,7 +230,7 @@ fn run_current_mdoc_all_positive_cases(test_circuits: &TestCircuits) {
             continue;
         };
 
-        let mut rng = runtime_random::DeterministicRng::new(42);
+        let mut rng = crate::runtime::random::DeterministicRng::new(42);
 
         let zkproof = run_mdoc_prover_inner(
             &provided.spec,
@@ -265,7 +271,7 @@ fn run_current_mdoc_all_positive_cases(test_circuits: &TestCircuits) {
 fn run_current_mdoc_all_negative_cases(test_circuits: &TestCircuits) {
     let mut executed = 0;
     let mut skipped_for_attribute_count = Vec::new();
-    for case in mdoc_zk_testcases::vectors::ALL_TEST_CASES {
+    for case in crate::mdoc::testcases::vectors::ALL_TEST_CASES {
         if !case.name.starts_with("fail-") {
             continue;
         }
@@ -331,7 +337,7 @@ fn run_current_mdoc_all_negative_cases(test_circuits: &TestCircuits) {
             .get(nattrs)
             .unwrap_or_else(|| panic!("missing {nattrs}-attribute circuit for {}", case.name));
 
-        let mut rng = runtime_random::DeterministicRng::new(42);
+        let mut rng = crate::runtime::random::DeterministicRng::new(42);
 
         let zkproof_res = run_mdoc_prover_inner(
             &provided.spec,
@@ -347,7 +353,7 @@ fn run_current_mdoc_all_negative_cases(test_circuits: &TestCircuits) {
         );
         assert_eq!(
             zkproof_res,
-            Err(mdoc_zk_runtime::MdocProverErrorCode::GeneralFailure),
+            Err(crate::mdoc::runtime::MdocProverErrorCode::GeneralFailure),
             "wrong prover failure for negative case: {}",
             case.name
         );
@@ -368,15 +374,15 @@ fn run_current_mdoc_all_negative_cases(test_circuits: &TestCircuits) {
 
 fn run_current_verifier_negative_cases(test_circuits: &TestCircuits) {
     let (issuer_pk, parsed, now) =
-        parse_test_data::<4, CompileNat<4>>(&mdoc_zk_testcases::vectors::TEST_DATA);
+        parse_test_data::<4, CompileNat<4>>(&crate::mdoc::testcases::vectors::TEST_DATA);
     let req_attrs: Vec<RequestedAttribute> = parsed
         .attrs
         .iter()
         .map(|a| req_attr("org.iso.18013.5.1", &a.name, &a.cbor_value))
         .collect();
 
-    let mdoc_bytes = mdoc_zk_testcases::vectors::TEST_DATA.mdoc;
-    let transcript = mdoc_zk_testcases::vectors::TEST_DATA.transcript;
+    let mdoc_bytes = crate::mdoc::testcases::vectors::TEST_DATA.mdoc;
+    let transcript = crate::mdoc::testcases::vectors::TEST_DATA.transcript;
     let doc_type = "org.iso.18013.5.1.mDL";
 
     let pubkey_x_string = format!(
@@ -389,7 +395,7 @@ fn run_current_verifier_negative_cases(test_circuits: &TestCircuits) {
     );
 
     let provided = test_circuits.get(req_attrs.len()).unwrap();
-    let mut rng = runtime_random::DeterministicRng::new(42);
+    let mut rng = crate::runtime::random::DeterministicRng::new(42);
     let zkproof = run_mdoc_prover_inner(
         &provided.spec,
         &provided.compressed,
@@ -418,7 +424,7 @@ fn run_current_verifier_negative_cases(test_circuits: &TestCircuits) {
             doc_type,
             &zkproof
         ),
-        Err(mdoc_zk_runtime::MdocVerifierErrorCode::GeneralFailure),
+        Err(crate::mdoc::runtime::MdocVerifierErrorCode::GeneralFailure),
         "Verifier should reject wrong PKX"
     );
 
@@ -437,7 +443,7 @@ fn run_current_verifier_negative_cases(test_circuits: &TestCircuits) {
             doc_type,
             &zkproof
         ),
-        Err(mdoc_zk_runtime::MdocVerifierErrorCode::GeneralFailure),
+        Err(crate::mdoc::runtime::MdocVerifierErrorCode::GeneralFailure),
         "Verifier should reject wrong PKY"
     );
 
@@ -460,7 +466,7 @@ fn run_current_verifier_negative_cases(test_circuits: &TestCircuits) {
             doc_type,
             &zkproof
         ),
-        Err(mdoc_zk_runtime::MdocVerifierErrorCode::GeneralFailure),
+        Err(crate::mdoc::runtime::MdocVerifierErrorCode::GeneralFailure),
         "Verifier should reject wrong transcript"
     );
 
@@ -478,7 +484,7 @@ fn run_current_verifier_negative_cases(test_circuits: &TestCircuits) {
             doc_type,
             &zkproof
         ),
-        Err(mdoc_zk_runtime::MdocVerifierErrorCode::GeneralFailure),
+        Err(crate::mdoc::runtime::MdocVerifierErrorCode::GeneralFailure),
         "Verifier should reject wrong timestamp"
     );
 
@@ -496,7 +502,7 @@ fn run_current_verifier_negative_cases(test_circuits: &TestCircuits) {
             bad_doc_type,
             &zkproof
         ),
-        Err(mdoc_zk_runtime::MdocVerifierErrorCode::GeneralFailure),
+        Err(crate::mdoc::runtime::MdocVerifierErrorCode::GeneralFailure),
         "Verifier should reject wrong doc_type"
     );
 
@@ -513,7 +519,7 @@ fn run_current_verifier_negative_cases(test_circuits: &TestCircuits) {
             "",
             &zkproof
         ),
-        Err(mdoc_zk_runtime::MdocVerifierErrorCode::GeneralFailure),
+        Err(crate::mdoc::runtime::MdocVerifierErrorCode::GeneralFailure),
         "Verifier should reject empty doc_type"
     );
 
@@ -532,7 +538,7 @@ fn run_current_verifier_negative_cases(test_circuits: &TestCircuits) {
             doc_type,
             &zkproof
         ),
-        Err(mdoc_zk_runtime::MdocVerifierErrorCode::GeneralFailure),
+        Err(crate::mdoc::runtime::MdocVerifierErrorCode::GeneralFailure),
         "Verifier should reject wrong attribute value"
     );
 
@@ -551,7 +557,7 @@ fn run_current_verifier_negative_cases(test_circuits: &TestCircuits) {
             doc_type,
             &zkproof
         ),
-        Err(mdoc_zk_runtime::MdocVerifierErrorCode::GeneralFailure),
+        Err(crate::mdoc::runtime::MdocVerifierErrorCode::GeneralFailure),
         "Verifier should reject wrong attribute id"
     );
 
@@ -568,7 +574,7 @@ fn run_current_verifier_negative_cases(test_circuits: &TestCircuits) {
             doc_type,
             &zkproof
         ),
-        Err(mdoc_zk_runtime::MdocVerifierErrorCode::AttributeNumberMismatch),
+        Err(crate::mdoc::runtime::MdocVerifierErrorCode::AttributeNumberMismatch),
         "Verifier should reject empty attributes slice"
     );
 
@@ -587,7 +593,7 @@ fn run_current_verifier_negative_cases(test_circuits: &TestCircuits) {
             doc_type,
             &zkproof
         ),
-        Err(mdoc_zk_runtime::MdocVerifierErrorCode::AttributeNumberMismatch),
+        Err(crate::mdoc::runtime::MdocVerifierErrorCode::AttributeNumberMismatch),
         "Verifier should reject too many attributes"
     );
 
@@ -606,7 +612,7 @@ fn run_current_verifier_negative_cases(test_circuits: &TestCircuits) {
             doc_type,
             &zkproof
         ),
-        Err(mdoc_zk_runtime::MdocVerifierErrorCode::InvalidZkSpecVersion),
+        Err(crate::mdoc::runtime::MdocVerifierErrorCode::InvalidZkSpecVersion),
         "Verifier should reject version 0"
     );
 
@@ -624,14 +630,14 @@ fn run_current_verifier_negative_cases(test_circuits: &TestCircuits) {
             doc_type,
             &zkproof
         ),
-        Err(mdoc_zk_runtime::MdocVerifierErrorCode::InvalidZkSpecVersion),
+        Err(crate::mdoc::runtime::MdocVerifierErrorCode::InvalidZkSpecVersion),
         "Verifier should reject version 99"
     );
 }
 
 fn run_current_verifier_attribute_reordering_and_duplicates(test_circuits: &TestCircuits) {
     let (issuer_pk, parsed, now) =
-        parse_test_data::<4, CompileNat<4>>(&mdoc_zk_testcases::vectors::TEST_DATA);
+        parse_test_data::<4, CompileNat<4>>(&crate::mdoc::testcases::vectors::TEST_DATA);
     let all_req_attrs: Vec<RequestedAttribute> = parsed
         .attrs
         .iter()
@@ -646,8 +652,8 @@ fn run_current_verifier_attribute_reordering_and_duplicates(test_circuits: &Test
         vec![all_req_attrs[0].clone(), second]
     };
 
-    let mdoc_bytes = mdoc_zk_testcases::vectors::TEST_DATA.mdoc;
-    let transcript = mdoc_zk_testcases::vectors::TEST_DATA.transcript;
+    let mdoc_bytes = crate::mdoc::testcases::vectors::TEST_DATA.mdoc;
+    let transcript = crate::mdoc::testcases::vectors::TEST_DATA.transcript;
     let doc_type = "org.iso.18013.5.1.mDL";
     let pubkey_x_string = format!(
         "0x{}",
@@ -659,7 +665,7 @@ fn run_current_verifier_attribute_reordering_and_duplicates(test_circuits: &Test
     );
 
     let provided = test_circuits.get(2).unwrap();
-    let mut rng = runtime_random::DeterministicRng::new(42);
+    let mut rng = crate::runtime::random::DeterministicRng::new(42);
     let zkproof_res = run_mdoc_prover_inner(
         &provided.spec,
         &provided.compressed,
@@ -688,7 +694,7 @@ fn run_current_verifier_attribute_reordering_and_duplicates(test_circuits: &Test
             doc_type,
             &zkproof
         ),
-        Err(mdoc_zk_runtime::MdocVerifierErrorCode::GeneralFailure),
+        Err(crate::mdoc::runtime::MdocVerifierErrorCode::GeneralFailure),
         "Verifier should reject reordered attributes"
     );
 
@@ -705,22 +711,22 @@ fn run_current_verifier_attribute_reordering_and_duplicates(test_circuits: &Test
             doc_type,
             &zkproof
         ),
-        Err(mdoc_zk_runtime::MdocVerifierErrorCode::GeneralFailure),
+        Err(crate::mdoc::runtime::MdocVerifierErrorCode::GeneralFailure),
         "Verifier should reject duplicate attributes"
     );
 }
 
 fn run_current_verifier_bad_proofs(test_circuits: &TestCircuits) {
     let (issuer_pk, parsed, now) =
-        parse_test_data::<4, CompileNat<4>>(&mdoc_zk_testcases::vectors::TEST_DATA);
+        parse_test_data::<4, CompileNat<4>>(&crate::mdoc::testcases::vectors::TEST_DATA);
     let req_attrs: Vec<RequestedAttribute> = parsed
         .attrs
         .iter()
         .map(|a| req_attr("org.iso.18013.5.1", &a.name, &a.cbor_value))
         .collect();
 
-    let mdoc_bytes = mdoc_zk_testcases::vectors::TEST_DATA.mdoc;
-    let transcript = mdoc_zk_testcases::vectors::TEST_DATA.transcript;
+    let mdoc_bytes = crate::mdoc::testcases::vectors::TEST_DATA.mdoc;
+    let transcript = crate::mdoc::testcases::vectors::TEST_DATA.transcript;
     let doc_type = "org.iso.18013.5.1.mDL";
     let pubkey_x_string = format!(
         "0x{}",
@@ -732,7 +738,7 @@ fn run_current_verifier_bad_proofs(test_circuits: &TestCircuits) {
     );
 
     let provided = test_circuits.get(req_attrs.len()).unwrap();
-    let mut rng = runtime_random::DeterministicRng::new(42);
+    let mut rng = crate::runtime::random::DeterministicRng::new(42);
     let zkproof = run_mdoc_prover_inner(
         &provided.spec,
         &provided.compressed,
@@ -760,7 +766,7 @@ fn run_current_verifier_bad_proofs(test_circuits: &TestCircuits) {
             doc_type,
             &[]
         ),
-        Err(mdoc_zk_runtime::MdocVerifierErrorCode::HashParsingFailure),
+        Err(crate::mdoc::runtime::MdocVerifierErrorCode::HashParsingFailure),
         "Verifier should reject empty proof"
     );
 
@@ -781,7 +787,7 @@ fn run_current_verifier_bad_proofs(test_circuits: &TestCircuits) {
                 doc_type,
                 &random_bytes
             ),
-            Err(mdoc_zk_runtime::MdocVerifierErrorCode::HashParsingFailure),
+            Err(crate::mdoc::runtime::MdocVerifierErrorCode::HashParsingFailure),
             "Verifier should reject random proof of len {len}"
         );
     }
@@ -803,7 +809,7 @@ fn run_current_verifier_bad_proofs(test_circuits: &TestCircuits) {
                     doc_type,
                     &flipped
                 ),
-                Err(mdoc_zk_runtime::MdocVerifierErrorCode::GeneralFailure),
+                Err(crate::mdoc::runtime::MdocVerifierErrorCode::GeneralFailure),
                 "Verifier should reject proof with byte flip at index {idx}"
             );
         }
@@ -824,7 +830,7 @@ fn run_current_verifier_bad_proofs(test_circuits: &TestCircuits) {
                 doc_type,
                 truncated
             ),
-            Err(mdoc_zk_runtime::MdocVerifierErrorCode::HashParsingFailure),
+            Err(crate::mdoc::runtime::MdocVerifierErrorCode::HashParsingFailure),
             "Verifier should reject truncated proof"
         );
     }
@@ -844,13 +850,13 @@ fn run_current_verifier_bad_proofs(test_circuits: &TestCircuits) {
             doc_type,
             &extended
         ),
-        Err(mdoc_zk_runtime::MdocVerifierErrorCode::GeneralFailure),
+        Err(crate::mdoc::runtime::MdocVerifierErrorCode::GeneralFailure),
         "Verifier should reject proof with trailing garbage"
     );
 }
 
 fn run_circuit_supports_cbor() {
-    use mdoc_zk_runtime::circuit_supports;
+    use crate::mdoc::runtime::circuit_supports;
 
     // Valid Inputs (ported from C++ CborValidate.ValidInputs)
     assert!(circuit_supports(&[0x00]), "Integer 0");
@@ -922,7 +928,7 @@ fn run_circuit_supports_cbor() {
 }
 
 fn run_namespace_mixup(test_circuits: &TestCircuits) {
-    use mdoc_zk_runtime::{req_attr, same_namespace};
+    use crate::mdoc::runtime::{req_attr, same_namespace};
 
     let attr1 = req_attr("org.iso.18013.5.1", "family_name", [0x63, b'f', b'o', b'o']);
     let attr2 = req_attr("org.iso.18013.5.1", "birth_date", [0x63, b'b', b'a', b'r']);
@@ -942,7 +948,7 @@ fn run_namespace_mixup(test_circuits: &TestCircuits) {
     );
 
     let (issuer_pk, _, now) =
-        parse_test_data::<4, CompileNat<4>>(&mdoc_zk_testcases::vectors::TEST_DATA);
+        parse_test_data::<4, CompileNat<4>>(&crate::mdoc::testcases::vectors::TEST_DATA);
     let pubkey_x_string = format!(
         "0x{}",
         num_bigint::BigUint::from_bytes_le(&issuer_pk.0.to_bytes_le()).to_str_radix(16)
@@ -960,7 +966,7 @@ fn run_namespace_mixup(test_circuits: &TestCircuits) {
         &provided.compressed,
         &pubkey_x_string,
         &pubkey_y_formatted,
-        mdoc_zk_testcases::vectors::TEST_DATA.transcript,
+        crate::mdoc::testcases::vectors::TEST_DATA.transcript,
         &mixed_attrs,
         now,
         "org.iso.18013.5.1.mDL",
@@ -968,7 +974,7 @@ fn run_namespace_mixup(test_circuits: &TestCircuits) {
     );
     assert_eq!(
         res,
-        Err(mdoc_zk_runtime::MdocVerifierErrorCode::AttributeNumberMismatch),
+        Err(crate::mdoc::runtime::MdocVerifierErrorCode::AttributeNumberMismatch),
         "Verifier should reject mixed namespace"
     );
 }
@@ -976,7 +982,7 @@ fn run_namespace_mixup(test_circuits: &TestCircuits) {
 fn run_current_circuit_hashes(test_circuits: &TestCircuits) {
     for nattrs in 1..=4 {
         let p = test_circuits.get(nattrs).expect("circuit missing");
-        let expected_spec = &mdoc_zk_runtime::CURRENT_ZK_SPECS[nattrs - 1];
+        let expected_spec = &crate::mdoc::runtime::CURRENT_ZK_SPECS[nattrs - 1];
         assert_eq!(
             p.spec, *expected_spec,
             "Current spec mismatch for nattrs={nattrs}"

@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use circuits_bitvec::{Bitvec, BitvecLogic};
-use circuits_boolean::Boolean;
-use compile_algebra::field::{CompileBinaryField, CompileField, SupportsU64Conversions};
-use compile_logic::Logic;
+use crate::circuits::bitvec::{Bitvec, BitvecLogic};
+use crate::circuits::boolean::Boolean;
+use crate::compile::algebra::field::{CompileBinaryField, CompileField, SupportsU64Conversions};
+use crate::compile::logic::Logic;
 
 pub struct AnalogAdder<'a, L: Logic> {
     logic: &'a L,
@@ -55,8 +55,8 @@ pub trait FieldWrappingSum: CompileField {
     ) -> L::Assertions;
 }
 
-impl<T> FieldWrappingSum for compile_algebra::fp::FpField<T>
-where compile_algebra::fp::FpField<T>: CompileField
+impl<T> FieldWrappingSum for crate::compile::algebra::fp::FpField<T>
+where crate::compile::algebra::fp::FpField<T>: CompileField
 {
     fn assert_wrapping_sum<L: Logic<F = Self>, const N: usize>(
         &self,
@@ -113,7 +113,7 @@ where compile_algebra::fp::FpField<T>: CompileField
     }
 }
 
-impl FieldWrappingSum for compile_algebra::gf2_128::Gf2_128Field {
+impl FieldWrappingSum for crate::compile::algebra::gf2_128::Gf2_128Field {
     fn assert_wrapping_sum<L: Logic<F = Self>, const N: usize>(
         &self,
         adder: &AnalogAdder<'_, L>,

@@ -14,3 +14,7 @@
 
 pub mod circuit;
 pub use circuit::Arithmetic;
+
+#[cfg(test)]
+#[path = "../tests/arithmetic.rs"]
+mod tests_arithmetic;

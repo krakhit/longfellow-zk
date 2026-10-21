@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use runtime_algebra::{field::AlgebraicField, gf2_128::Gf2_128RuntimeField, Poly};
+use crate::runtime::algebra::{field::AlgebraicField, gf2_128::Gf2_128RuntimeField, Poly};
 
 #[test]
 fn test_zero_length_polynomial_rejects_evaluation() {

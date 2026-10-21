@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::{archive::CircuitArchive, uleb::serialize_uleb128};
+use crate::core::proto::{archive::CircuitArchive, uleb::serialize_uleb128};
 
 pub const LFA2_MAGIC: &[u8; 4] = b"LFA2";
 

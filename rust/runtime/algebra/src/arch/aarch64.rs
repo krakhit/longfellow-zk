@@ -23,10 +23,10 @@ use std::arch::aarch64::*;
 ))]
 #[inline(always)]
 pub fn cmovne<const N: usize>(
-    a: &mut [crate::limb::Limb; N],
-    x: crate::limb::Limb,
-    y: crate::limb::Limb,
-    b: &[crate::limb::Limb; N],
+    a: &mut [crate::runtime::algebra::limb::Limb; N],
+    x: crate::runtime::algebra::limb::Limb,
+    y: crate::runtime::algebra::limb::Limb,
+    b: &[crate::runtime::algebra::limb::Limb; N],
 ) {
     #[cfg(target_arch = "aarch64")]
     if N == 1 {
@@ -121,10 +121,10 @@ pub fn cmovne<const N: usize>(
 #[cfg(any(target_pointer_width = "32", feature = "force-32bit-limbs"))]
 #[inline(always)]
 pub fn cmovne<const N: usize>(
-    a: &mut [crate::limb::Limb; N],
-    x: crate::limb::Limb,
-    y: crate::limb::Limb,
-    b: &[crate::limb::Limb; N],
+    a: &mut [crate::runtime::algebra::limb::Limb; N],
+    x: crate::runtime::algebra::limb::Limb,
+    y: crate::runtime::algebra::limb::Limb,
+    b: &[crate::runtime::algebra::limb::Limb; N],
 ) {
     #[cfg(target_arch = "aarch64")]
     if N == 1 {
@@ -218,17 +218,17 @@ pub fn cmovne<const N: usize>(
 
 #[inline(always)]
 pub fn cmovnz<const N: usize>(
-    a: &mut [crate::limb::Limb; N],
-    nz: crate::limb::Limb,
-    b: &[crate::limb::Limb; N],
+    a: &mut [crate::runtime::algebra::limb::Limb; N],
+    nz: crate::runtime::algebra::limb::Limb,
+    b: &[crate::runtime::algebra::limb::Limb; N],
 ) {
     cmovne(a, nz, 0, b);
 }
 pub use cmovnz as cmovzn;
 
 #[inline(always)]
-pub fn zero_but_you_dont_know_it() -> crate::limb::Limb {
-    std::hint::black_box(0 as crate::limb::Limb)
+pub fn zero_but_you_dont_know_it() -> crate::runtime::algebra::limb::Limb {
+    std::hint::black_box(0 as crate::runtime::algebra::limb::Limb)
 }
 
 // ============================================================================
@@ -245,12 +245,12 @@ pub struct Gf2_128Accum(pub [Gf2_128; 3]);
 impl Gf2_128 {
     #[inline(always)]
     pub const fn from_u64s(low: u64, high: u64) -> Self {
-        unsafe { Self(std::mem::transmute([low, high])) }
+        unsafe { Self(std::mem::transmute::<[u64; 2], poly64x2_t>([low, high])) }
     }
 
     #[inline(always)]
     pub const fn from_u128(v: u128) -> Self {
-        unsafe { Self(std::mem::transmute(v)) }
+        unsafe { Self(std::mem::transmute::<u128, poly64x2_t>(v)) }
     }
 
     #[inline(always)]

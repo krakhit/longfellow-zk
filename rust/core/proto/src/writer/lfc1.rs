@@ -15,22 +15,22 @@
 use std::collections::HashMap;
 
 use super::CircuitWriter;
-use crate::{circuit::Circuit, SerializableField};
+use crate::core::proto::{circuit::Circuit, SerializableField};
 
 fn serialize_num(bytes: &mut Vec<u8>, mut g: usize) {
-    let max_val = (1 << (crate::BYTES_PER_SIZE_T * 8)) - 1;
+    let max_val = (1 << (crate::core::proto::BYTES_PER_SIZE_T * 8)) - 1;
     assert!(
         g <= max_val,
         "Violating small wire-label assumption: label too large for {} bytes",
-        crate::BYTES_PER_SIZE_T
+        crate::core::proto::BYTES_PER_SIZE_T
     );
-    for _ in 0..crate::BYTES_PER_SIZE_T {
+    for _ in 0..crate::core::proto::BYTES_PER_SIZE_T {
         bytes.push((g & 0xff) as u8);
         g >>= 8;
     }
 }
 
-fn serialize_field_id(bytes: &mut Vec<u8>, id: crate::FieldID) {
+fn serialize_field_id(bytes: &mut Vec<u8>, id: crate::core::proto::FieldID) {
     serialize_num(bytes, id as usize);
 }
 
@@ -84,7 +84,10 @@ pub(super) fn to_bytes_lfc1<F: SerializableField>(
 
     // Serialize layers and quads
     for layer in &sc_c.raw.layers {
-        assert!(crate::sane_logw(layer.logw), "layer logw must be sane");
+        assert!(
+            crate::core::proto::sane_logw(layer.logw),
+            "layer logw must be sane"
+        );
         serialize_size(&mut bytes, layer.logw);
         serialize_size(&mut bytes, layer.nw);
         serialize_size(&mut bytes, layer.num_terms());

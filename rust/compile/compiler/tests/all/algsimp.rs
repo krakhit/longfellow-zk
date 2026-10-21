@@ -12,19 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use compile_algebra::{
+use crate::compile::algebra::{
     field::{CompileField, SupportsNatConversions, SupportsU64Conversions},
     gf2_128::Gf2_128Field,
     p256::P256Field,
     AlgebraicField,
 };
-use compile_compiler::{
+use crate::compile::compiler::{
     algsimp::AlgebraicRewriter,
     arena::CompilerArena,
     cse::Cse,
     ir::{Expr, RewriteT},
 };
-use core_algebra::Nat;
+use crate::core::algebra::Nat;
 
 fn run_test<
     const W: usize,

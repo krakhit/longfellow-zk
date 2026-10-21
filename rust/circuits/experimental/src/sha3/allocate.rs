@@ -12,13 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use circuits_bitvec::BitvecIO;
-use compile_logic::LogicIO;
+use crate::circuits::bitvec::BitvecIO;
+use crate::compile::logic::LogicIO;
 
 use super::circuit::{Derived, Given, State};
 
 pub fn allocate_given<L: LogicIO>(
-    bv: &circuits_bitvec::BitvecLogic<L>,
+    bv: &crate::circuits::bitvec::BitvecLogic<L>,
     pos: &mut usize,
 ) -> Given<L> {
     let bitvec_io = BitvecIO::new(bv);
@@ -28,7 +28,7 @@ pub fn allocate_given<L: LogicIO>(
 }
 
 pub fn allocate_derived<L: LogicIO>(
-    bv: &circuits_bitvec::BitvecLogic<L>,
+    bv: &crate::circuits::bitvec::BitvecLogic<L>,
     pos: &mut usize,
 ) -> Derived<L> {
     let bitvec_io = BitvecIO::new(bv);

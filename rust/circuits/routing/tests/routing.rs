@@ -12,23 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use circuits_bitvec::{Bitvec, BitvecIO, BitvecLogic};
-use circuits_boolean::{Bitw, Boolean};
-use circuits_routing::Routing;
-use compile_algebra::{field::SupportsU64Conversions, p256::P256Field};
-use compile_logic::{Logic, LogicIO};
+use crate::circuits::bitvec::{Bitvec, BitvecIO, BitvecLogic};
+use crate::circuits::boolean::{Bitw, Boolean};
+use crate::circuits::routing::Routing;
+use crate::compile::algebra::{field::SupportsU64Conversions, p256::P256Field};
+use crate::compile::logic::{Logic, LogicIO};
 
 #[test]
 fn test_compile_routing() {
     let f = P256Field::new();
-    let (circuit, stats, _symbols) = compile_compiler::compile(&f, |iologic| {
+    let (circuit, stats, _symbols) = crate::compile::compiler::compile(&f, |iologic| {
         let bv = BitvecLogic::new(&iologic);
         let bitvec_io = BitvecIO::new(&bv);
 
         let n = 16;
         let unroll = 2;
 
-        let mut pos = compile_logic::K_FIRST_WIRE_POSITION;
+        let mut pos = crate::compile::logic::K_FIRST_WIRE_POSITION;
         let amount_bv: Bitvec<_, 4> = bitvec_io.next(&mut pos);
 
         let a_wires: Vec<_> = (0..n).map(|_| iologic.next(&mut pos)).collect();
@@ -44,7 +44,7 @@ fn test_compile_routing() {
         (iologic.assert_all("shifte_routing", &asserts), 1, 0)
     });
 
-    compile_compiler::dump_stats("shifte_16_16_2", &circuit, &stats);
+    crate::compile::compiler::dump_stats("shifte_16_16_2", &circuit, &stats);
 
     assert_eq!(stats.ninput, 22);
     assert_eq!(stats.npublic_input, 1);
@@ -54,8 +54,8 @@ fn test_compile_routing() {
     assert_eq!(stats.nterms, 184);
 }
 
-use compile_algebra::field::{CompileField, SupportsNatConversions};
-use compile_logic::eval::EvalLogic;
+use crate::compile::algebra::field::{CompileField, SupportsNatConversions};
+use crate::compile::logic::eval::EvalLogic;
 
 fn int_to_bits(val: usize, bits: usize) -> Vec<bool> {
     (0..bits).map(|i| ((val >> i) & 1) == 1).collect()
@@ -73,7 +73,7 @@ fn run_eval_test_e_generic<
     unroll: usize,
     unshift: bool,
 ) {
-    let tracker = compile_logic::scope::AssertionScope::new();
+    let tracker = crate::compile::logic::scope::AssertionScope::new();
     let iologic = EvalLogic::new(f, &tracker);
     let boolean = Boolean::new(&iologic);
     let routing = Routing::new(&iologic);
@@ -111,12 +111,10 @@ fn run_eval_test_e_generic<
             } else {
                 default_val_raw.clone()
             }
+        } else if i + real_shift < n {
+            a_vals_raw[i + real_shift].clone()
         } else {
-            if i + real_shift < n {
-                a_vals_raw[i + real_shift].clone()
-            } else {
-                default_val_raw.clone()
-            }
+            default_val_raw.clone()
         };
         assert_eq!(res[i].value, expected);
     }
@@ -131,7 +129,7 @@ fn run_eval_test_b_generic<const W: usize, F: CompileField + SupportsNatConversi
     unroll: usize,
     unshift: bool,
 ) {
-    let tracker = compile_logic::scope::AssertionScope::new();
+    let tracker = crate::compile::logic::scope::AssertionScope::new();
     let iologic = EvalLogic::new(f, &tracker);
     let boolean = Boolean::new(&iologic);
     let routing = Routing::new(&iologic);
@@ -176,12 +174,10 @@ fn run_eval_test_b_generic<const W: usize, F: CompileField + SupportsNatConversi
             } else {
                 default_val
             }
+        } else if i + real_shift < n {
+            a_vals[i + real_shift]
         } else {
-            if i + real_shift < n {
-                a_vals[i + real_shift]
-            } else {
-                default_val
-            }
+            default_val
         };
 
         let got = res[i].clone();
@@ -200,7 +196,7 @@ fn run_eval_test_bitvec_generic<const W: usize, F: CompileField + SupportsNatCon
     unroll: usize,
     unshift: bool,
 ) {
-    let tracker = compile_logic::scope::AssertionScope::new();
+    let tracker = crate::compile::logic::scope::AssertionScope::new();
     let iologic = EvalLogic::new(f, &tracker);
     let boolean = Boolean::new(&iologic);
     let routing = Routing::new(&iologic);
@@ -261,12 +257,10 @@ fn run_eval_test_bitvec_generic<const W: usize, F: CompileField + SupportsNatCon
             } else {
                 default_val
             }
+        } else if i + real_shift < n {
+            a_vals[i + real_shift]
         } else {
-            if i + real_shift < n {
-                a_vals[i + real_shift]
-            } else {
-                default_val
-            }
+            default_val
         };
 
         let mut got_val = 0u8;

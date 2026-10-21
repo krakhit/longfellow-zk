@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use circuits_bitvec::{BitvecIO, BitvecLogic};
-use compile_logic::LogicIO;
+use crate::circuits::bitvec::{BitvecIO, BitvecLogic};
+use crate::compile::logic::LogicIO;
 
 use super::circuit::Given;
 

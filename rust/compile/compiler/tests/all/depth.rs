@@ -12,17 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use compile_algebra::p256::P256Field;
-use compile_eval::eval_circuit_fc;
-use compile_logic::{Logic, LogicIO};
-use core_algebra::AlgebraicField;
-use core_proto::FieldID;
-use runtime_algebra::p256::P256Field as RuntimeP256Field;
+use crate::compile::algebra::p256::P256Field;
+use crate::compile::eval::eval_circuit_fc;
+use crate::compile::logic::{Logic, LogicIO};
+use crate::core::algebra::AlgebraicField;
+use crate::core::proto::FieldID;
+use crate::runtime::algebra::p256::P256Field as RuntimeP256Field;
 
 #[test]
 fn test_direct_input_assertion_has_one_layer() {
     let f = P256Field::new();
-    let (circuit, geometry, symbols) = compile_compiler::compile(&f, |logic| {
+    let (circuit, geometry, symbols) = crate::compile::compiler::compile(&f, |logic| {
         let x = logic.input(1);
         let assertion = logic.assert0("input", &x);
         (assertion, 1, 0)

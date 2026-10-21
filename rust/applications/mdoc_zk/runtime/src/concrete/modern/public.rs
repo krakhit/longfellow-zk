@@ -12,14 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use core_algebra::{AlgebraicField, Nat, SupportsU64Conversions};
-use runtime_algebra::{
-    gf2_128::{Gf2_128, Gf2_128Field},
-    p256::{P256Element, P256Field},
-};
-
 use crate::{
-    attribute::RequestedAttribute, concrete::builder::AssignmentBuilder, config::K_ATTR_LEN_BITS,
+    core::algebra::{AlgebraicField, Nat, SupportsU64Conversions},
+    mdoc::runtime::{
+        attribute::RequestedAttribute, concrete::builder::AssignmentBuilder,
+        config::K_ATTR_LEN_BITS,
+    },
+    runtime::algebra::{
+        gf2_128::{Gf2_128, Gf2_128Field},
+        p256::{P256Element, P256Field},
+    },
 };
 
 fn push_modern_input_attrs(
@@ -27,7 +29,7 @@ fn push_modern_input_attrs(
     attrs: &[RequestedAttribute],
 ) {
     for la in attrs {
-        let cbor_id = mdoc_zk_circuits::cbor::encode_cbor_string(&la.id);
+        let cbor_id = crate::mdoc::circuits::cbor::encode_cbor_string(&la.id);
         for i in 0..32 {
             builder.push_v8(*cbor_id.get(i).unwrap_or(&0));
         }

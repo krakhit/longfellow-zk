@@ -1,4 +1,3 @@
-use core_algebra::SerializableField;
 // Copyright 2026 Google LLC.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,8 +11,11 @@ use core_algebra::SerializableField;
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-use runtime_algebra::{p256::P256Field, Subfield};
-use runtime_random::{RandomEngine, Transcript};
+use crate::runtime::algebra::{p256::P256Field, Subfield};
+use crate::{
+    core::algebra::SerializableField,
+    runtime::random::{RandomEngine, Transcript},
+};
 
 #[test]
 fn test_transcript_cpp_compatibility() {
@@ -68,7 +70,9 @@ fn test_transcript_cpp_compatibility() {
 
 #[test]
 fn test_transcript_gf2_128_subfield_sampling() {
-    let sf = runtime_algebra::subfield::BinarySubfield::new(&core_algebra::proto::GF2_16_BASIS_V1);
+    let sf = crate::runtime::algebra::subfield::BinarySubfield::new(
+        &crate::core::algebra::proto::GF2_16_BASIS_V1,
+    );
     let init = [1u8, 2, 3, 4];
     let mut ts = Transcript::new(&init);
 

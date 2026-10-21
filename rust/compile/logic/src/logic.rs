@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use compile_algebra::field::CompileField;
-use core_algebra::ElementOf;
+use crate::compile::algebra::field::CompileField;
+use crate::core::algebra::ElementOf;
 
 pub const K_FIRST_WIRE_POSITION: usize = 1;
 
@@ -95,7 +95,7 @@ pub trait Logic {
         if elements.is_empty() {
             self.one()
         } else {
-            util::array::tree_fold(elements, &|x, y| self.mul(&x, &y), &|x| x.clone())
+            crate::util::array::tree_fold(elements, &|x, y| self.mul(&x, &y), &|x| x.clone())
         }
     }
 

@@ -12,29 +12,30 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use compile_algebra::gf2_128::Gf2_128Field;
-use compile_eval::FieldID;
-use mdoc_zk_circuits::mso_attribute::circuit::AttributeVerifier;
 use mso_attribute_corruptors::MsoAttributeMockGiven;
-use runtime_algebra::field::RuntimeField;
 
 use super::mso_attribute_corruptors;
+use crate::{
+    compile::{algebra::gf2_128::Gf2_128Field, eval::FieldID},
+    mdoc::circuits::mso_attribute::circuit::AttributeVerifier,
+    runtime::algebra::field::RuntimeField,
+};
 
 pub fn compile_attribute_circuit<const W: usize, FC>(
     fc: &FC,
 ) -> (
-    compile_eval::Circuit<FC>,
-    compile_eval::CircuitGeometry,
-    compile_compiler::debug::CircuitDebugSymbols,
+    crate::compile::eval::Circuit<FC>,
+    crate::compile::eval::CircuitGeometry,
+    crate::compile::compiler::debug::CircuitDebugSymbols,
 )
-where FC: mdoc_zk_circuits::MdocHashCompileField {
-    let (circuit, stats, symbols) = compile_compiler::compile(fc, |iologic| {
-        let mut pos = compile_logic::K_FIRST_WIRE_POSITION;
+where FC: crate::mdoc::circuits::MdocHashCompileField {
+    let (circuit, stats, symbols) = crate::compile::compiler::compile(fc, |iologic| {
+        let mut pos = crate::compile::logic::K_FIRST_WIRE_POSITION;
 
         let verifier = AttributeVerifier::new(&iologic);
-        let bv = circuits_bitvec::BitvecLogic::new(&iologic);
-        let given_wires = mdoc_zk_circuits::mso_attribute::allocate_given(&bv, &mut pos);
-        let derived_wires = mdoc_zk_circuits::mso_attribute::allocate_derived(&bv, &mut pos);
+        let bv = crate::circuits::bitvec::BitvecLogic::new(&iologic);
+        let given_wires = crate::mdoc::circuits::mso_attribute::allocate_given(&bv, &mut pos);
+        let derived_wires = crate::mdoc::circuits::mso_attribute::allocate_derived(&bv, &mut pos);
         (
             verifier.assert_attribute(&given_wires, &derived_wires),
             1,
@@ -61,10 +62,10 @@ fn make_inputs<const W: usize, FR: RuntimeField<W>>(
     mock: &MsoAttributeMockGiven,
     fr: &FR,
 ) -> Vec<FR::E> {
-    let mut inputs = compile_eval::initial_inputs(fr);
+    let mut inputs = crate::compile::eval::initial_inputs(fr);
 
     let (_, _, padded_preimage) =
-        circuits_sha256msg::concrete::pad_sha256_message(&mock.raw_buf, 2).unwrap();
+        crate::circuits::sha256msg::concrete::pad_sha256_message(&mock.raw_buf, 2).unwrap();
 
     // attribute_preimage.data (128 bytes)
     for i in 0..128 {
@@ -131,14 +132,14 @@ fn make_inputs<const W: usize, FR: RuntimeField<W>>(
 
     // allocate_derived: SHA-256 derived for 2 blocks
     let (nblocks, length_bytes, _) =
-        circuits_sha256msg::concrete::pad_sha256_message(&mock.raw_buf, 2).unwrap();
-    let concrete_given = circuits_sha256msg::concrete::ConcreteGiven {
+        crate::circuits::sha256msg::concrete::pad_sha256_message(&mock.raw_buf, 2).unwrap();
+    let concrete_given = crate::circuits::sha256msg::concrete::ConcreteGiven {
         padded_preimage,
         nblocks,
         length_bytes,
         expected_hash: [0; 8],
     };
-    let concrete_derived = circuits_sha256msg::concrete::derived(&concrete_given, 2);
+    let concrete_derived = crate::circuits::sha256msg::concrete::derived(&concrete_given, 2);
 
     for b in 0..2 {
         let d = &concrete_derived.sha_derived[b];
@@ -164,13 +165,13 @@ fn test_serialize_attribute_size() {
     let gf2_c = Gf2_128Field::new();
 
     let (circuit, stats, _) = compile_attribute_circuit::<2, _>(&gf2_c);
-    compile_compiler::dump_stats("mso_attribute", &circuit, &stats);
+    crate::compile::compiler::dump_stats("mso_attribute", &circuit, &stats);
 }
 
 #[test]
 fn test_compile_mso_attribute_tampering() {
     let gf2_c = Gf2_128Field::new();
-    let gf2_r = runtime_algebra::gf2_128::Gf2_128Field::new();
+    let gf2_r = crate::runtime::algebra::gf2_128::Gf2_128Field::new();
 
     let (circuit, _, symbols) = compile_attribute_circuit::<2, _>(&gf2_c);
 
@@ -206,7 +207,7 @@ fn test_compile_mso_attribute_tampering() {
 
     // Verify untampered passes
     let inputs = make_inputs(&base_mock, &gf2_r);
-    compile_eval::eval_circuit_fc(
+    crate::compile::eval::eval_circuit_fc(
         &gf2_c,
         &gf2_r,
         &circuit,
@@ -224,7 +225,7 @@ fn test_compile_mso_attribute_tampering() {
         (c.corrupt)(&mut mock);
 
         let inputs_tampered = make_inputs(&mock, &gf2_r);
-        let eval_res = compile_eval::eval_circuit_fc(
+        let eval_res = crate::compile::eval::eval_circuit_fc(
             &gf2_c,
             &gf2_r,
             &circuit,

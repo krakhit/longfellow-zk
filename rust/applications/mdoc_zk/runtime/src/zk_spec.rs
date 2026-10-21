@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use runtime_ligero::param::LigeroConfig;
+use crate::runtime::ligero::param::LigeroConfig;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct ZkSpecStruct {
@@ -44,7 +44,7 @@ impl ZkSpecStruct {
     }
 }
 
-pub use mdoc_zk_circuits::CURRENT_VERSION;
+pub use crate::mdoc::circuits::CURRENT_VERSION;
 
 pub const NUM_ZK_SPECS: usize = 12;
 

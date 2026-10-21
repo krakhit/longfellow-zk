@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use runtime_algebra::{Subfield, SupportsSampling};
+use crate::runtime::algebra::{Subfield, SupportsSampling};
 
 pub mod transcript;
 pub use transcript::Transcript;
@@ -106,7 +106,11 @@ pub trait RandomEngine {
 pub mod secure;
 pub use secure::SecureRandomEngine;
 
-#[cfg(feature = "testonly")]
-pub mod deterministic;
-#[cfg(feature = "testonly")]
-pub use deterministic::DeterministicRng;
+cfg_testonly! {
+    pub mod deterministic;
+    pub use deterministic::DeterministicRng;
+}
+
+#[cfg(test)]
+#[path = "../tests/transcript.rs"]
+mod tests_transcript;

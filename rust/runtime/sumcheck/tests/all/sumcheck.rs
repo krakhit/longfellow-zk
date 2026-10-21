@@ -12,20 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use compile_algebra::p256::P256Field as CompileP256;
-use compile_logic::{Logic, LogicIO};
-use core_proto::{
-    circuit::Circuit, reader::CircuitReader, writer::CircuitWriter, FieldID, SerializableField,
-};
-use runtime_algebra::{
-    field::{RuntimeField, SupportsU64Conversions},
-    p256::P256Field as RuntimeP256,
-    AlgebraicField,
-};
-use runtime_random::{RandomEngine, Transcript};
-use runtime_sumcheck::{
-    eval::eval_circuit, prover::prove, verifier::verify, LayerProof, Poly, QuadRoundPoly,
-    SumcheckProof,
+use crate::{
+    compile::{
+        algebra::p256::P256Field as CompileP256,
+        logic::{Logic, LogicIO},
+    },
+    core::proto::{
+        circuit::Circuit, reader::CircuitReader, writer::CircuitWriter, FieldID, SerializableField,
+    },
+    runtime::{
+        algebra::{
+            field::{RuntimeField, SupportsU64Conversions},
+            p256::P256Field as RuntimeP256,
+            AlgebraicField,
+        },
+        random::{RandomEngine, Transcript},
+        sumcheck::{
+            eval::eval_circuit, prover::prove, verifier::verify, LayerProof, Poly, QuadRoundPoly,
+            SumcheckProof,
+        },
+    },
 };
 
 fn zero_proof<const W: usize, F: SerializableField + RuntimeField<W>>(
@@ -48,7 +54,7 @@ fn zero_proof<const W: usize, F: SerializableField + RuntimeField<W>>(
 #[test]
 fn test_sumcheck_prover_verifier_end_to_end() {
     let fc = CompileP256::new();
-    let (circ_comp, _, _) = compile_compiler::compile(&fc, |iologic| {
+    let (circ_comp, _, _) = crate::compile::compiler::compile(&fc, |iologic| {
         let x = iologic.input(1);
         let y = iologic.input(2);
         let z = iologic.mul(&x, &y);
@@ -102,7 +108,7 @@ fn test_sumcheck_prover_verifier_end_to_end() {
 #[test]
 fn test_sumcheck_prover_verifier_with_nonzero_pad() {
     let fc = CompileP256::new();
-    let (circ_comp, _, _) = compile_compiler::compile(&fc, |iologic| {
+    let (circ_comp, _, _) = crate::compile::compiler::compile(&fc, |iologic| {
         let x = iologic.input(1);
         let y = iologic.input(2);
         let z = iologic.mul(&x, &y);
@@ -161,7 +167,7 @@ fn test_sumcheck_prover_verifier_with_nonzero_pad() {
 #[test]
 fn test_sumcheck_multi_layer() {
     let fc = CompileP256::new();
-    let (circ_comp, _, _) = compile_compiler::compile(&fc, |iologic| {
+    let (circ_comp, _, _) = crate::compile::compiler::compile(&fc, |iologic| {
         let mut x = iologic.input(1);
         let y = iologic.input(2);
         for _ in 0..6 {

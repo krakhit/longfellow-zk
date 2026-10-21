@@ -12,9 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use core_algebra::{Curve, ElementOf};
-
-use crate::field::RuntimeSerializableField;
+use crate::{
+    core::algebra::{Curve, ElementOf},
+    runtime::algebra::field::RuntimeSerializableField,
+};
 
 const SECP256R1_A: [u64; 4] = [
     0xfffffffffffffffc,
@@ -100,7 +101,7 @@ impl<F: RuntimeSerializableField<4>> Secp256r1<F> {
 
 impl<F: RuntimeSerializableField<4>> Curve<4> for Secp256r1<F> {
     type F = F;
-    type N = crate::RuntimeNat<4>;
+    type N = crate::runtime::algebra::RuntimeNat<4>;
 
     fn order(&self) -> Self::N {
         Self::N::from_limbs(self.order)

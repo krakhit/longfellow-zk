@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use core_algebra::Nat;
-pub use mdoc_zk_testcases::TestDataStatic;
+use crate::core::algebra::Nat;
+pub use crate::mdoc::testcases::TestDataStatic;
 use num_bigint::BigUint;
 
-use crate::cbor::mdoc::{parse_mdoc, ParsedMdoc};
+use crate::mdoc::circuits::cbor::mdoc::{parse_mdoc, ParsedMdoc};
 
 #[must_use]
 pub fn parse_test_data<const W: usize, N: Nat<W> + Nat<4>>(

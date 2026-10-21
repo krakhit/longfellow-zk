@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use runtime_algebra::{poly::InterpolationField, ElementOf, RuntimeField, SupportsSampling};
-use runtime_random::Transcript;
+use crate::runtime::algebra::{poly::InterpolationField, ElementOf, RuntimeField, SupportsSampling};
+use crate::runtime::random::Transcript;
 
-use crate::{
+use crate::runtime::sumcheck::{
     dense,
     hquad::HQuad,
     poly::QuadWirePoly,
@@ -47,7 +47,7 @@ pub struct Claims<const W: usize, F: RuntimeField<W>> {
 pub fn verify<const W: usize, F: InterpolationField<W> + SupportsSampling<W>>(
     w_in: Vec<ElementOf<F>>,
     pad: &SumcheckProof<W, F>,
-    circuit: &core_proto::circuit::Circuit<F>,
+    circuit: &crate::core::proto::circuit::Circuit<F>,
     proof: &SumcheckProof<W, F>,
     transcript: &mut Transcript,
     f: &F,
@@ -74,7 +74,7 @@ pub fn verify<const W: usize, F: InterpolationField<W> + SupportsSampling<W>>(
 pub fn verify_core<const W: usize, F: InterpolationField<W> + SupportsSampling<W>>(
     mut w_in: Vec<ElementOf<F>>,
     pad: &SumcheckProof<W, F>,
-    circuit: &core_proto::circuit::Circuit<F>,
+    circuit: &crate::core::proto::circuit::Circuit<F>,
     proof: &SumcheckProof<W, F>,
     transcript: &mut Transcript,
     f: &F,
@@ -111,7 +111,7 @@ pub fn verify_core<const W: usize, F: InterpolationField<W> + SupportsSampling<W
     let mut w1 = w_in.clone();
 
     // Check right hand witness evaluation
-    if !crate::sane_logw(claims.logv) {
+    if !crate::runtime::sumcheck::sane_logw(claims.logv) {
         return Err(format!("insane logv: {}", claims.logv));
     }
     if (w_in.len() as u64) > (1u64 << claims.logv) {
@@ -147,7 +147,7 @@ pub fn verify_core<const W: usize, F: InterpolationField<W> + SupportsSampling<W
 /// Verifies the sumcheck claims layer-by-layer, bottom-up (from output layer to input layer).
 fn verify_layers<const W: usize, F: InterpolationField<W> + SupportsSampling<W>>(
     pad: &SumcheckProof<W, F>,
-    circuit: &core_proto::circuit::Circuit<F>,
+    circuit: &crate::core::proto::circuit::Circuit<F>,
     proof: &SumcheckProof<W, F>,
     ts: &mut Transcript,
     claims_init: Claims<W, F>,
@@ -219,12 +219,12 @@ fn verify_layers<const W: usize, F: InterpolationField<W> + SupportsSampling<W>>
 fn verify_layer_quad<const W: usize, F: InterpolationField<W> + SupportsSampling<W>>(
     logw: usize,
     claim: &mut ElementOf<F>,
-    plr: &crate::proof::LayerProof<W, F>,
+    plr: &crate::runtime::sumcheck::proof::LayerProof<W, F>,
     pad_hp: &[Vec<RoundPoly<W, F>>; 2],
     ts: &mut Transcript,
     f: &F,
 ) -> Result<[Vec<ElementOf<F>>; 2], String> {
-    if !crate::sane_logw(logw) {
+    if !crate::runtime::sumcheck::sane_logw(logw) {
         return Err(format!("insane logw: {logw}"));
     }
     if plr.hp[0].len() != logw || plr.hp[1].len() != logw {

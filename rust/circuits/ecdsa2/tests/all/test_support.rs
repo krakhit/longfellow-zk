@@ -14,13 +14,13 @@
 
 #![allow(dead_code)]
 
-use circuits_ec::concrete::{affine, projective, scalar_mul};
-use circuits_ecdsa2::concrete::{derived, given, ConcreteDerived, ConcreteGiven};
-use core_algebra::{AlgebraicField, BareField, Curve, SupportsNatConversions};
+use crate::circuits::ec::concrete::{affine, projective, scalar_mul};
+use crate::circuits::ecdsa2::concrete::{derived, given, ConcreteDerived, ConcreteGiven};
+use crate::core::algebra::{AlgebraicField, BareField, Curve, SupportsNatConversions};
 
-pub(crate) fn sign_and_generate_given_derived<
+pub(in crate::circuits::ecdsa2) fn sign_and_generate_given_derived<
     const W: usize,
-    F: AlgebraicField + SupportsNatConversions<W> + core_algebra::HasLookupPoints,
+    F: AlgebraicField + SupportsNatConversions<W> + crate::core::algebra::HasLookupPoints,
     S: AlgebraicField + SupportsNatConversions<W, N = F::N>,
     C: Curve<W, F = F, N = F::N>,
 >(
@@ -72,7 +72,7 @@ pub struct EcdsaCorruptor<F: BareField> {
 
 pub fn all_ecdsa_corruptors<
     const W: usize,
-    F: AlgebraicField + SupportsNatConversions<W> + core_algebra::HasLookupPoints + Clone + 'static,
+    F: AlgebraicField + SupportsNatConversions<W> + crate::core::algebra::HasLookupPoints + Clone + 'static,
 >(
     field: &F,
 ) -> Vec<EcdsaCorruptor<F>> {

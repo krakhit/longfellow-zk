@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use compile_algebra::p256::P256Field;
-use compile_logic::{Logic, LogicIO};
+use crate::compile::algebra::p256::P256Field;
+use crate::compile::logic::{Logic, LogicIO};
 
 #[test]
 #[should_panic(expected = "npublic_input must include the reserved constant One")]
@@ -35,7 +35,7 @@ fn test_rejects_subfield_boundary_past_inputs() {
 
 fn compile_with_metadata(npublic_input: usize, subfield_boundary: usize) {
     let f = P256Field::new();
-    compile_compiler::compile(&f, |logic| {
+    crate::compile::compiler::compile(&f, |logic| {
         let x = logic.input(1);
         let square = logic.mul(&x, &x);
         let assertion = logic.assert0("square", &square);

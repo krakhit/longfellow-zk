@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use runtime_algebra::field::RuntimeField;
+use crate::runtime::algebra::field::RuntimeField;
 
 pub fn push_bitvec_u64<const W: usize, FR: RuntimeField<W>>(
     fr: &FR,

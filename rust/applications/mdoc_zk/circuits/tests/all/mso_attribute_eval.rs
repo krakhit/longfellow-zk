@@ -12,21 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use circuits_bitvec::{BitvecLogic, V8};
-use compile_algebra::gf2_128::Gf2_128Field;
-use compile_logic::eval::EvalLogic;
-use mdoc_zk_circuits::mso_attribute::{
-    circuit::{AttrSlice, AttributeVerifier, DisclosedAttribute, FieldLocator},
-    constants::K_ATTR_INDEX_BITS,
-};
 use mso_attribute_corruptors::MsoAttributeMockGiven;
 
 use super::mso_attribute_corruptors;
+use crate::{
+    circuits::bitvec::{BitvecLogic, V8},
+    compile::{algebra::gf2_128::Gf2_128Field, logic::eval::EvalLogic},
+    mdoc::circuits::mso_attribute::{
+        circuit::{AttrSlice, AttributeVerifier, DisclosedAttribute, FieldLocator},
+        constants::K_ATTR_INDEX_BITS,
+    },
+};
 
 #[test]
 fn test_prefix_equal_boundary_bug() {
     let f = Gf2_128Field::new();
-    let tracker = compile_logic::tracker::AssertionTracker::new();
+    let tracker = crate::compile::logic::tracker::AssertionTracker::new();
     let l = EvalLogic::new_with_tracker(&f, &tracker);
 
     let bv = BitvecLogic::new(&l);
@@ -57,7 +58,7 @@ fn test_prefix_equal_boundary_bug() {
 #[test]
 fn test_prefix_equal_vlen_boundary_bug() {
     let f = Gf2_128Field::new();
-    let tracker = compile_logic::tracker::AssertionTracker::new();
+    let tracker = crate::compile::logic::tracker::AssertionTracker::new();
     let l = EvalLogic::new_with_tracker(&f, &tracker);
 
     let bv = BitvecLogic::new(&l);
@@ -87,9 +88,9 @@ fn test_prefix_equal_vlen_boundary_bug() {
 
 fn run_attribute_test_mock<'a, F>(
     f: &'a Gf2_128Field,
-    tracker: &'a compile_logic::tracker::AssertionTracker,
+    tracker: &'a crate::compile::logic::tracker::AssertionTracker,
     mutate_f: F,
-) -> compile_logic::eval::EvalAssertions<'a>
+) -> crate::compile::logic::eval::EvalAssertions<'a>
 where
     F: FnOnce(&mut MsoAttributeMockGiven),
 {
@@ -129,9 +130,9 @@ where
     let l = EvalLogic::new_with_tracker(f, tracker);
     let bv = BitvecLogic::new(&l);
 
-    use mdoc_zk_circuits::mso_attribute::constants::K_ATTR_PREIMAGE_LEN;
+    use crate::mdoc::circuits::mso_attribute::constants::K_ATTR_PREIMAGE_LEN;
     let (nblocks, length_bytes, padded_preimage) =
-        circuits_sha256msg::concrete::pad_sha256_message(&mock.raw_buf, 2).unwrap();
+        crate::circuits::sha256msg::concrete::pad_sha256_message(&mock.raw_buf, 2).unwrap();
     let attribute_preimage = padded_preimage
         .iter()
         .map(|&b| bv.of_u8(b))
@@ -183,21 +184,22 @@ where
         let bit_idx = idx % 8;
         let byte = digest_bytes[byte_idx];
         let bit_val = (byte.checked_shr(bit_idx as u32).unwrap_or(0) & 1) == 1;
-        circuits_boolean::Boolean::new(&l).konst(bit_val)
+        crate::circuits::boolean::Boolean::new(&l).konst(bit_val)
     });
 
-    let concrete_given = circuits_sha256msg::concrete::ConcreteGiven {
+    let concrete_given = crate::circuits::sha256msg::concrete::ConcreteGiven {
         padded_preimage,
         nblocks,
         length_bytes,
         expected_hash: [0; 8],
     };
-    let concrete_derived = circuits_sha256msg::concrete::derived(&concrete_given, 2);
-    let sha_derived = circuits_sha256msg::evaluate::evaluate_derived(&concrete_derived, &bv);
+    let concrete_derived = crate::circuits::sha256msg::concrete::derived(&concrete_given, 2);
+    let sha_derived =
+        crate::circuits::sha256msg::evaluate::evaluate_derived(&concrete_derived, &bv);
 
     let verifier = AttributeVerifier::new(&l);
 
-    let verifier_args = mdoc_zk_circuits::mso_attribute::circuit::Given {
+    let verifier_args = crate::mdoc::circuits::mso_attribute::circuit::Given {
         attribute_preimage: preimage_bytes,
         field_locator,
         disclosed_attribute: da,
@@ -210,7 +212,7 @@ where
 #[test]
 fn test_attribute_success() {
     let f = Gf2_128Field::new();
-    let tracker = compile_logic::tracker::AssertionTracker::new();
+    let tracker = crate::compile::logic::tracker::AssertionTracker::new();
     run_attribute_test_mock(&f, &tracker, |_| {}).unwrap();
 }
 
@@ -219,7 +221,7 @@ fn test_eval_mso_attribute_shared_corruptors() {
     let f = Gf2_128Field::new();
     let corruptors = mso_attribute_corruptors::all_mso_attribute_corruptors();
     for c in corruptors {
-        let tracker = compile_logic::tracker::AssertionTracker::new();
+        let tracker = crate::compile::logic::tracker::AssertionTracker::new();
         let res = run_attribute_test_mock(&f, &tracker, |g| {
             (c.corrupt)(g);
         });

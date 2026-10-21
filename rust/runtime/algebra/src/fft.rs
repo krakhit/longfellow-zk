@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::{field::RuntimeField, permutations};
+use crate::runtime::algebra::{field::RuntimeField, permutations};
 
-pub(crate) fn assert_valid_orders(transform_order: u64, root_order: u64) {
+pub(in crate::runtime::algebra) fn assert_valid_orders(transform_order: u64, root_order: u64) {
     assert!(
         transform_order.is_power_of_two(),
         "FFT length must be a nonzero power of two"

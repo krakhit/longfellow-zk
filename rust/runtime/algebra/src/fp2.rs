@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::field::{AlgebraicField, RuntimeField, SupportsQuadraticExtension};
+use crate::runtime::algebra::field::{AlgebraicField, RuntimeField, SupportsQuadraticExtension};
 
 pub struct Fp2Element<const W: usize, F: SupportsQuadraticExtension<W>> {
     pub re: F::E,
@@ -87,13 +87,13 @@ impl<'a, const W: usize, F: SupportsQuadraticExtension<W>> Fp2Field<'a, W, F> {
     }
 }
 
-impl<const W: usize, F: SupportsQuadraticExtension<W>> core_algebra::BareField
+impl<const W: usize, F: SupportsQuadraticExtension<W>> crate::core::algebra::BareField
     for Fp2Field<'_, W, F>
 {
     type E = Fp2Element<W, F>;
 }
 
-impl<const W: usize, F: SupportsQuadraticExtension<W>> core_algebra::AlgebraicField
+impl<const W: usize, F: SupportsQuadraticExtension<W>> crate::core::algebra::AlgebraicField
     for Fp2Field<'_, W, F>
 {
     fn zero(&self) -> Self::E {
@@ -189,8 +189,10 @@ impl<const W: usize, F: SupportsQuadraticExtension<W>> RuntimeField<W> for Fp2Fi
     }
 }
 
-impl<const W: usize, F: SupportsQuadraticExtension<W> + core_algebra::SupportsU64Conversions>
-    core_algebra::SupportsU64Conversions for Fp2Field<'_, W, F>
+impl<
+        const W: usize,
+        F: SupportsQuadraticExtension<W> + crate::core::algebra::SupportsU64Conversions,
+    > crate::core::algebra::SupportsU64Conversions for Fp2Field<'_, W, F>
 {
     fn u64_to_element(&self, n: u64) -> Self::E {
         Fp2Element {

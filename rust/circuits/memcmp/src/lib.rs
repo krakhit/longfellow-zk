@@ -15,3 +15,7 @@
 pub mod circuit;
 
 pub use circuit::Memcmp;
+
+#[cfg(test)]
+#[path = "../tests/memcmp.rs"]
+mod tests_memcmp;

@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use core_algebra::SerializableField;
-use core_proto::circuit::{compute_id, Circuit, Layer, RawCircuit};
+use crate::core::algebra::SerializableField;
+use crate::core::proto::circuit::{compute_id, Circuit, Layer, RawCircuit};
 
 /// Compresses a single layer using the Grouped Literals heuristic directly on deduplicated delta
 /// indices.

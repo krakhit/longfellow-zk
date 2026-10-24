@@ -546,8 +546,9 @@ impl<const W: usize, const L: usize, const ACCUM_L: usize, Tag, S: MontgomeryStr
     #[inline(always)]
     fn mac(&self, acc: &mut Self::Accum, x: &Self::E, y: &Self::E) {
         for i in 0..L {
-            let window = &mut acc.0[i..i + L + 2];
-            mul_accum(window, 0, x.0[i], &y.0);
+            // Earlier products can fill higher limbs, so carry must reach the
+            // end of the accumulator rather than stop at this product's window.
+            mul_accum(&mut acc.0, i, x.0[i], &y.0);
         }
     }
 

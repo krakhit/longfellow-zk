@@ -20,8 +20,33 @@ use crate::{
         AlgebraicField, Curve, Nat, SerializableField, SupportsNatConversions,
         SupportsU64Conversions,
     },
-    runtime::algebra::{field::RuntimeSerializableField, p256::*, poly::InterpolationField},
+    runtime::algebra::{
+        field::RuntimeSerializableField, p256::*, poly::InterpolationField, RuntimeField,
+    },
 };
+
+#[test]
+fn test_p256_mac_carry() {
+    let field = P256Field::new();
+    let raw = |words: [u64; 4]| -> P256Element {
+        crate::runtime::algebra::fp_generic::FpGenericElement(
+            crate::runtime::algebra::limb::words64_to_limbs(&words),
+            std::marker::PhantomData,
+        )
+    };
+    let a = raw([u64::MAX, u64::MAX, u64::MAX, 0]);
+    let b = raw([1, 0, 0, 1]);
+    let c = raw([1, 0, 0, 0]);
+    let mut acc = field.zero_accum();
+    field.mac(&mut acc, &a, &b);
+    field.mac(&mut acc, &c, &c);
+
+    // These raw Montgomery products sum to
+    // (2^192 - 1)*(2^192 + 1) + 1 = 2^384. Reduction removes R=2^256,
+    // leaving the raw Montgomery value 2^128. The second product must carry
+    // through the higher limbs filled by the first, on both limb widths.
+    assert_eq!(field.accum_reduce(&acc), raw([0, 0, 1, 0]));
+}
 
 #[test]
 fn test_specific_mul() {

@@ -84,16 +84,6 @@ pub fn load_circuit_lfc2(hash: &str) -> Vec<u8> {
 }
 
 #[must_use]
-pub fn load_circuit_v1(hash: &str) -> Vec<u8> {
-    load_circuit_lfa1(hash)
-}
-
-#[must_use]
-pub fn load_circuit_v2(hash: &str) -> Vec<u8> {
-    load_circuit_lfa2(hash)
-}
-
-#[must_use]
 pub fn load_prior_proof(hash: &str) -> Vec<u8> {
     let path = format!(
         "{}/applications/mdoc_zk/artifacts/proofs/{}.bin",

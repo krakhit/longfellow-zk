@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//! Version-neutral Merkle messages shared by the standalone commitment schemes.
+//! Their layout depends only on the Merkle tree, never on a Longfellow system.
+
 pub const DIGEST_LEN: usize = 32;
 pub const NONCE_LEN: usize = 32;
 

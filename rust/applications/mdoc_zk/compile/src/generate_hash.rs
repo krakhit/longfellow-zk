@@ -12,16 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::compile::algebra::gf2_128::Gf2_128Field;
-use crate::core::algebra::SerializableField;
-use crate::core::proto::circuit::Circuit;
-use crate::mdoc::circuits::{
-    config::{K_HASH_V256_BIT_PLUCKER, K_HASH_V8_BIT_PLUCKER, K_SHA_BIT_PLUCKER},
-    hash::circuit::MdocHash,
-    MdocHashCompileField,
+use crate::{
+    compile::algebra::gf2_128::Gf2_128Field,
+    core::proto::circuit::Circuit,
+    mdoc::{
+        circuits::{
+            config::{K_HASH_V256_BIT_PLUCKER, K_HASH_V8_BIT_PLUCKER, K_SHA_BIT_PLUCKER},
+            hash::circuit::MdocHash,
+            MdocHashCompileField,
+        },
+        compile::{allocate_hash::allocate_hash, allocator::WireAllocator},
+    },
 };
-
-use crate::mdoc::compile::{allocate_hash::allocate_hash, allocator::WireAllocator};
 
 pub fn mdoc_zk_circuits_hash<FC>(
     fc: &FC,
@@ -34,18 +36,23 @@ pub fn mdoc_zk_circuits_hash<FC>(
 where
     FC: MdocHashCompileField,
 {
-    crate::compile::compiler::compile(fc, |iologic| {
+    crate::compile::compiler::compile_v2(fc, |iologic| {
         let bv = crate::circuits::bitvec::BitvecLogic::new(&iologic);
         let bitvec_io = crate::circuits::bitvec::BitvecIO::new(&bv);
         let plucker_v8 =
             crate::circuits::bit_plucker::BitPlucker::<_, { K_HASH_V8_BIT_PLUCKER }>::new(&iologic);
         let plucker_v256 =
-            crate::circuits::bit_plucker::BitPlucker::<_, { K_HASH_V256_BIT_PLUCKER }>::new(&iologic);
+            crate::circuits::bit_plucker::BitPlucker::<_, { K_HASH_V256_BIT_PLUCKER }>::new(
+                &iologic,
+            );
         let plucker_sha =
             crate::circuits::bit_plucker::BitPlucker::<_, { K_SHA_BIT_PLUCKER }>::new(&iologic);
 
-        let mut allocator =
-            WireAllocator::new(&iologic, &bitvec_io, crate::compile::logic::K_FIRST_WIRE_POSITION);
+        let mut allocator = WireAllocator::new(
+            &iologic,
+            &bitvec_io,
+            crate::compile::logic::K_FIRST_WIRE_POSITION,
+        );
 
         let (given, derived, pub_inputs_count, subfield_boundary_val) = allocate_hash(
             &mut allocator,
@@ -61,62 +68,11 @@ where
     })
 }
 
+/// Compile and segment the NEXT circuit without selecting commitment parameters.
 pub fn generate_hash_circuit(
-    f128_compile: &Gf2_128Field,
+    f: &Gf2_128Field,
     num_attrs: usize,
-    profile: crate::mdoc::compile::LigeroProfile,
-) -> Result<(Circuit<Gf2_128Field>, crate::runtime::ligero::param::LigeroConfig), String> {
-    use std::fmt::Write;
-
-    let start = std::time::Instant::now();
-    let (hash_circuit_comp, stats, _symbols) = mdoc_zk_circuits_hash(f128_compile, num_attrs);
-
-    let duration = start.elapsed();
-
-    let segmented = crate::compile::compiler::segment_circuit(f128_compile, &hash_circuit_comp);
-    let mut hex_id = String::with_capacity(64);
-    for b in hash_circuit_comp.id {
-        let _ = write!(&mut hex_id, "{b:02x}");
-    }
-
-    println!("[Compiler] Hash Circuit (nattrs={num_attrs})");
-    println!("  Hash (ID): 0x{hex_id}");
-    println!(
-        "  Geometry: nin={}, npubin={}, nout={}, W={}, T={}, L={}, assertions={}",
-        stats.ninput,
-        stats.npublic_input,
-        stats.noutput,
-        stats.nwires,
-        stats.nterms,
-        stats.nlayers,
-        stats.nassertions
-    );
-
-    let (num_witness, num_quadratic_constraints) =
-        crate::runtime::proto::witness_and_constraint_count(&segmented);
-    let gf2 = crate::runtime::algebra::gf2_128::Gf2_128Field::new();
-    let sf_hash =
-        crate::runtime::algebra::subfield::BinarySubfield::new(&crate::core::algebra::proto::GF2_16_BASIS_V1);
-    let make_interpolator =
-        crate::runtime::algebra::lch14_reed_solomon::Lch14InterpolatorFactory::new(&gf2, &sf_hash);
-    let best_block_enc = crate::runtime::ligero::optimize_geometry(
-        num_witness,
-        num_quadratic_constraints,
-        profile.rateinv,
-        profile.nreq,
-        f128_compile.serialized_size_bytes(),
-        2,
-        &make_interpolator,
-    );
-    let config = crate::runtime::ligero::param::LigeroConfig {
-        rateinv: profile.rateinv,
-        nreq: profile.nreq,
-        block_enc: best_block_enc,
-    };
-    println!("  Compile time: {duration:?}");
-    println!(
-        "  Ligero params: rateinv={}, nreq={}, block_enc={}",
-        config.rateinv, config.nreq, config.block_enc
-    );
-    Ok((segmented, config))
+) -> Result<Circuit<Gf2_128Field>, String> {
+    let (circuit, _, _) = mdoc_zk_circuits_hash(f, num_attrs);
+    Ok(crate::compile::compiler::segment_circuit(f, &circuit))
 }

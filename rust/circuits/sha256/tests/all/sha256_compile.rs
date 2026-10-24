@@ -81,7 +81,7 @@ fn test_compile_sha256_for_field<
     };
     let derived_val = derived(&given);
 
-    let (circuit, stats, symbols) = crate::compile::compiler::compile(fc, |iologic| {
+    let (circuit, stats, symbols) = super::compile(fc, |iologic| {
         let mut pos = crate::compile::logic::K_FIRST_WIRE_POSITION;
         let sha256 = Sha256::new(&iologic);
         let bv = crate::circuits::bitvec::BitvecLogic::new(&iologic);
@@ -162,7 +162,7 @@ fn test_compile_sha256_tampering() {
     };
     let derived_val = derived(&given);
 
-    let (circuit, _stats, symbols) = crate::compile::compiler::compile(&fc, |iologic| {
+    let (circuit, _stats, symbols) = super::compile(&fc, |iologic| {
         let mut pos = crate::compile::logic::K_FIRST_WIRE_POSITION;
         let sha256 = Sha256::new(&iologic);
         let bv = crate::circuits::bitvec::BitvecLogic::new(&iologic);
@@ -184,9 +184,15 @@ fn test_compile_sha256_tampering() {
         (c.corrupt)(&mut g, &mut d);
 
         let inputs = make_inputs(&g, &d, &fr);
-        let eval_res =
-            crate::compile::eval::eval_circuit_fc(&fc, &fr, &circuit, &symbols, &inputs, FieldID::P256)
-                .unwrap();
+        let eval_res = crate::compile::eval::eval_circuit_fc(
+            &fc,
+            &fr,
+            &circuit,
+            &symbols,
+            &inputs,
+            FieldID::P256,
+        )
+        .unwrap();
         assert!(
             eval_res.is_err(),
             "Corruptor '{}' failed to cause circuit evaluation error",

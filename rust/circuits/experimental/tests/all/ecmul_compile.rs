@@ -40,7 +40,7 @@ fn test_compile_ecmul_generic<
     fr: &FR,
 ) {
     let n = 256;
-    let (compiled_circuit, stats, symbols) = crate::compile::compiler::compile(fc, |iologic| {
+    let (compiled_circuit, stats, symbols) = super::compile(fc, |iologic| {
         let mut pos = crate::compile::logic::K_FIRST_WIRE_POSITION;
 
         let circuit = EcmulCircuit::new(&iologic, curve_c, n);
@@ -78,9 +78,16 @@ fn test_compile_ecmul_generic<
     concrete_given.push_elements(n, fr, |e| inputs.push(e));
     concrete_derived.push_elements(|e| inputs.push(e));
 
-    crate::compile::eval::eval_circuit_fc(fc, fr, &compiled_circuit, &symbols, &inputs, FieldID::P256)
-        .unwrap()
-        .assert_all_passed();
+    crate::compile::eval::eval_circuit_fc(
+        fc,
+        fr,
+        &compiled_circuit,
+        &symbols,
+        &inputs,
+        FieldID::P256,
+    )
+    .unwrap()
+    .assert_all_passed();
 }
 
 #[test]

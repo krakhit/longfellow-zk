@@ -12,7 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! This is an implementation of the Ligero protocol described in:
+//! Legacy Ligero dimensions and the exact committed row/column layout.
+//! The protocol is described in:
 //!
 //!   Ligero: Lightweight Sublinear Arguments Without a Trusted Setup,
 //!   Scott Ames and Carmit Hazay and Yuval Ishai and Muthuramakrishnan
@@ -63,7 +64,7 @@
 //!
 //! The second row, row `IDOT` for `IDOT = 1`, used in the linear test,
 //! consists of `DBLOCK` random field elements, with the additional
-//! constraint that the double block sum to 0. As usual, the row is
+//! constraint that its witness slots sum to 0. As usual, the row is
 //! extended to `BLOCK_ENC` by interpolation.
 //!
 //! The third row, row `IQUAD` for `IQUAD = 2`, used in the quadratic test,
@@ -80,11 +81,11 @@
 //! quadratic check in addition to the linear check. In Ligero, a
 //! quadratic constraint induces three entries in three quadratic rows.
 //! Thus, for `NQ` total quadratic constraints and `W` useful entries per
-//! row, we have a total of `3 * (NQ / W)` quadratic rows. To enforce
-//! this structure, the code stores `NQTRIPLES = (NQ / W)` instead of the
+//! row, we have a total of `3 * ceil(NQ / W)` quadratic rows. To enforce
+//! this structure, the code stores `NQTRIPLES = ceil(NQ / W)` instead of the
 //! number `3 * NQTRIPLES` of rows.
 
-use crate::runtime::algebra::{field::RuntimeField, interpolator::InterpolatorFactory};
+use crate::runtime::algebra::{field::RuntimeField, RangeInterpolatorFactory};
 pub use crate::runtime::proto::{LigeroCommitment, LigeroGeometry};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -106,7 +107,7 @@ pub struct LigeroParam {
     pub w: usize,         // number of witnesses in a witness block
     pub nwrow: usize,     // number of witness rows
     pub nqtriples: usize, // number of triples of quadratic-check rows
-    pub nwqrow: usize,    // nwqrow + nqtriples
+    pub nwqrow: usize,    // nwrow + 3 * nqtriples
 
     // layout of rows
     pub ildt: usize,  // blinding for the low-degree test
@@ -117,7 +118,7 @@ pub struct LigeroParam {
 }
 
 impl LigeroParam {
-    pub fn new<const W: usize, F: RuntimeField<W>, IF: InterpolatorFactory<W, F>>(
+    pub fn new<const W: usize, F: RuntimeField<W>, IF: RangeInterpolatorFactory<W, F>>(
         nw: usize,
         nq: usize,
         config: LigeroConfig,
@@ -129,7 +130,7 @@ impl LigeroParam {
         param
     }
 
-    pub fn try_new<const W: usize, F: RuntimeField<W>, IF: InterpolatorFactory<W, F>>(
+    pub fn try_new<const W: usize, F: RuntimeField<W>, IF: RangeInterpolatorFactory<W, F>>(
         nw: usize,
         nq: usize,
         config: LigeroConfig,
@@ -146,7 +147,7 @@ impl LigeroParam {
         }
 
         let block = (config.block_enc + 1) / (2 + config.rateinv);
-        if !make_interpolator.can_encode(block, config.block_enc) {
+        if !make_interpolator.can_interpolate(0..block, block..config.block_enc) {
             return None;
         }
         if block < config.nreq {
@@ -160,6 +161,12 @@ impl LigeroParam {
 
         let dblock = 2 * block - 1;
         if config.block_enc < dblock || config.block_enc - dblock < config.nreq {
+            return None;
+        }
+        if !make_interpolator.can_interpolate(0..dblock, dblock..config.block_enc)
+            || !make_interpolator.can_interpolate(0..block, block..dblock)
+            || !make_interpolator.can_interpolate(0..block, dblock..config.block_enc)
+        {
             return None;
         }
 

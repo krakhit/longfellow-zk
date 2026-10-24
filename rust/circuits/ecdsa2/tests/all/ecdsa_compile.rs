@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use super::compile;
 use crate::circuits::ecdsa2::{derived, given, EcdsaCircuit};
 use crate::compile::algebra::{
     field::{CompilePrimeField, SupportsNatConversions},
@@ -19,7 +20,7 @@ use crate::compile::algebra::{
     secp256r1::Secp256r1,
     Curve,
 };
-use crate::compile::compiler::{compile, dump_stats};
+use crate::compile::compiler::dump_stats;
 use crate::compile::eval::FieldID;
 use crate::compile::logic::K_FIRST_WIRE_POSITION;
 use crate::core::algebra::{Nat, SerializableField};
@@ -90,7 +91,10 @@ fn test_compile_ecdsa_generic<
         + SerializableField
         + crate::core::algebra::HasLookupPoints
         + crate::core::algebra::SupportsU64Conversions,
-    FR: RuntimeField<W> + SerializableField + SupportsNatConversions<W> + crate::core::algebra::HasLookupPoints,
+    FR: RuntimeField<W>
+        + SerializableField
+        + SupportsNatConversions<W>
+        + crate::core::algebra::HasLookupPoints,
     Fn: crate::core::algebra::AlgebraicField + SupportsNatConversions<W, N = FR::N>,
     CC: Curve<W, F = FC, N = FC::N>,
     CR: Curve<W, F = FR, N = FR::N>,
@@ -201,9 +205,15 @@ fn test_compile_ecdsa_signature_tampering_generic<
     // Verify valid inputs pass
     {
         let inputs = make_inputs(&concrete_given, &concrete_derived, fr);
-        let eval_res =
-            crate::compile::eval::eval_circuit_fc(fc, fr, &circuit, &symbols, &inputs, FieldID::P256)
-                .unwrap();
+        let eval_res = crate::compile::eval::eval_circuit_fc(
+            fc,
+            fr,
+            &circuit,
+            &symbols,
+            &inputs,
+            FieldID::P256,
+        )
+        .unwrap();
         eval_res.assert_all_passed();
     }
 
@@ -214,9 +224,15 @@ fn test_compile_ecdsa_signature_tampering_generic<
         let mut cd = concrete_derived.clone();
         (c.corrupt)(&mut g, &mut cd);
         let inputs = make_inputs(&g, &cd, fr);
-        let eval_res =
-            crate::compile::eval::eval_circuit_fc(fc, fr, &circuit, &symbols, &inputs, FieldID::P256)
-                .unwrap();
+        let eval_res = crate::compile::eval::eval_circuit_fc(
+            fc,
+            fr,
+            &circuit,
+            &symbols,
+            &inputs,
+            FieldID::P256,
+        )
+        .unwrap();
         assert!(
             eval_res.is_err(),
             "Corruptor '{}' failed to cause circuit evaluation error",

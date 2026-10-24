@@ -12,15 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::circuits::bit_plucker::BitPlucker;
-use crate::compile::compiler::CompilerLogic;
-use crate::mdoc::circuits::{
-    config::K_SIG_MAC_BIT_PLUCKER,
-    signature::{Derived as SigDerived, Given as SigGiven},
-    MdocSigCompileField,
+use crate::{
+    circuits::bit_plucker::BitPlucker,
+    compile::compiler::CompilerLogic,
+    mdoc::{
+        circuits::{
+            config::K_SIG_MAC_BIT_PLUCKER,
+            signature::{Derived as SigDerived, Given as SigGiven},
+            MdocSigCompileField,
+        },
+        compile::allocator::WireAllocator,
+    },
 };
-
-use crate::mdoc::compile::allocator::WireAllocator;
 
 pub fn allocate_sig<'b, FC, C>(
     allocator: &mut WireAllocator<'_, 'b, FC>,

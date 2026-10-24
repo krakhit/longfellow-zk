@@ -26,7 +26,7 @@ use crate::{
 #[test]
 fn test_compile_analog_decoder() {
     let f = P256Field::new();
-    let (circuit, stats, _symbols) = crate::compile::compiler::compile(&f, |iologic| {
+    let (circuit, stats, _symbols) = compile(&f, |iologic| {
         let ad = AnalogDecoder::new(&iologic);
 
         let n = 5;
@@ -43,7 +43,7 @@ fn test_compile_analog_decoder() {
 #[test]
 fn test_compile_analog_decoder_binary() {
     let f = P256Field::new();
-    let (circuit, stats, _symbols) = crate::compile::compiler::compile(&f, |iologic| {
+    let (circuit, stats, _symbols) = compile(&f, |iologic| {
         let ad = AnalogDecoder::new(&iologic);
         let boolean = Boolean::new(&iologic);
 

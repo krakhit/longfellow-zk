@@ -12,19 +12,39 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::core::algebra::ElementOf;
-use crate::runtime::algebra::{blas, Interpolator, InterpolatorFactory, RuntimeField, SupportsSampling};
-use crate::runtime::proto::LigeroProof;
-use crate::runtime::random::Transcript;
+//! Verify the v1 Ligero responses against authenticated oracle columns.
+//!
+//! Validate proof lengths and sparse constraint indices before transcript replay.
+//! Reproduce the batching weights, absorb all response samples, and choose the
+//! opened columns. Merkle authentication then precedes three algebraic checks:
+//! the low-degree row combination, the batched dot-product polynomial and its
+//! logical sum, and the weighted product residuals Z_i-X_i*Y_i.
+//!
+//! Ordinary rows interpolate from 0..block; product responses use 0..dblock.
+//! Both are evaluated on the oracle dblock..block_enc and gathered at the sampled
+//! indices. Openings are already row-major, so their combinations use dense BLAS.
 use sha2::digest::Update;
 
-use crate::runtime::ligero::{
-    common::{inner_product_vector, layout_aext_into},
-    param::{LigeroCommitment, LigeroLinearConstraint, LigeroParam, LigeroQuadraticConstraint},
-    transcript::TranscriptLigero,
-    LigeroError,
+use crate::{
+    core::algebra::ElementOf,
+    runtime::{
+        algebra::{
+            blas, InterpolationPlan, RangeInterpolatorFactory, RuntimeField, SupportsSampling,
+        },
+        ligero::{
+            common::{inner_product_vector, layout_aext_into},
+            param::{
+                LigeroCommitment, LigeroLinearConstraint, LigeroParam, LigeroQuadraticConstraint,
+            },
+            transcript::TranscriptLigero,
+            LigeroError,
+        },
+        proto::LigeroProof,
+        random::Transcript,
+    },
 };
 
+/// Borrow the current transcript and the immutable legacy layout for verification.
 pub struct LigeroVerifier<'a> {
     ts: &'a mut Transcript,
     param: &'a LigeroParam,
@@ -46,7 +66,7 @@ impl<'a> LigeroVerifier<'a> {
     pub fn verify<
         const W: usize,
         F: RuntimeField<W> + crate::core::algebra::SerializableField + SupportsSampling<W>,
-        IF: InterpolatorFactory<W, F>,
+        IF: RangeInterpolatorFactory<W, F>,
     >(
         &mut self,
         linear_evals: &[ElementOf<F>],
@@ -58,73 +78,15 @@ impl<'a> LigeroVerifier<'a> {
         make_interpolator: &IF,
         f: &F,
     ) -> Result<(), LigeroError> {
-        if proof.y_ldt.len() != self.param.block {
-            return Err(LigeroError::InvalidProof(
-                "invalid y_ldt length".to_string(),
-            ));
-        }
-        if proof.y_dot.len() != self.param.dblock {
-            return Err(LigeroError::InvalidProof(
-                "invalid y_dot length".to_string(),
-            ));
-        }
-        if proof.y_quad_0.len() != self.param.r {
-            return Err(LigeroError::InvalidProof(
-                "invalid y_quad_0 length".to_string(),
-            ));
-        }
-        if proof.y_quad_2.len() != self.param.dblock - self.param.block {
-            return Err(LigeroError::InvalidProof(
-                "invalid y_quad_2 length".to_string(),
-            ));
-        }
-        if proof.req.len() != self.param.nrow * self.param.nreq {
-            return Err(LigeroError::InvalidProof("invalid req length".to_string()));
-        }
+        self.validate(
+            proof,
+            linear_evals.len(),
+            linear_constraints,
+            quadratic_constraints,
+        )?;
 
-        for term in linear_constraints {
-            if term.w >= self.param.nw || term.c >= linear_evals.len() {
-                return Err(LigeroError::InvalidProof(
-                    "linear constraint index out of bounds".to_string(),
-                ));
-            }
-        }
-        if quadratic_constraints.len() < self.param.nq {
-            return Err(LigeroError::InvalidProof(
-                "invalid quadratic constraints length".to_string(),
-            ));
-        }
-        for l in &quadratic_constraints[..self.param.nq] {
-            if l.x >= self.param.nw || l.y >= self.param.nw || l.z >= self.param.nw {
-                return Err(LigeroError::InvalidProof(
-                    "quadratic constraint index out of bounds".to_string(),
-                ));
-            }
-        }
-
-        // Replay the protocol first in order to compute all the challenges.
-        //
-        // # Note on Batched Challenge Sampling & Soundness in Ligero
-        // In general interactive protocols, a challenge at round `k` must depend on the prover's
-        // message at round `k-1`. Here, notice that `u_ldt`, `alphal`, `alphaq`, and
-        // `u_quad` are sampled *before* the folded polynomial evaluations (`y_ldt`,
-        // `y_dot`, `y_quad`) are written to the transcript.
-        //
-        // This batched challenge sampling is cryptographically sound by design in Ligero:
-        // 1. The prover commits to the entire tableau (all rows) in the initial Merkle commitment
-        //    `C` (absorbed during `receive_commitment`).
-        // 2. The subsequent polynomial evaluations (`y_ldt`, `y_dot`, `y_quad`) are not arbitrary
-        //    new polynomials; they are strictly homomorphic linear combinations of the
-        //    already-committed rows in `C`.
-        // 3. Because the underlying rows are already frozen in `C`, once the random combination
-        //    weights (`u_ldt`, `alphal`, `alphaq`, `u_quad`) are drawn, the true folded polynomials
-        //    are mathematically fixed and unique.
-        //
-        // Therefore, only the final column query challenge (`idx`) needs to depend on the
-        // transmitted polynomial evaluations (`y_ldt`, `y_dot`, `y_quad`). As seen below,
-        // `idx` is sampled strictly after absorbing all three polynomials into the
-        // transcript, ensuring that any discrepancy between the transmitted polynomials and
-        // the committed tableau rows is caught during column verification.
+        // Batching weights follow the committed tableau. Column queries follow
+        // all responses, linking the claimed combinations to that same tableau.
 
         // P -> V theorem statement
         self.ts.write_ligero_statement(hash_of_ligero_statement);
@@ -153,23 +115,30 @@ impl<'a> LigeroVerifier<'a> {
         self.merkle_check(&idx, commitment, proof, f)
             .map_err(LigeroError::MerkleCheckFailed)?;
 
-        if !self.low_degree_check(&idx, &u_ldt, proof, make_interpolator, f) {
-            return Err(LigeroError::LowDegreeCheckFailed);
-        }
+        let response_encoder = {
+            let ordinary_encoder = make_interpolator
+                .make_range(0..self.param.block, self.param.dblock..self.param.block_enc);
+            if !self.low_degree_check(&idx, &u_ldt, proof, &ordinary_encoder, f) {
+                return Err(LigeroError::LowDegreeCheckFailed);
+            }
 
-        // Linear check
-        let a = inner_product_vector(
-            self.param,
-            linear_constraints,
-            &alphal,
-            quadratic_constraints,
-            &alphaq,
-            f,
-        );
-
-        if !self.dot_check(&idx, &a, proof, make_interpolator, f) {
-            return Err(LigeroError::DotCheckFailed);
-        }
+            let a = inner_product_vector(
+                self.param,
+                linear_constraints,
+                &alphal,
+                quadratic_constraints,
+                &alphaq,
+                f,
+            );
+            let response_encoder = make_interpolator.make_range(
+                0..self.param.dblock,
+                self.param.dblock..self.param.block_enc,
+            );
+            if !self.dot_check(&idx, &a, proof, &ordinary_encoder, &response_encoder, f) {
+                return Err(LigeroError::DotCheckFailed);
+            }
+            response_encoder
+        };
 
         // Check the putative value of the inner product for linear constraint A w + b = 0.
         // proof_dot = alpha_L . (A w)
@@ -185,38 +154,84 @@ impl<'a> LigeroVerifier<'a> {
             return Err(LigeroError::LinearInnerProductMismatch);
         }
 
-        if !self.quadratic_check(&idx, &u_quad, proof, make_interpolator, f) {
+        if !self.quadratic_check(&idx, &u_quad, proof, &response_encoder, f) {
             return Err(LigeroError::QuadraticCheckFailed);
         }
 
         Ok(())
     }
 
-    fn interpolate_req_columns<
-        const W: usize,
-        F: RuntimeField<W>,
-        IF: InterpolatorFactory<W, F>,
-    >(
+    /// Check the legacy shape and index conditions in their original error order.
+    /// This precedes all transcript sampling and indexing into untrusted messages.
+    fn validate<const W: usize, F: RuntimeField<W> + crate::core::algebra::SerializableField>(
         &self,
-        ylen: usize,
-        idx: &[usize],
-        y: &[F::E],
-        make_interpolator: &IF,
-        f: &F,
-    ) -> Vec<F::E> {
-        let interpy = make_interpolator.make(ylen, self.param.block_enc);
-        let mut yext = y[..ylen].to_vec();
-        yext.resize(self.param.block_enc, f.zero());
-        interpy.interpolate(&mut yext);
-
-        let mut yp = Vec::with_capacity(self.param.nreq);
-        for &i in idx {
-            yp.push(yext[self.param.dblock + i].clone());
+        proof: &LigeroProof<W, F>,
+        nequations: usize,
+        linear_constraints: &[LigeroLinearConstraint<W, F>],
+        quadratic_constraints: &[LigeroQuadraticConstraint],
+    ) -> Result<(), LigeroError> {
+        if proof.y_ldt.len() != self.param.block {
+            return Err(LigeroError::InvalidProof(
+                "invalid y_ldt length".to_string(),
+            ));
         }
-        yp
+        if proof.y_dot.len() != self.param.dblock {
+            return Err(LigeroError::InvalidProof(
+                "invalid y_dot length".to_string(),
+            ));
+        }
+        if proof.y_quad_0.len() != self.param.r {
+            return Err(LigeroError::InvalidProof(
+                "invalid y_quad_0 length".to_string(),
+            ));
+        }
+        if proof.y_quad_2.len() != self.param.dblock - self.param.block {
+            return Err(LigeroError::InvalidProof(
+                "invalid y_quad_2 length".to_string(),
+            ));
+        }
+        if proof.req.len() != self.param.nrow * self.param.nreq {
+            return Err(LigeroError::InvalidProof("invalid req length".to_string()));
+        }
+        for term in linear_constraints {
+            if term.w >= self.param.nw || term.c >= nequations {
+                return Err(LigeroError::InvalidProof(
+                    "linear constraint index out of bounds".to_string(),
+                ));
+            }
+        }
+        if quadratic_constraints.len() < self.param.nq {
+            return Err(LigeroError::InvalidProof(
+                "invalid quadratic constraints length".to_string(),
+            ));
+        }
+        for l in &quadratic_constraints[..self.param.nq] {
+            if l.x >= self.param.nw || l.y >= self.param.nw || l.z >= self.param.nw {
+                return Err(LigeroError::InvalidProof(
+                    "quadratic constraint index out of bounds".to_string(),
+                ));
+            }
+        }
+        Ok(())
     }
 
-    fn merkle_check<const W: usize, F: RuntimeField<W> + crate::core::algebra::SerializableField>(
+    /// Extend a response onto the oracle and return only the requested columns.
+    /// The full extension buffer ends here, before the caller combines values.
+    fn interpolate_req_columns<const W: usize, F: RuntimeField<W>>(
+        &self,
+        idx: &[usize],
+        y: &[F::E],
+        encoder: &impl InterpolationPlan<W, F>,
+    ) -> Vec<F::E> {
+        let yext = encoder.apply(y);
+        blas::gather(idx, &yext)
+    }
+
+    /// Hash opened values in committed column order and verify the shared path.
+    fn merkle_check<
+        const W: usize,
+        F: RuntimeField<W> + crate::core::algebra::SerializableField,
+    >(
         &self,
         idx: &[usize],
         commitment: &LigeroCommitment,
@@ -242,16 +257,16 @@ impl<'a> LigeroVerifier<'a> {
         )
     }
 
+    /// Compare the interpolated low-degree response with its opened row combination.
     fn low_degree_check<
         const W: usize,
         F: RuntimeField<W> + crate::core::algebra::SerializableField,
-        IF: InterpolatorFactory<W, F>,
     >(
         &self,
         idx: &[usize],
         u_ldt: &[F::E],
         proof: &LigeroProof<W, F>,
-        make_interpolator: &IF,
+        encoder: &impl InterpolationPlan<W, F>,
         f: &F,
     ) -> bool {
         // The ILDT blinding row with coefficient 1
@@ -270,22 +285,19 @@ impl<'a> LigeroVerifier<'a> {
             );
         }
 
-        let yp =
-            self.interpolate_req_columns(self.param.block, idx, &proof.y_ldt, make_interpolator, f);
+        let yp = self.interpolate_req_columns(idx, &proof.y_ldt, encoder);
 
         blas::equal(&yp, &yc)
     }
 
-    fn dot_check<
-        const W: usize,
-        F: RuntimeField<W> + crate::core::algebra::SerializableField,
-        IF: InterpolatorFactory<W, F>,
-    >(
+    /// At every opened column, check y_dot = mask_dot + sum_i A_i*W_i.
+    fn dot_check<const W: usize, F: RuntimeField<W> + crate::core::algebra::SerializableField>(
         &self,
         idx: &[usize],
         a: &[F::E],
         proof: &LigeroProof<W, F>,
-        make_interpolator: &IF,
+        ordinary_encoder: &impl InterpolationPlan<W, F>,
+        response_encoder: &impl InterpolationPlan<W, F>,
         f: &F,
     ) -> bool {
         // The IDOT blinding row with coefficient 1
@@ -294,12 +306,11 @@ impl<'a> LigeroVerifier<'a> {
             .to_vec();
 
         {
-            let interp_a = make_interpolator.make(self.param.block, self.param.block_enc);
-            let mut a_ext = vec![f.zero(); self.param.block_enc];
+            let mut samples = vec![f.zero(); self.param.block];
             for i in 0..self.param.nwqrow {
-                layout_aext_into(self.param, i, a, &mut a_ext, f);
-                interp_a.interpolate(&mut a_ext);
-                let a_req = blas::gather(idx, &a_ext[self.param.dblock..]);
+                layout_aext_into(self.param, i, a, &mut samples, f);
+                let a_ext = ordinary_encoder.apply(&samples);
+                let a_req = blas::gather(idx, &a_ext);
 
                 // Accumulate yc += A[i] \otimes W[i].
                 blas::vaxpy(
@@ -312,26 +323,21 @@ impl<'a> LigeroVerifier<'a> {
             }
         }
 
-        let yp = self.interpolate_req_columns(
-            self.param.dblock,
-            idx,
-            &proof.y_dot,
-            make_interpolator,
-            f,
-        );
+        let yp = self.interpolate_req_columns(idx, &proof.y_dot, response_encoder);
         blas::equal(&yp, &yc)
     }
 
+    /// Reinsert the implicit zero witness interval, then check the weighted
+    /// product residuals against the quadratic response at each opened column.
     fn quadratic_check<
         const W: usize,
         F: RuntimeField<W> + crate::core::algebra::SerializableField,
-        IF: InterpolatorFactory<W, F>,
     >(
         &self,
         idx: &[usize],
         u_quad: &[F::E],
         proof: &LigeroProof<W, F>,
-        make_interpolator: &IF,
+        encoder: &impl InterpolationPlan<W, F>,
         f: &F,
     ) -> bool {
         // The IQUAD blinding row with coefficient 1
@@ -376,7 +382,7 @@ impl<'a> LigeroVerifier<'a> {
         yquad.extend_from_slice(&proof.y_quad_2);
 
         // Interpolate y_quad at the opened columns
-        let yp = self.interpolate_req_columns(self.param.dblock, idx, &yquad, make_interpolator, f);
+        let yp = self.interpolate_req_columns(idx, &yquad, encoder);
 
         blas::equal(&yp, &yc)
     }

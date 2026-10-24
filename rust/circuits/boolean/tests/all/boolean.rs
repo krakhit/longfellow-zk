@@ -19,7 +19,7 @@ use crate::compile::logic::LogicIO;
 #[test]
 fn test_compile_boolean() {
     let f = P256Field::new();
-    let (circuit, stats, _symbols) = crate::compile::compiler::compile(&f, |iologic| {
+    let (circuit, stats, _symbols) = super::compile(&f, |iologic| {
         let boolean = Boolean::new(&iologic);
 
         let a = iologic.input(1);

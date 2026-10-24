@@ -61,7 +61,8 @@ fn test_precious_sum_behavior() {
         let expr = l.add(&precious_sum, &w3);
         let assert_expr = l.assert0("test_case_1", &expr);
         let items_ref = arena.alloc_slice(assert_expr.items);
-        let rewritten = crate::compile::compiler::assertion::rewrite(&arena, &f, items_ref, &tracker);
+        let rewritten =
+            crate::compile::compiler::assertion::rewrite(&arena, &f, items_ref, &tracker);
         assert_eq!(rewritten.len(), 1);
         let rewritten_node = rewritten[0].expr;
 
@@ -107,7 +108,8 @@ fn test_precious_sum_behavior() {
         let expr = l.mul(&w3, &precious_sum);
         let assert_expr = l.assert0("test_case_2", &expr);
         let items_ref = arena.alloc_slice(assert_expr.items);
-        let rewritten = crate::compile::compiler::assertion::rewrite(&arena, &f, items_ref, &tracker);
+        let rewritten =
+            crate::compile::compiler::assertion::rewrite(&arena, &f, items_ref, &tracker);
         assert_eq!(rewritten.len(), 1);
         let rewritten_node = rewritten[0].expr;
 
@@ -148,7 +150,8 @@ fn test_precious_sum_behavior() {
         let precious_val = l.precious(&w1);
         let assert_expr = l.assert0("test_case_3", &precious_val);
         let items_ref = arena.alloc_slice(assert_expr.items);
-        let rewritten = crate::compile::compiler::assertion::rewrite(&arena, &f, items_ref, &tracker);
+        let rewritten =
+            crate::compile::compiler::assertion::rewrite(&arena, &f, items_ref, &tracker);
         assert_eq!(rewritten.len(), 1);
         let rewritten_node = rewritten[0].expr;
         match &rewritten_node.v {
@@ -195,7 +198,7 @@ fn test_assertion_paths_do_not_expand_through_shared_groups() {
         assert_eq!(assertion.items.len(), 1);
     }
 
-    let (_, info, symbols) = crate::compile::compiler::compile(&f, |logic| {
+    let (_, info, symbols) = super::compile(&f, |logic| {
         let cx = logic.input(1);
         let assert = logic.assert0("leaf", &cx);
         let mut root = logic.assert_all("shared", &[assert]);
@@ -223,7 +226,7 @@ fn test_duplicate_assertion_paths_keep_first_path() {
 
     assert_eq!(root.items.len(), 2);
 
-    let (_, info, symbols) = crate::compile::compiler::compile(&f, |logic| {
+    let (_, info, symbols) = super::compile(&f, |logic| {
         let cx = logic.input(1);
         let cfirst = logic.assert0("first", &cx);
         let csecond = logic.assert0("second", &cx);

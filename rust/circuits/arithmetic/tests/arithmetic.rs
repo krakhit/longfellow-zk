@@ -19,7 +19,7 @@ use crate::compile::logic::{eval::EvalLogic, Eltw, Logic};
 use crate::core::algebra::SerializableField;
 
 fn compile_and_dump_add<F: CompileField + SerializableField>(f: &F, name: &str) {
-    let (circuit, stats, _symbols) = crate::compile::compiler::compile(f, |iologic| {
+    let (circuit, stats, _symbols) = compile(f, |iologic| {
         let boolean = Boolean::new(&iologic);
         let boolean_io = BooleanIO::new(&iologic);
         let arith = Arithmetic::new(&iologic);
@@ -43,7 +43,7 @@ fn compile_and_dump_add<F: CompileField + SerializableField>(f: &F, name: &str) 
 }
 
 fn compile_and_dump_sub<F: CompileField + SerializableField>(f: &F, name: &str) {
-    let (circuit, stats, _symbols) = crate::compile::compiler::compile(f, |iologic| {
+    let (circuit, stats, _symbols) = compile(f, |iologic| {
         let boolean = Boolean::new(&iologic);
         let boolean_io = BooleanIO::new(&iologic);
         let arith = Arithmetic::new(&iologic);
@@ -67,7 +67,7 @@ fn compile_and_dump_sub<F: CompileField + SerializableField>(f: &F, name: &str) 
 }
 
 fn compile_and_dump_lt<F: CompileField + SerializableField>(f: &F, name: &str) {
-    let (circuit, stats, _symbols) = crate::compile::compiler::compile(f, |iologic| {
+    let (circuit, stats, _symbols) = compile(f, |iologic| {
         let boolean = Boolean::new(&iologic);
         let boolean_io = BooleanIO::new(&iologic);
         let arith = Arithmetic::new(&iologic);
@@ -89,7 +89,7 @@ fn compile_and_dump_lt<F: CompileField + SerializableField>(f: &F, name: &str) {
 }
 
 fn compile_and_dump_leq<F: CompileField + SerializableField>(f: &F, name: &str) {
-    let (circuit, stats, _symbols) = crate::compile::compiler::compile(f, |iologic| {
+    let (circuit, stats, _symbols) = compile(f, |iologic| {
         let boolean = Boolean::new(&iologic);
         let boolean_io = BooleanIO::new(&iologic);
         let arith = Arithmetic::new(&iologic);
@@ -111,7 +111,7 @@ fn compile_and_dump_leq<F: CompileField + SerializableField>(f: &F, name: &str) 
 }
 
 fn compile_and_dump_eq<F: CompileField + SerializableField>(f: &F, name: &str) {
-    let (circuit, stats, _symbols) = crate::compile::compiler::compile(f, |iologic| {
+    let (circuit, stats, _symbols) = compile(f, |iologic| {
         let boolean = Boolean::new(&iologic);
         let boolean_io = BooleanIO::new(&iologic);
         let arith = Arithmetic::new(&iologic);
@@ -163,7 +163,9 @@ fn of_u64<L: Logic>(boolean: &Boolean<L>, n: usize, z: u64) -> Vec<Bitw<L>> {
 }
 
 fn assert_eq_bits<L: Logic>(boolean: &Boolean<L>, want: &[Bitw<L>], got: &[Bitw<L>])
-where Eltw<L>: PartialEq + std::fmt::Debug {
+where
+    Eltw<L>: PartialEq + std::fmt::Debug,
+{
     assert_eq!(want.len(), got.len());
     for i in 0..want.len() {
         let w = boolean.as_eltw(&want[i]);
@@ -173,7 +175,9 @@ where Eltw<L>: PartialEq + std::fmt::Debug {
 }
 
 fn test_add_eval_for_logic<L: Logic>(logic: &L)
-where Eltw<L>: PartialEq + std::fmt::Debug {
+where
+    Eltw<L>: PartialEq + std::fmt::Debug,
+{
     let boolean = Boolean::new(logic);
     let arith = Arithmetic::new(logic);
 
@@ -189,7 +193,9 @@ where Eltw<L>: PartialEq + std::fmt::Debug {
 }
 
 fn test_sub_eval_for_logic<L: Logic>(logic: &L)
-where Eltw<L>: PartialEq + std::fmt::Debug {
+where
+    Eltw<L>: PartialEq + std::fmt::Debug,
+{
     let boolean = Boolean::new(logic);
     let arith = Arithmetic::new(logic);
 
@@ -205,7 +211,9 @@ where Eltw<L>: PartialEq + std::fmt::Debug {
 }
 
 fn test_lt_eval_for_logic<L: Logic>(logic: &L)
-where Eltw<L>: PartialEq + std::fmt::Debug {
+where
+    Eltw<L>: PartialEq + std::fmt::Debug,
+{
     let boolean = Boolean::new(logic);
     let arith = Arithmetic::new(logic);
 
@@ -222,7 +230,9 @@ where Eltw<L>: PartialEq + std::fmt::Debug {
 }
 
 fn test_leq_eval_for_logic<L: Logic>(logic: &L)
-where Eltw<L>: PartialEq + std::fmt::Debug {
+where
+    Eltw<L>: PartialEq + std::fmt::Debug,
+{
     let boolean = Boolean::new(logic);
     let arith = Arithmetic::new(logic);
 
@@ -243,7 +253,9 @@ where Eltw<L>: PartialEq + std::fmt::Debug {
 }
 
 fn test_eq_eval_for_logic<L: Logic>(logic: &L)
-where Eltw<L>: PartialEq + std::fmt::Debug {
+where
+    Eltw<L>: PartialEq + std::fmt::Debug,
+{
     let boolean = Boolean::new(logic);
     let arith = Arithmetic::new(logic);
 
@@ -265,7 +277,8 @@ fn test_exactly_one_for_logic<F: CompileField>(logic: &EvalLogic<'_, F>) {
     for len in 1..=6 {
         let n_combinations = 1 << len;
         for mask in 0..n_combinations {
-            let inputs: Vec<_> = crate::util::array::init(len, |i| boolean.konst(((mask >> i) & 1) == 1));
+            let inputs: Vec<_> =
+                crate::util::array::init(len, |i| boolean.konst(((mask >> i) & 1) == 1));
             let popcount = (0..len).filter(|i| ((mask >> i) & 1) == 1).count();
 
             let assertion = arithmetic.assert_exactly_one(&inputs);
@@ -280,7 +293,9 @@ fn test_exactly_one_for_logic<F: CompileField>(logic: &EvalLogic<'_, F>) {
 }
 
 fn test_empty_vectors_relations_for_logic<L: Logic>(logic: &L)
-where Eltw<L>: PartialEq + std::fmt::Debug {
+where
+    Eltw<L>: PartialEq + std::fmt::Debug,
+{
     let boolean = Boolean::new(logic);
     let arith = Arithmetic::new(logic);
 

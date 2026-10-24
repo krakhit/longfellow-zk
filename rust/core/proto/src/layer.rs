@@ -355,6 +355,8 @@ pub fn canonical_term<F: SerializableField>(t: Term<F>) -> Term<F> {
     }
 }
 
+/// Historical Morton ordering required by the legacy compiler and two-hand runtime.
+/// The V2 compiler applies its own traversal policy without changing this comparison.
 pub fn compare_term<F: SerializableField>(f: &F, t: &Term<F>, s: &Term<F>) -> std::cmp::Ordering {
     crate::util::morton::cmp(t.h0 as usize, t.h1 as usize, s.h0 as usize, s.h1 as usize)
         .then_with(|| t.g.cmp(&s.g))

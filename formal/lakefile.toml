@@ -110,3 +110,18 @@ srcDir = "."
 roots = ["polygero"]
 globs = ["polygero", "polygero.+"]
 leanOptions = { autoImplicit = false, relaxedAutoImplicit = false, warningAsError = true }
+
+# Optional parameter certificates. These are checked independently of the Rust
+# prover and verifier and are not included in the default formal targets.
+[[lean_lib]]
+name = "RuntimeHahn"
+srcDir = "parameters/hahn"
+globs = ["RuntimeHahn.+"]
+leanOptions = { autoImplicit = false, relaxedAutoImplicit = false, warningAsError = true }
+
+[[lean_lib]]
+name = "RustPolygeroProfiles"
+srcDir = "parameters/polygero"
+roots = ["PolygeroRustHahn", "TunedProfiles"]
+globs = ["PolygeroRustHahn", "TunedProfiles"]
+leanOptions = { autoImplicit = false, relaxedAutoImplicit = false, warningAsError = true }

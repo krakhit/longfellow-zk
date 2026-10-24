@@ -19,7 +19,7 @@ use crate::compile::algebra::p256::P256Field;
 #[test]
 fn test_compile_bitvec() {
     let f = P256Field::new();
-    let (circuit, stats, _symbols) = crate::compile::compiler::compile(&f, |iologic| {
+    let (circuit, stats, _symbols) = super::compile(&f, |iologic| {
         let bv = BitvecLogic::new(&iologic);
         let bitvec_io = BitvecIO::new(&bv);
 
@@ -39,7 +39,7 @@ fn test_compile_bitvec_leq() {
     use crate::compile::eval::FieldID;
     let fc = P256Field::new();
     let fr = crate::runtime::algebra::p256::P256Field::new();
-    let (circuit, _stats, symbols) = crate::compile::compiler::compile(&fc, |iologic| {
+    let (circuit, _stats, symbols) = super::compile(&fc, |iologic| {
         let bv = BitvecLogic::new(&iologic);
         let bitvec_io = BitvecIO::new(&bv);
 
@@ -68,7 +68,7 @@ fn test_compile_bitvec_is_zero() {
     use crate::compile::eval::FieldID;
     let fc = P256Field::new();
     let fr = crate::runtime::algebra::p256::P256Field::new();
-    let (circuit, _stats, symbols) = crate::compile::compiler::compile(&fc, |iologic| {
+    let (circuit, _stats, symbols) = super::compile(&fc, |iologic| {
         let bv = BitvecLogic::new(&iologic);
         let bitvec_io = BitvecIO::new(&bv);
 
@@ -109,7 +109,7 @@ fn test_compile_bitvec_lt() {
     use crate::compile::eval::FieldID;
     let fc = P256Field::new();
     let fr = crate::runtime::algebra::p256::P256Field::new();
-    let (circuit, _stats, symbols) = crate::compile::compiler::compile(&fc, |iologic| {
+    let (circuit, _stats, symbols) = super::compile(&fc, |iologic| {
         let bv = BitvecLogic::new(&iologic);
         let bitvec_io = BitvecIO::new(&bv);
 
@@ -399,7 +399,9 @@ fn test_assert_add() {
 }
 
 fn test_is_zero_for_logic<L: Logic>(logic: &L)
-where Eltw<L>: PartialEq + std::fmt::Debug {
+where
+    Eltw<L>: PartialEq + std::fmt::Debug,
+{
     let bv = BitvecLogic::new(logic);
     let boolean = Boolean::new(logic);
 

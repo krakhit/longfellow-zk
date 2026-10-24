@@ -61,7 +61,7 @@ fn test_compile_mac_for_field<
     name: &str,
     field_id: FieldID,
 ) {
-    let (circuit, stats, symbols) = crate::compile::compiler::compile(fc, |iologic| {
+    let (circuit, stats, symbols) = super::compile(fc, |iologic| {
         let mut pos = crate::compile::logic::K_FIRST_WIRE_POSITION;
 
         let mac_circuit = MAC::new(&iologic);
@@ -94,9 +94,15 @@ fn test_compile_mac_for_field<
         (c.corrupt)(&mut g);
 
         let inputs_tampered = make_inputs(&g, fr);
-        let eval_res =
-            crate::compile::eval::eval_circuit_fc(fc, fr, &circuit, &symbols, &inputs_tampered, field_id)
-                .unwrap();
+        let eval_res = crate::compile::eval::eval_circuit_fc(
+            fc,
+            fr,
+            &circuit,
+            &symbols,
+            &inputs_tampered,
+            field_id,
+        )
+        .unwrap();
         assert!(
             eval_res.is_err(),
             "Corruptor '{}' failed to cause circuit evaluation error",

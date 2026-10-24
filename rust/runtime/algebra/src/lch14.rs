@@ -182,14 +182,60 @@ impl<
     // compute the other evaluations up to n=2^l. So we care about both
     // the unknown nonzero coefficients and the unknown n-k evaluations.
     pub fn bidirectional_fft(&self, l: usize, k: usize, b: &mut [F::E]) {
+        self.bidirectional_fft_on_coset(l, 0, k, b);
+    }
+
+    /// Same mixed transform on points `coset XOR 0..2^l`, in the original
+    /// novel coefficient basis. A reversed suffix uses a low-bit coset shift.
+    pub(super) fn bidirectional_fft_on_coset(
+        &self,
+        l: usize,
+        coset: usize,
+        k: usize,
+        b: &mut [F::E],
+    ) {
+        self.check_bidirectional_input(l, coset, k, b.len());
+        self.bidir_recur(l, coset, k, b);
+    }
+
+    /// Mixed transform with evaluations on the final k points of an additive coset.
+    /// Input: b[..k] contains suffix evaluations in increasing point order;
+    /// b[k..2^l] contains known novel coefficients k..2^l.
+    /// Output: b[..k] contains recovered coefficients 0..k; b[k..2^l]
+    /// contains evaluations at the first 2^l-k points, in increasing point order.
+    /// Elements beyond 2^l are unchanged. No coefficient basis conversion is needed.
+    pub(super) fn bidirectional_fft_suffix_on_coset(
+        &self,
+        l: usize,
+        coset: usize,
+        k: usize,
+        b: &mut [F::E],
+    ) {
+        let len = self.check_bidirectional_input(l, coset, k, b.len());
+        // XOR reverses the additive point ordering. Negation is the identity
+        // in characteristic two and would not perform this translation.
+        b[..k].reverse();
+        self.bidir_recur(l, coset ^ (len - 1), k, b);
+        b[k..len].reverse();
+    }
+
+    /// Validate both mixed-transform entry points before mutating their buffer.
+    fn check_bidirectional_input(
+        &self,
+        l: usize,
+        coset: usize,
+        k: usize,
+        buffer_len: usize,
+    ) -> usize {
+        assert!(coset < 1 << self.subfield.dimension());
         assert!(l <= self.subfield.dimension());
         let len = 1 << l;
         assert!(k <= len, "bidirectional FFT requires k <= 2^l");
         assert!(
-            b.len() >= len,
+            buffer_len >= len,
             "bidirectional FFT buffer must contain at least 2^l elements"
         );
-        self.bidir_recur(l, 0, k, b);
+        len
     }
 
     fn bidir_recur(&self, mut i: usize, coset: usize, k: usize, b: &mut [F::E]) {
@@ -211,7 +257,7 @@ impl<
                     self.butterfly_diag_pair(b_uv, b_uv_s, &twu);
                 }
 
-                self.fft(i, coset + s, right);
+                self.fft(i, coset ^ s, right);
             } else {
                 let (left, right) = b_slice.split_at_mut(s);
                 self.ifft(i, coset, left);
@@ -221,7 +267,7 @@ impl<
                     self.butterfly_diag_pair(b_uv, b_uv_s, &twu);
                 }
 
-                self.bidir_recur(i, coset + s, k_sub, right);
+                self.bidir_recur(i, coset ^ s, k_sub, right);
 
                 for (b_uv, b_uv_s) in left[..k_sub].iter_mut().zip(right[..k_sub].iter_mut()) {
                     self.butterfly_bwd_pair(b_uv, b_uv_s, &twu);

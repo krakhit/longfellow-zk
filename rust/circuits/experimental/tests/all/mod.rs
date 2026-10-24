@@ -17,3 +17,16 @@ mod ecmul_eval;
 mod sha3_compile;
 mod sha3_eval;
 mod testvec;
+
+#[cfg(feature = "experimental")]
+mod mldsa_circuit;
+#[cfg(feature = "experimental")]
+mod mldsa_reference;
+#[cfg(feature = "experimental")]
+mod mldsa_sample;
+#[cfg(feature = "experimental")]
+mod mldsa_shake;
+#[cfg(feature = "experimental")]
+mod mldsa_test_vectors;
+#[cfg(feature = "experimental")]
+mod mldsa_verifier;

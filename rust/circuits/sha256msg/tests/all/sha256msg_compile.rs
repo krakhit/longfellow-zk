@@ -40,15 +40,18 @@ fn test_compile_sha256msg_for_field<
     hasher.update(message);
     let _reference_hash = hasher.finalize();
 
-    let (circuit, stats, symbols) = crate::compile::compiler::compile(fc, |iologic| {
+    let (circuit, stats, symbols) = super::compile(fc, |iologic| {
         let mut pos = crate::compile::logic::K_FIRST_WIRE_POSITION;
         let sha256msg = Sha256Msg::<_, MAX_BLOCKS>::new(&iologic);
         let bv = crate::circuits::bitvec::BitvecLogic::new(&iologic);
-        let given_wires =
-            crate::circuits::sha256msg::allocate_given::<CompilerLogic<'_, FC>, MAX_BLOCKS>(&bv, &mut pos);
-        let derived_wires = crate::circuits::sha256msg::allocate_derived::<CompilerLogic<'_, FC>, MAX_BLOCKS>(
-            &bv, &mut pos,
-        );
+        let given_wires = crate::circuits::sha256msg::allocate_given::<
+            CompilerLogic<'_, FC>,
+            MAX_BLOCKS,
+        >(&bv, &mut pos);
+        let derived_wires = crate::circuits::sha256msg::allocate_derived::<
+            CompilerLogic<'_, FC>,
+            MAX_BLOCKS,
+        >(&bv, &mut pos);
 
         (
             sha256msg.assert_message_hash::<MAX_BLOCKS>(&given_wires, &derived_wires),
@@ -57,7 +60,12 @@ fn test_compile_sha256msg_for_field<
         )
     });
 
-    let given = given(message, &crate::circuits::sha256::constants::INITIAL, MAX_BLOCKS).unwrap();
+    let given = given(
+        message,
+        &crate::circuits::sha256::constants::INITIAL,
+        MAX_BLOCKS,
+    )
+    .unwrap();
     let derived = crate::circuits::sha256msg::concrete::derived(&given, MAX_BLOCKS);
 
     crate::compile::compiler::dump_stats(name, &circuit, &stats);
@@ -123,14 +131,18 @@ fn test_compile_sha256msg_tampering() {
     .unwrap();
     let derived_orig = crate::circuits::sha256msg::concrete::derived(&given_orig, const_max_blocks);
 
-    let (circuit, _stats, symbols) = crate::compile::compiler::compile(&fc, |iologic| {
+    let (circuit, _stats, symbols) = super::compile(&fc, |iologic| {
         let mut pos = crate::compile::logic::K_FIRST_WIRE_POSITION;
         let sha256msg = Sha256Msg::<_, 2>::new(&iologic);
         let bv = crate::circuits::bitvec::BitvecLogic::new(&iologic);
-        let given_wires =
-            crate::circuits::sha256msg::allocate_given::<CompilerLogic<'_, P256Field>, 2>(&bv, &mut pos);
-        let derived_wires =
-            crate::circuits::sha256msg::allocate_derived::<CompilerLogic<'_, P256Field>, 2>(&bv, &mut pos);
+        let given_wires = crate::circuits::sha256msg::allocate_given::<
+            CompilerLogic<'_, P256Field>,
+            2,
+        >(&bv, &mut pos);
+        let derived_wires = crate::circuits::sha256msg::allocate_derived::<
+            CompilerLogic<'_, P256Field>,
+            2,
+        >(&bv, &mut pos);
 
         (
             sha256msg.assert_message_hash::<2>(&given_wires, &derived_wires),
@@ -150,9 +162,15 @@ fn test_compile_sha256msg_tampering() {
         g.push_elements(&fr, const_max_blocks, |e| inputs.push(e));
         d.push_elements(&fr, |e| inputs.push(e));
 
-        let eval_res =
-            crate::compile::eval::eval_circuit_fc(&fc, &fr, &circuit, &symbols, &inputs, FieldID::P256)
-                .unwrap();
+        let eval_res = crate::compile::eval::eval_circuit_fc(
+            &fc,
+            &fr,
+            &circuit,
+            &symbols,
+            &inputs,
+            FieldID::P256,
+        )
+        .unwrap();
         assert!(
             eval_res.is_err(),
             "Corruptor '{}' failed to cause circuit evaluation error",

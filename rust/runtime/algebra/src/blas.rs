@@ -17,12 +17,19 @@ use crate::runtime::algebra::field::RuntimeField;
 /// SUM_{i} x[i] * y[i]
 pub fn dot<const W: usize, F: RuntimeField<W>>(x: &[F::E], y: &[F::E], f: &F) -> F::E {
     assert_eq!(x.len(), y.len(), "dot: slice size mismatch");
-    if x.is_empty() {
-        return f.zero();
-    }
+    dot_pairs(x.iter().zip(y), f)
+}
 
+/// Dot product over borrowed pairs, allowing indexed operands without a gather buffer.
+pub(crate) fn dot_pairs<'a, const W: usize, F: RuntimeField<W>>(
+    pairs: impl IntoIterator<Item = (&'a F::E, &'a F::E)>,
+    f: &F,
+) -> F::E
+where
+    F::E: 'a,
+{
     let mut r = f.zero();
-    for (xi, yi) in x.iter().zip(y) {
+    for (xi, yi) in pairs {
         f.fma(&mut r, xi, yi);
     }
     r
@@ -61,8 +68,8 @@ pub fn vaxpy<const W: usize, F: RuntimeField<W>>(y: &mut [F::E], a: &[F::E], x: 
     assert_eq!(y.len(), a.len(), "vaxpy: slice size mismatch");
     assert_eq!(y.len(), x.len(), "vaxpy: slice size mismatch");
 
-    for (yi, (ai, xi)) in y.iter_mut().zip(a.iter().zip(x)) {
-        f.fma(yi, ai, xi);
+    for i in 0..y.len() {
+        f.fma(&mut y[i], &a[i], &x[i]);
     }
 }
 
@@ -71,8 +78,8 @@ pub fn vymax<const W: usize, F: RuntimeField<W>>(y: &mut [F::E], a: &[F::E], x: 
     assert_eq!(y.len(), a.len(), "vymax: slice size mismatch");
     assert_eq!(y.len(), x.len(), "vymax: slice size mismatch");
 
-    for (yi, (ai, xi)) in y.iter_mut().zip(a.iter().zip(x)) {
-        f.fnms(yi, ai, xi);
+    for i in 0..y.len() {
+        f.fnms(&mut y[i], &a[i], &x[i]);
     }
 }
 

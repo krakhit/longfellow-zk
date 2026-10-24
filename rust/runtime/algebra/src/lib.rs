@@ -18,34 +18,28 @@ pub mod field;
 pub mod fp2;
 pub mod fp_generic;
 pub mod gf2_128;
-pub mod interpolator;
 pub mod lch14;
-pub mod lch14_reed_solomon;
 pub mod limb;
-pub mod mem;
-pub mod middle_product;
 pub mod nat;
 pub mod p256;
 pub(in crate::runtime::algebra) mod permutations;
 pub mod poly;
 pub mod q256;
-pub mod reed_solomon;
+pub mod range_interpolation;
 pub mod rfft;
 pub mod secp256r1;
 pub mod subfield;
-pub(in crate::runtime::algebra) mod utility;
 
 pub use field::{
     RuntimeBinaryField, RuntimeField, SupportsFFT, SupportsQuadraticExtension, SupportsSampling,
 };
-pub use interpolator::{Interpolator, InterpolatorFactory};
 pub use limb::{
     limbs_to_u64, limbs_to_words64, u64_to_limbs, words64_to_limbs, Limb, LIMBS_PER_U64, LIMB_BITS,
 };
-pub use mem::*;
 pub use nat::RuntimeNat;
 pub use poly::{InterpolationField, LagrangeBasis, Poly};
 pub use q256::{Q256Element, Q256Field};
+pub use range_interpolation::{EvaluationDomain, InterpolationPlan, RangeInterpolatorFactory};
 pub use secp256r1::Secp256r1 as RuntimeSecp256r1;
 pub use subfield::Subfield;
 
@@ -58,6 +52,9 @@ pub trait ZkField<const W: usize>:
 }
 impl<const W: usize, F> ZkField<W> for F where F: InterpolationField<W> + crate::core::algebra::SerializableField + SupportsSampling<W>
 {}
+
+#[cfg(feature = "experimental")]
+pub mod fp24_ext6;
 
 #[cfg(test)]
 #[path = "../tests/all/mod.rs"]

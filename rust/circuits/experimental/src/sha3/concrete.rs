@@ -87,62 +87,63 @@ pub fn derived(given: &ConcreteGiven) -> ConcreteDerived {
     }
 }
 
-impl ConcreteGiven {
-    pub fn push_wires<const W: usize, FR: crate::runtime::algebra::field::RuntimeField<W>>(
-        &self,
-        fr: &FR,
-        dest: &mut Vec<FR::E>,
-    ) {
-        for x in 0..5 {
-            for y in 0..5 {
-                crate::circuits::bitvec::concrete::push_bitvec_u64(
-                    fr,
-                    self.initial_state[x][y],
-                    64,
-                    dest,
-                );
-            }
-        }
-    }
-
-    pub fn push_elements<const W: usize, FR: crate::runtime::algebra::field::RuntimeField<W>>(
-        &self,
-        fr: &FR,
-        mut push: impl FnMut(FR::E),
-    ) {
-        let mut dest = Vec::new();
-        self.push_wires(fr, &mut dest);
-        for e in dest {
-            push(e);
-        }
-    }
-}
-
-impl ConcreteDerived {
-    pub fn push_wires<const W: usize, FR: crate::runtime::algebra::field::RuntimeField<W>>(
-        &self,
-        fr: &FR,
-        dest: &mut Vec<FR::E>,
-    ) {
-        for state in &self.intermediate_states {
-            for row in state {
-                for &val in row {
-                    crate::circuits::bitvec::concrete::push_bitvec_u64(fr, val, 64, dest);
+cfg_testonly! {
+    impl ConcreteGiven {
+        pub fn push_wires<const W: usize, FR: crate::runtime::algebra::field::RuntimeField<W>>(
+            &self,
+            fr: &FR,
+            dest: &mut Vec<FR::E>,
+        ) {
+            for x in 0..5 {
+                for y in 0..5 {
+                    crate::circuits::bitvec::concrete::push_bitvec_u64(
+                        fr,
+                        self.initial_state[x][y],
+                        64,
+                        dest,
+                    );
                 }
             }
         }
+
+        pub fn push_elements<const W: usize, FR: crate::runtime::algebra::field::RuntimeField<W>>(
+            &self,
+            fr: &FR,
+            mut push: impl FnMut(FR::E),
+        ) {
+            let mut dest = Vec::new();
+            self.push_wires(fr, &mut dest);
+            for e in dest {
+                push(e);
+            }
+        }
     }
 
-    pub fn push_elements<const W: usize, FR: crate::runtime::algebra::field::RuntimeField<W>>(
-        &self,
-        fr: &FR,
-        mut push: impl FnMut(FR::E),
-    ) {
-        let mut dest = Vec::new();
-        self.push_wires(fr, &mut dest);
-        for e in dest {
-            push(e);
+    impl ConcreteDerived {
+        pub fn push_wires<const W: usize, FR: crate::runtime::algebra::field::RuntimeField<W>>(
+            &self,
+            fr: &FR,
+            dest: &mut Vec<FR::E>,
+        ) {
+            for state in &self.intermediate_states {
+                for row in state {
+                    for &val in row {
+                        crate::circuits::bitvec::concrete::push_bitvec_u64(fr, val, 64, dest);
+                    }
+                }
+            }
+        }
+
+        pub fn push_elements<const W: usize, FR: crate::runtime::algebra::field::RuntimeField<W>>(
+            &self,
+            fr: &FR,
+            mut push: impl FnMut(FR::E),
+        ) {
+            let mut dest = Vec::new();
+            self.push_wires(fr, &mut dest);
+            for e in dest {
+                push(e);
+            }
         }
     }
 }
-

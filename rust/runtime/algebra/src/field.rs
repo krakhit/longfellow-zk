@@ -26,6 +26,20 @@ pub trait RuntimeField<const W: usize>: crate::core::algebra::AlgebraicField {
 
     // Arithmetic operations
 
+    /// Raise an element to a nonnegative public exponent by repeated squaring.
+    fn pow(&self, value: &Self::E, mut exponent: usize) -> Self::E {
+        let mut base = value.clone();
+        let mut result = self.one();
+        while exponent != 0 {
+            if exponent & 1 != 0 {
+                self.mul(&mut result, &base);
+            }
+            base = self.mulf(&base, &base);
+            exponent >>= 1;
+        }
+        result
+    }
+
     #[inline]
     fn fma(&self, e1: &mut Self::E, a: &Self::E, b: &Self::E) {
         let mut prod = a.clone();
@@ -65,4 +79,25 @@ pub trait SupportsQuadraticExtension<const W: usize>: RuntimeField<W> {}
 pub trait SupportsFFT<const W: usize>: RuntimeField<W> {
     fn omega(&self) -> Self::E;
     fn omega_order(&self) -> u64;
+}
+
+/// Invert nonzero elements using one inversion. Empty input is valid.
+pub(crate) fn batch_inverse<F: AlgebraicField>(values: &[F::E], field: &F) -> Vec<F::E> {
+    let mut products = Vec::with_capacity(values.len());
+    let mut product = field.one();
+    for value in values {
+        assert!(!field.is_zero(value), "batch inversion of zero");
+        products.push(product.clone());
+        field.mul(&mut product, value);
+    }
+    if values.is_empty() {
+        return products;
+    }
+    let mut inverse = field.invert(&product);
+    for i in (0..values.len()).rev() {
+        let prefix = products[i].clone();
+        products[i] = field.mulf(&inverse, &prefix);
+        field.mul(&mut inverse, &values[i]);
+    }
+    products
 }

@@ -450,7 +450,7 @@ fn validate_mso_layout(
         return Err(MdocParseError::TooBig);
     }
 
-    // Current circuits assume the deterministic encoding
+    // NEXT circuits assume the deterministic encoding
     // tag(24) + bytes(u16 length) + MSO map bytes.
     if cbor_mso_map_bytes.len() < 256
         || cbor_mso_wrapped.get(..3) != Some(&[0xd8, 0x18, 0x59])

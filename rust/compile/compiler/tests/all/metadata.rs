@@ -4,7 +4,7 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//      https://www.apache.org/licenses/LICENSE-2.0
+//     http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -35,7 +35,7 @@ fn test_rejects_subfield_boundary_past_inputs() {
 
 fn compile_with_metadata(npublic_input: usize, subfield_boundary: usize) {
     let f = P256Field::new();
-    crate::compile::compiler::compile(&f, |logic| {
+    super::compile(&f, |logic| {
         let x = logic.input(1);
         let square = logic.mul(&x, &x);
         let assertion = logic.assert0("square", &square);

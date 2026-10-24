@@ -22,11 +22,11 @@ pub mod ir_to_quad;
 pub mod logic_impl;
 pub mod node;
 pub mod quad;
-mod scheduler;
 pub mod segment;
-pub mod top;
+mod stats;
+pub mod v1;
+pub mod v2;
 
-pub use crate::compile::proto::debug;
 pub use debug::{
     AssertionSymbol, CircuitDebugSymbols, CompiledAssertionStatus, CompiledEvalAssertions,
     EvaluatedCompiledAssertion, WireRef,
@@ -34,8 +34,15 @@ pub use debug::{
 pub use ir::AssertionItem;
 pub use logic_impl::{CompilerAssertions, CompilerLogic};
 pub use segment::{segment_circuit, segment_layer};
-pub use top::{compile, dump_stats};
+pub use stats::dump_stats;
+pub use v1::compile as compile_v1;
+pub use v2::compile as compile_v2;
+
+pub use crate::compile::proto::debug;
 
 #[cfg(test)]
-#[path = "../tests/all/mod.rs"]
-mod compiler_tests;
+test_compilers!("../tests/all/mod.rs");
+
+#[cfg(test)]
+#[path = "../tests/backends.rs"]
+mod backend_tests;

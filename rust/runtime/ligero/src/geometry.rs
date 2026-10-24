@@ -12,8 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//! Legacy proof-size estimation and parameter search.
+//!
+//! Estimate field responses, compact witness openings, salts and the Merkle
+//! frontier for an admitted Ligero layout. The search keeps the caller's inverse
+//! rate and query count fixed while scanning encoded row lengths. Published v1
+//! specifications depend on the existing search order and tie handling.
 use crate::runtime::{
-    algebra::{field::RuntimeField, interpolator::InterpolatorFactory},
+    algebra::{field::RuntimeField, RangeInterpolatorFactory},
     ligero::param::{LigeroConfig, LigeroParam},
     proto::{DIGEST_LEN, NONCE_LEN},
 };
@@ -50,7 +56,11 @@ fn merkle_path_length_digests(h: usize, nreq: usize) -> usize {
 }
 
 /// Estimates the size of the Ligero commitment proof for the given parameters.
-pub fn estimate_proof_size<const W: usize, F: RuntimeField<W>, IF: InterpolatorFactory<W, F>>(
+pub fn estimate_proof_size<
+    const W: usize,
+    F: RuntimeField<W>,
+    IF: RangeInterpolatorFactory<W, F>,
+>(
     nw: usize,
     nq: usize,
     config: LigeroConfig,
@@ -73,7 +83,7 @@ pub fn estimate_proof_size<const W: usize, F: RuntimeField<W>, IF: InterpolatorF
 }
 
 /// Optimizes the `block_enc` parameter to minimize the proof size.
-pub fn optimize_geometry<const W: usize, F: RuntimeField<W>, IF: InterpolatorFactory<W, F>>(
+pub fn optimize_geometry<const W: usize, F: RuntimeField<W>, IF: RangeInterpolatorFactory<W, F>>(
     nw: usize,
     nq: usize,
     rateinv: usize,

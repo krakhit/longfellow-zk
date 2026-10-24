@@ -11,10 +11,12 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-use crate::runtime::algebra::{p256::P256Field, Subfield};
 use crate::{
     core::algebra::SerializableField,
-    runtime::random::{RandomEngine, Transcript},
+    runtime::{
+        algebra::{p256::P256Field, Subfield},
+        random::{RandomEngine, Transcript},
+    },
 };
 
 #[test]
@@ -76,14 +78,21 @@ fn test_transcript_gf2_128_subfield_sampling() {
     let init = [1u8, 2, 3, 4];
     let mut ts = Transcript::new(&init);
 
-    for _ in 0..100 {
-        let val = ts.elt_subfield(&sf);
-        assert!(sf.contains(&val), "Sampled value not in subfield");
+    for len in [0, 1, 17, 100] {
+        let mut scalar_ts = ts.clone();
+        let values = ts.elt_subfield_slice(len, &sf);
+        assert_eq!(values.len(), len);
+        for val in values {
+            assert_eq!(val, scalar_ts.elt_subfield(&sf));
+            assert!(sf.contains(&val), "Sampled value not in subfield");
 
-        let bytes = sf.to_bytes(&val);
-        let u = u64::from(u16::from_le_bytes([bytes[0], bytes[1]]));
-        let embedded = sf.embed(u);
-        assert_eq!(val, embedded, "Embed/to_bytes roundtrip failed");
+            let bytes = sf.to_bytes(&val);
+            let u = u64::from(u16::from_le_bytes([bytes[0], bytes[1]]));
+            let embedded = sf.embed(u);
+            assert_eq!(val, embedded, "Embed/to_bytes roundtrip failed");
+        }
+        // Batch sampling consumes exactly the same randomness, including len=0.
+        assert_eq!(ts.bytes(32), scalar_ts.bytes(32));
     }
 }
 

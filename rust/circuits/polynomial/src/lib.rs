@@ -16,5 +16,4 @@ pub mod circuit;
 pub use circuit::Polynomial;
 
 #[cfg(test)]
-#[path = "../tests/polynomial.rs"]
-mod tests_polynomial;
+test_compilers!("../tests/polynomial.rs");

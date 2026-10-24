@@ -22,7 +22,7 @@ use crate::compile::logic::{Logic, LogicIO};
 #[test]
 fn test_compile_polynomial() {
     let f = P256Field::new();
-    let (circuit, stats, _symbols) = crate::compile::compiler::compile(&f, |iologic| {
+    let (circuit, stats, _symbols) = compile(&f, |iologic| {
         let p = Polynomial::new(&iologic);
 
         let mut pos = crate::compile::logic::K_FIRST_WIRE_POSITION;

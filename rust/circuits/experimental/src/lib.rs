@@ -12,9 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-pub mod ecmul;
+cfg_testonly! { pub mod ecmul; }
+
+#[cfg(feature = "experimental")]
+pub mod mldsa;
 pub mod sha3;
 
 #[cfg(test)]
-#[path = "../tests/all/mod.rs"]
-mod tests_all;
+test_compilers!("../tests/all/mod.rs");

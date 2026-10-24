@@ -15,9 +15,9 @@
 //! Standalone mDoc ZK **verifier** demo (built with only the `verifier` + `mdoc` features).
 //!
 //! Verifies a proof produced by `prover_only`. Like the prover, it is pinned to the
-//! **precompiled legacy circuit** [`ZK_SPECS`]`[0]` (ZK-spec version 7, one disclosed
+//! **precompiled Longfellow v1 circuit** [`ZK_SPECS`]`[0]` (ZK-spec version 7, one disclosed
 //! attribute) whose `.lfa2` archive is checked into `applications/mdoc_zk/artifacts/circuits/`;
-//! the `CURRENT_VERSION` (v8) circuits are only synthesised by `compiler` builds and are not
+//! the `NEXT_VERSION` (v8) circuits are only synthesised by `compiler` builds and are not
 //! exercised here.
 //!
 //! ```text
@@ -32,7 +32,7 @@
 
 use std::path::{Path, PathBuf};
 
-use longfellow_zk::mdoc::runtime::{req_attr, run_mdoc_verifier, ZK_SPECS};
+use longfellow_zk::mdoc::v1::{req_attr, run_mdoc_verifier, ZK_SPECS};
 
 /// Environment variable that overrides the default circuit-archive location.
 const CIRCUIT_ENV_VAR: &str = "LONGFELLOW_MDOC_CIRCUIT";
@@ -70,7 +70,7 @@ fn usage() -> String {
         "usage: verifier_only [--circuit <path>] [<proof-in-path>]\n\
          \n\
          Verifies the proof in <proof-in-path> (default: ./{DEFAULT_PROOF_FILE}) against the\n\
-         legacy v7 circuit ZK_SPECS[0] and the embedded test transcript/issuer key.\n\
+         Longfellow v1 / circuit v7 circuit ZK_SPECS[0] and the embedded test transcript/issuer key.\n\
          The circuit archive is taken from --circuit, else ${CIRCUIT_ENV_VAR}, else the\n\
          checked-in artifact under applications/mdoc_zk/artifacts/circuits/."
     )
@@ -140,7 +140,8 @@ fn read_proof(path: &Path) -> Result<Vec<u8>, String> {
 fn run() -> Result<(), String> {
     let opts = parse_args(std::env::args().skip(1))?;
 
-    // Legacy v7 / 1-attribute circuit: the only version with a checked-in artifact.
+    // Longfellow v1 / circuit v7 / 1-attribute circuit: the only version with a checked-in
+    // artifact.
     let spec = &ZK_SPECS[0];
     let circuit_path = resolve_circuit_path(opts.circuit_override, &spec.combined_hash_hex());
     let circuits = std::fs::read(&circuit_path).map_err(|e| {

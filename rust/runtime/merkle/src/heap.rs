@@ -91,6 +91,11 @@ impl MerkleHeap {
     /// It automatically computes all internal parent digests.
     #[must_use]
     pub fn new(leaves: &[Digest]) -> Self {
+        Self::new_with_hash(leaves, hash2)
+    }
+
+    /// Build the same fixed heap with a caller-selected internal-node codec.
+    pub fn new_with_hash(leaves: &[Digest], hash: impl Fn(&Digest, &Digest) -> Digest) -> Self {
         let num_leaves = leaves.len();
         assert!(num_leaves > 0, "Cannot construct an empty Merkle heap");
         let mut layers = vec![Digest::default(); 2 * num_leaves];
@@ -100,7 +105,7 @@ impl MerkleHeap {
 
         // Build parent nodes bottom-up
         for i in (1..num_leaves).rev() {
-            layers[i] = hash2(&layers[2 * i], &layers[2 * i + 1]);
+            layers[i] = hash(&layers[2 * i], &layers[2 * i + 1]);
         }
 
         Self { num_leaves, layers }
@@ -148,6 +153,17 @@ pub fn verify_proof(
     root: &Digest,
     proof: &[Digest],
     leaves: &[(usize, Digest)],
+) -> Result<(), MerkleError> {
+    verify_proof_with_hash(num_leaves, root, proof, leaves, hash2)
+}
+
+/// Verify a frontier using the same internal-node codec used at construction.
+pub fn verify_proof_with_hash(
+    num_leaves: usize,
+    root: &Digest,
+    proof: &[Digest],
+    leaves: &[(usize, Digest)],
+    hash: impl Fn(&Digest, &Digest) -> Digest,
 ) -> Result<(), MerkleError> {
     let leaf_indices: Vec<usize> = leaves.iter().map(|(idx, _)| *idx).collect();
     // `None` means this node has not been supplied or derived.  Do not use a
@@ -202,7 +218,7 @@ pub fn verify_proof(
     // 3. Reconstruct internal nodes bottom-up
     for i in (1..num_leaves).rev() {
         if let (Some(left), Some(right)) = (computed_nodes[2 * i], computed_nodes[2 * i + 1]) {
-            computed_nodes[i] = Some(hash2(&left, &right));
+            computed_nodes[i] = Some(hash(&left, &right));
         }
     }
 

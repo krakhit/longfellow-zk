@@ -2,7 +2,7 @@
 name = "longfellow-zk"
 version = "0.1.0"
 edition = "2021"
-description = "Longfellow Zero-Knowledge (Ligero + Sumcheck) proof system and ISO 18013-5 mdoc circuits"
+description = "Longfellow v1/v2 Zero-Knowledge proof system and ISO 18013-5 mdoc circuits"
 license = "Apache-2.0"
 repository = "https://github.com/google/longfellow-zk"
 exclude = [
@@ -20,10 +20,16 @@ verifier = []
 prover = []
 compiler = ["dep:bumpalo", "dep:num-bigint", "dep:num-traits", "dep:rustc-hash"]
 mdoc = ["dep:zstd"]
-testonly = ["verifier", "prover", "compiler", "dep:bumpalo", "dep:num-bigint", "dep:num-traits", "dep:rustc-hash"]
+testonly = ["verifier", "prover", "compiler"]
 force-32bit-limbs = []
 limb32 = ["force-32bit-limbs"]
 force-generic-arch = []
+# Benchmark-only allocation tracking; keep it off for timing measurements.
+bench-memory = []
+# Opt-in arithmetic and circuits under development; never enabled by default.
+experimental = []
+# Offline audits and specification generation; never a proof-role dependency.
+tooling = ["compiler", "experimental", "dep:serde_json"]
 
 [dependencies]
 aes = "0.8.4"
@@ -34,6 +40,8 @@ num-traits = { version = "0.2", optional = true }
 rustc-hash = { version = "2.1.0", optional = true }
 sha2 = { version = "0.10.8", features = ["asm"] }
 zstd = { version = "0.13", optional = true }
+
+serde_json = { version = "1.0", features = ["arbitrary_precision"], optional = true }
 
 [dev-dependencies]
 criterion = "0.5"
@@ -53,8 +61,8 @@ path = "applications/mdoc_zk/verifier_only/src/main.rs"
 required-features = ["verifier", "mdoc"]
 
 [[bin]]
-name = "convert_circuits"
-path = "applications/mdoc_zk/runtime/src/bin/convert_circuits.rs"
+name = "convert_circuits_v1"
+path = "applications/mdoc_zk/runtime/src/bin/convert_circuits_v1.rs"
 required-features = ["compiler", "mdoc"]
 
 [[bench]]
@@ -83,26 +91,50 @@ path = "runtime/algebra/benches/lch14_benchmark.rs"
 harness = false
 
 [[bench]]
-name = "reed_solomon_benchmark"
-path = "runtime/algebra/benches/reed_solomon_benchmark.rs"
+name = "sumcheck_bench_v1"
+path = "runtime/sumcheck-v1/benches/sumcheck_bench_v1.rs"
 harness = false
 
 [[bench]]
-name = "sumcheck_bench"
-path = "runtime/sumcheck/benches/sumcheck_bench.rs"
+name = "sumcheck_bench_v2"
+path = "runtime/sumcheck-v2/benches/sumcheck_bench_v2.rs"
 harness = false
+required-features = ["prover"]
 
 [[bench]]
-name = "mdoc_zk_bench_v7"
-path = "applications/mdoc_zk/runtime/benches/mdoc_zk_bench_v7.rs"
+name = "mdoc_zk_bench_v1"
+path = "applications/mdoc_zk/runtime/benches/mdoc_zk_bench_v1.rs"
 harness = false
 required-features = ["prover", "verifier", "compiler", "mdoc", "testonly"]
 
 [[bench]]
-name = "mdoc_zk_bench_current"
-path = "applications/mdoc_zk/runtime/benches/mdoc_zk_bench_current.rs"
+name = "mdoc_zk_bench_next"
+path = "applications/mdoc_zk/runtime/benches/mdoc_zk_bench_next.rs"
 harness = false
 required-features = ["prover", "verifier", "compiler", "mdoc", "testonly"]
+
+[[bench]]
+name = "fp24_benchmark"
+path = "runtime/algebra/benches/fp24_benchmark.rs"
+harness = false
+required-features = ["experimental"]
+
+[[bench]]
+name = "mldsa_bench_v2"
+path = "circuits/experimental/benches/mldsa_bench_v2.rs"
+harness = false
+required-features = ["experimental", "testonly"]
+
+[[bench]]
+name = "polygero_bench"
+path = "runtime/polygero/benches/polygero_bench.rs"
+harness = false
+required-features = ["testonly"]
+
+[[bench]]
+name = "range_interpolation_benchmark"
+path = "runtime/algebra/benches/range_interpolation_benchmark.rs"
+harness = false
 
 [lints.clippy]
 shadow_same = "warn"
@@ -119,3 +151,8 @@ panic = "abort"
 [profile.dev]
 opt-level = 2
 lto = false
+
+[[bin]]
+name = "zk_tool"
+path = "tools/zk_tool/main.rs"
+required-features = ["tooling"]

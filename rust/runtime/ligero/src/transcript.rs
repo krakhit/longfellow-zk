@@ -12,6 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//! Legacy Ligero transcript operations shared by prover and verifier.
+//!
+//! Bind the commitment root, then the statement digest. Sample low-degree weights,
+//! linear-equation weights, three copy weights per product, and quadratic weights,
+//! in that order. After all response slices have been written, choose oracle
+//! columns in the sampler's returned order. No final opening message is absorbed.
 use crate::{
     core::algebra::ElementOf,
     runtime::{
@@ -22,6 +28,7 @@ use crate::{
     },
 };
 
+/// Challenge counts and encodings defined by the v1 protocol layout.
 pub trait TranscriptLigero {
     fn write_commitment(&mut self, commitment: &LigeroCommitment);
     fn write_ligero_statement(&mut self, hash_of_ligero_statement: &Digest);

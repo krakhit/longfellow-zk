@@ -69,14 +69,14 @@ fn test_circuit_archive_lfa1_roundtrip() {
     let f256 = P256Field::new();
     let fgf2 = Gf2_128Field::new();
 
-    let (c_sig, _, _) = crate::compile::compiler::compile(&f256, |iologic256| {
+    let (c_sig, _, _) = crate::compile::compiler::compile_v1(&f256, |iologic256| {
         let boolean256 = Boolean::new(&iologic256);
         let a = iologic256.input(1);
         let ab = boolean256.of_eltw(a);
         (boolean256.assert_true("assert_a", &ab), 1, 0)
     });
 
-    let (c_hash, _, _) = crate::compile::compiler::compile(&fgf2, |iologic_gf2| {
+    let (c_hash, _, _) = crate::compile::compiler::compile_v1(&fgf2, |iologic_gf2| {
         let boolean_gf2 = Boolean::new(&iologic_gf2);
         let b = iologic_gf2.input(1);
         let bb = boolean_gf2.of_eltw(b);
@@ -161,7 +161,7 @@ fn test_circuit_archive_legacy_concatenated_stream() {
     let f256 = P256Field::new();
     let fgf2 = Gf2_128Field::new();
 
-    let (c_sig, _, _) = crate::compile::compiler::compile(&f256, |iologic256| {
+    let (c_sig, _, _) = crate::compile::compiler::compile_v1(&f256, |iologic256| {
         let boolean256 = Boolean::new(&iologic256);
         let a = iologic256.input(1);
         let ab = boolean256.of_eltw(a);
@@ -169,7 +169,7 @@ fn test_circuit_archive_legacy_concatenated_stream() {
         (assertion256, 1, 0)
     });
 
-    let (c_hash, _, _) = crate::compile::compiler::compile(&fgf2, |iologic_gf2| {
+    let (c_hash, _, _) = crate::compile::compiler::compile_v1(&fgf2, |iologic_gf2| {
         let boolean_gf2 = Boolean::new(&iologic_gf2);
         let b = iologic_gf2.input(1);
         let bb = boolean_gf2.of_eltw(b);

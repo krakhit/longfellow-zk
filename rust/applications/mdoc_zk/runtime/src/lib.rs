@@ -12,51 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-pub mod attribute;
-pub(in crate::mdoc::runtime) mod concrete;
-pub mod error;
-pub mod proto;
-pub(in crate::mdoc::runtime) mod utils;
+//! System selection only; proof execution and encoding live under v1 or v2.
+
+pub mod v1;
+pub mod v2;
 pub mod zk_spec;
-
-pub use attribute::RequestedAttribute;
-pub use concrete::{push_input_hash, push_input_sig};
-pub use error::{MdocProverErrorCode, MdocVerifierErrorCode};
-pub use proto::*;
-pub use utils::{circuit_supports, parse_hex_nat, parse_pk_coordinate, req_attr, same_namespace};
-pub use zk_spec::*;
-
-pub use crate::mdoc::{
-    circuits,
-    proto::{config, *},
-};
-
-cfg_compiler! {
-    pub mod provider;
-
-    pub use {
-        self::provider::*,
-        crate::mdoc::{compile as generate, compile::*},
-    };
-}
-
-cfg_prover! {
-    pub(in crate::mdoc::runtime) mod mac;
-    pub mod prover;
-
-    pub use self::{
-        concrete::{push_witness_hash, push_witness_sig},
-        mac::{generate_mac_ap, push_macs},
-        prover::*,
-    };
-}
-
-cfg_verifier! {
-    pub mod verifier;
-
-    pub use verifier::*;
-}
+pub use zk_spec::{find_zk_spec, find_zk_spec_by_hex, ZkSpecRef, LONGFELLOW_V1, LONGFELLOW_V2};
 
 #[cfg(test)]
 #[path = "../tests/all/mod.rs"]
 mod tests_all;
+
+#[cfg(test)]
+#[path = "../tests/specs.rs"]
+mod tests_specs;

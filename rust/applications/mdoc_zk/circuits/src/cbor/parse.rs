@@ -39,6 +39,9 @@ pub enum CborValue {
     Float64(u64),
 }
 
+// Bound recursive descent and recursive destruction of the parsed value tree.
+const MAX_DEPTH: usize = 64;
+
 pub struct CborParser<'a> {
     data: &'a [u8],
     offset: usize,
@@ -72,7 +75,10 @@ impl<'a> CborParser<'a> {
         Ok(res)
     }
 
-    fn parse_val(&mut self) -> Result<CborElement, String> {
+    fn parse_val(&mut self, depth: usize) -> Result<CborElement, String> {
+        if depth > MAX_DEPTH {
+            return Err("CBOR nesting limit exceeded".into());
+        }
         let start = self.offset;
         let b = self.read_byte()?;
         let major = b >> 5;
@@ -117,21 +123,21 @@ impl<'a> CborParser<'a> {
             4 => {
                 let mut arr = Vec::new();
                 for _ in 0..val {
-                    arr.push(self.parse_val()?);
+                    arr.push(self.parse_val(depth + 1)?);
                 }
                 CborValue::Array(arr)
             }
             5 => {
                 let mut map = Vec::new();
                 for _ in 0..val {
-                    let k = self.parse_val()?;
-                    let v = self.parse_val()?;
+                    let k = self.parse_val(depth + 1)?;
+                    let v = self.parse_val(depth + 1)?;
                     map.push((k, v));
                 }
                 CborValue::Map(map)
             }
             6 => {
-                let inner = self.parse_val()?;
+                let inner = self.parse_val(depth + 1)?;
                 CborValue::Tag(val, Box::new(inner))
             }
             7 => match info {
@@ -158,7 +164,7 @@ impl<'a> CborParser<'a> {
     }
 
     pub fn parse_exact(&mut self) -> Result<CborElement, String> {
-        let element = self.parse_val()?;
+        let element = self.parse_val(0)?;
         if self.offset != self.data.len() {
             return Err(format!(
                 "Trailing data after CBOR item: {} bytes",
@@ -170,73 +176,5 @@ impl<'a> CborParser<'a> {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::{CborParser, CborValue};
-
-    fn parse_integer(data: &[u8]) -> i128 {
-        let mut parser = CborParser::new(data);
-        let element = parser.parse_exact().expect("test CBOR must be valid");
-        let CborValue::Integer(value) = element.value else {
-            panic!("test CBOR must be an integer");
-        };
-        value
-    }
-
-    #[test]
-    fn parses_positive_and_negative_integers_semantically() {
-        assert_eq!(parse_integer(&[0x00]), 0);
-        assert_eq!(
-            parse_integer(&[0x1b, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff]),
-            u64::MAX.into()
-        );
-        assert_eq!(parse_integer(&[0x20]), -1);
-        assert_eq!(parse_integer(&[0x21]), -2);
-        assert_eq!(
-            parse_integer(&[0x3b, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff]),
-            -18_446_744_073_709_551_616
-        );
-    }
-
-    #[test]
-    fn parses_extended_simple_values() {
-        let mut parser = CborParser::new(&[0xf8, 0x20]);
-        let element = parser.parse_exact().expect("test CBOR must be valid");
-        assert!(matches!(element.value, CborValue::Simple(32)));
-    }
-
-    #[test]
-    fn preserves_floating_point_bits() {
-        let mut half_parser = CborParser::new(&[0xf9, 0x3c, 0x00]);
-        let half = half_parser
-            .parse_exact()
-            .expect("half-float CBOR must be valid");
-        assert!(matches!(half.value, CborValue::Float16(0x3c00)));
-
-        let mut single_parser = CborParser::new(&[0xfa, 0x3f, 0x80, 0x00, 0x00]);
-        let single = single_parser
-            .parse_exact()
-            .expect("single-float CBOR must be valid");
-        assert!(matches!(single.value, CborValue::Float32(0x3f80_0000)));
-
-        let mut double_parser =
-            CborParser::new(&[0xfb, 0x3f, 0xf0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
-        let double = double_parser
-            .parse_exact()
-            .expect("double-float CBOR must be valid");
-        assert!(matches!(
-            double.value,
-            CborValue::Float64(0x3ff0_0000_0000_0000)
-        ));
-    }
-
-    #[test]
-    fn rejects_trailing_data_without_parsing_it() {
-        let mut parser = CborParser::new(&[0x01, 0xff]);
-        assert_eq!(
-            parser
-                .parse_exact()
-                .expect_err("trailing data must be rejected"),
-            "Trailing data after CBOR item: 1 bytes"
-        );
-    }
-}
+#[path = "../../tests/cbor_parse.rs"]
+mod tests;

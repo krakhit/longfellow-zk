@@ -22,5 +22,4 @@ cfg_compiler! {
 }
 
 #[cfg(test)]
-#[path = "../tests/analog_decoder.rs"]
-mod tests_analog_decoder;
+test_compilers!("../tests/analog_decoder.rs");

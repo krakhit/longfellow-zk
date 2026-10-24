@@ -19,7 +19,7 @@ use crate::compile::logic::{Logic, LogicIO};
 #[test]
 fn test_circuit_compression_and_recompression() {
     let f = P256Field::new();
-    let (original_circuit, _, _) = crate::compile::compiler::compile(&f, |logic| {
+    let (original_circuit, _, _) = super::compile(&f, |logic| {
         // Build a circuit with repetitive patterns so DP discovers macros and creates multiple
         // segments
         let mut x = logic.input(1);

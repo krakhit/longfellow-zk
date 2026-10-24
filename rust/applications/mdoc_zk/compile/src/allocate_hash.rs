@@ -12,25 +12,30 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::circuits::bit_plucker::BitPlucker;
-use crate::compile::compiler::CompilerLogic;
-use crate::mdoc::circuits::{
-    config::{K_HASH_V256_BIT_PLUCKER, K_HASH_V8_BIT_PLUCKER, K_SHA_BIT_PLUCKER},
-    hash::{
-        circuit::{
-            AttrDerived, AttrGiven, AttrPreimageBytes, Derived as HashDerived, Given as HashGiven,
-            MsoPreimageBytes,
+use crate::{
+    circuits::bit_plucker::BitPlucker,
+    compile::compiler::CompilerLogic,
+    mdoc::{
+        circuits::{
+            config::{K_HASH_V256_BIT_PLUCKER, K_HASH_V8_BIT_PLUCKER, K_SHA_BIT_PLUCKER},
+            hash::{
+                circuit::{
+                    AttrDerived, AttrGiven, AttrPreimageBytes, Derived as HashDerived,
+                    Given as HashGiven, MsoPreimageBytes,
+                },
+                constants::{
+                    K_HASH_INDEX_BITS, K_MAX_SHA_BLOCKS, K_MSO_PREIMAGE_LEN, K_TIMESTAMP_LEN,
+                },
+            },
+            mso_attribute::{
+                constants::{K_ATTR_INDEX_BITS, K_ATTR_PREIMAGE_LEN},
+                AttrSlice, DisclosedAttribute, FieldLocator,
+            },
+            MdocHashCompileField,
         },
-        constants::{K_HASH_INDEX_BITS, K_MAX_SHA_BLOCKS, K_MSO_PREIMAGE_LEN, K_TIMESTAMP_LEN},
+        compile::allocator::WireAllocator,
     },
-    mso_attribute::{
-        constants::{K_ATTR_INDEX_BITS, K_ATTR_PREIMAGE_LEN},
-        AttrSlice, DisclosedAttribute, FieldLocator,
-    },
-    MdocHashCompileField,
 };
-
-use crate::mdoc::compile::allocator::WireAllocator;
 
 pub fn allocate_disclosed_attribute<'b, FC: MdocHashCompileField, const PLUCKER_WIDTH: usize>(
     allocator: &mut WireAllocator<'_, 'b, FC>,

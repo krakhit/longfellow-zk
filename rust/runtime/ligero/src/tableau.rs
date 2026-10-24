@@ -12,6 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//! Contiguous row-major storage for the legacy prover's polynomial evaluations.
+//!
+//! A row slice supports dense BLAS and interpolation without gathering. Column
+//! hashing and proof openings index those same rows at their oracle positions.
+/// One allocation for all encoded rows, with checked row and element access.
 pub struct Tableau<T> {
     data: Vec<T>,
     width: usize,

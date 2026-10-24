@@ -22,7 +22,7 @@ fn test_compile_for_field<F: CompileField + FieldWrappingSum + SerializableField
     f: &F,
     name: &str,
 ) {
-    let (circuit, stats, _symbols) = crate::compile::compiler::compile(f, |iologic| {
+    let (circuit, stats, _symbols) = compile(f, |iologic| {
         let bv = BitvecLogic::new(&iologic);
         let bitvec_io = BitvecIO::new(&bv);
 

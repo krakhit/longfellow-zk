@@ -15,10 +15,10 @@
 //! Standalone mDoc ZK **prover** demo (built with only the `prover` + `mdoc` features).
 //!
 //! Because this profile has no circuit compiler, the demo proves against a **precompiled
-//! legacy circuit**: [`ZK_SPECS`]`[0]` (ZK-spec version 7, one disclosed attribute), whose
+//! Longfellow v1 circuit**: [`ZK_SPECS`]`[0]` (ZK-spec version 7, one disclosed attribute), whose
 //! `.lfa2` archive is checked into `applications/mdoc_zk/artifacts/circuits/`. It does *not*
-//! exercise the `CURRENT_VERSION` (v8) circuits, which are only synthesised on the fly by
-//! `mdoc::runtime::provider::materialize` in `compiler` builds.
+//! exercise the `NEXT_VERSION` (v8) circuits, which are only synthesised on the fly by
+//! `mdoc::development_provider::compile_next` in `compiler` builds.
 //!
 //! ```text
 //! prover_only [--circuit <path>] [<proof-out-path>]
@@ -32,7 +32,7 @@
 
 use std::path::{Path, PathBuf};
 
-use longfellow_zk::mdoc::runtime::{req_attr, run_mdoc_prover, ZK_SPECS};
+use longfellow_zk::mdoc::v1::{req_attr, run_mdoc_prover, ZK_SPECS};
 
 /// Environment variable that overrides the default circuit-archive location.
 const CIRCUIT_ENV_VAR: &str = "LONGFELLOW_MDOC_CIRCUIT";
@@ -152,7 +152,7 @@ fn usage() -> String {
     format!(
         "usage: prover_only [--circuit <path>] [<proof-out-path>]\n\
          \n\
-         Proves the embedded test mdoc against the legacy v7 circuit ZK_SPECS[0] and writes\n\
+         Proves the embedded test mdoc against the Longfellow v1 / circuit v7 circuit ZK_SPECS[0] and writes\n\
          the proof to <proof-out-path> (default: ./{DEFAULT_PROOF_FILE}).\n\
          The circuit archive is taken from --circuit, else ${CIRCUIT_ENV_VAR}, else the\n\
          checked-in artifact under applications/mdoc_zk/artifacts/circuits/."
@@ -200,7 +200,8 @@ fn resolve_circuit_path(override_path: Option<PathBuf>, hash_hex: &str) -> PathB
 fn run() -> Result<(), String> {
     let opts = parse_args(std::env::args().skip(1))?;
 
-    // Legacy v7 / 1-attribute circuit: the only version with a checked-in artifact.
+    // Longfellow v1 / circuit v7 / 1-attribute circuit: the only version with a checked-in
+    // artifact.
     let spec = &ZK_SPECS[0];
     let circuit_path = resolve_circuit_path(opts.circuit_override, &spec.combined_hash_hex());
     let circuits = std::fs::read(&circuit_path).map_err(|e| {

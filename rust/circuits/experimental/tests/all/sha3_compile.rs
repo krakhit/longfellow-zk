@@ -34,7 +34,7 @@ fn test_compile_keccak_f_1600_for_field<
     field_id: FieldID,
     expected_stats: crate::compile::eval::CircuitGeometry,
 ) {
-    let (circuit, stats, symbols) = crate::compile::compiler::compile(fc, |iologic| {
+    let (circuit, stats, symbols) = super::compile(fc, |iologic| {
         let mut pos = crate::compile::logic::K_FIRST_WIRE_POSITION;
 
         let sha3 = Sha3::new(&iologic);
@@ -83,7 +83,7 @@ fn test_compile_keccak_f_1600_unrolled_for_field<
     use crate::circuits::bitvec::BitvecIO;
     use crate::circuits::experimental::sha3::State;
 
-    let (circuit, stats, symbols) = crate::compile::compiler::compile(fc, |iologic| {
+    let (circuit, stats, symbols) = super::compile(fc, |iologic| {
         let bv = BitvecLogic::new(&iologic);
         let bitvec_io = BitvecIO::new(&bv);
 
@@ -219,7 +219,7 @@ fn test_compile_keccak_f_1600_sliced_for_field<
 
     let slice_rounds = [5, 11, 17, 23];
 
-    let (circuit, stats, symbols) = crate::compile::compiler::compile(fc, |iologic| {
+    let (circuit, stats, symbols) = super::compile(fc, |iologic| {
         let bv = BitvecLogic::new(&iologic);
         let bitvec_io = BitvecIO::new(&bv);
 

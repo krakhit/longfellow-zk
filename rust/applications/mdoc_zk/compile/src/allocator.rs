@@ -12,11 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::circuits::bit_plucker::BitPlucker;
-use crate::circuits::bitvec::{BitvecIO, V128, V256, V32, V8};
-use crate::compile::algebra::field::CompileField;
-use crate::compile::compiler::CompilerLogic;
-use crate::compile::logic::{Eltw, LogicIO};
+use crate::{
+    circuits::{
+        bit_plucker::BitPlucker,
+        bitvec::{BitvecIO, V128, V256, V32, V8},
+    },
+    compile::{
+        algebra::field::CompileField,
+        compiler::CompilerLogic,
+        logic::{Eltw, LogicIO},
+    },
+};
 
 pub struct WireAllocator<'l, 'a, FC: CompileField> {
     pub iologic: &'l CompilerLogic<'a, FC>,

@@ -25,12 +25,10 @@ cfg_compiler! {
     };
 }
 
-
 cfg_testonly! {
     pub mod evaluate;
     pub use evaluate::evaluate_given;
 }
 
 #[cfg(test)]
-#[path = "../tests/all/mod.rs"]
-mod tests_all;
+test_compilers!("../tests/all/mod.rs");

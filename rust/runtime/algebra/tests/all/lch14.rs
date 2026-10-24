@@ -16,9 +16,9 @@ use crate::runtime::algebra::{
     field::{AlgebraicField, RuntimeField},
     gf2_128::{Gf2_128, Gf2_128RuntimeField},
     lch14::*,
-    lch14_reed_solomon::{Lch14InterpolatorFactory, Lch14ReedSolomon},
+    range_interpolation::BinaryInterpolatorFactory,
     subfield::BinarySubfield,
-    Interpolator, InterpolatorFactory,
+    InterpolationPlan, RangeInterpolatorFactory,
 };
 
 fn w_ref(f: &Gf2_128RuntimeField, subfield: &BinarySubfield, i: usize, x: &Gf2_128) -> Gf2_128 {
@@ -257,40 +257,69 @@ fn test_lch14_interpolation() {
 }
 
 #[test]
-fn test_lch14_interpolator_rejects_invalid_dimensions() {
+fn test_binary_range_rejects_invalid_dimensions() {
     let f = Gf2_128RuntimeField::new();
     let subfield = BinarySubfield::new(&crate::core::algebra::proto::GF2_16_BASIS_V1);
-    let factory = Lch14InterpolatorFactory::new(&f, &subfield);
+    let factory = BinaryInterpolatorFactory::new(&f, &subfield);
     let capacity = 1 << subfield.dimension();
-
-    assert!(!factory.can_encode(0, 1));
-    assert!(!factory.can_encode(2, 1));
-    assert!(factory.can_encode(1, 1));
-    assert!(factory.can_encode(capacity, capacity));
-    assert!(!factory.can_encode(capacity, capacity + 1));
-
-    assert!(std::panic::catch_unwind(|| Lch14ReedSolomon::new(0, 1, &f, &subfield)).is_err());
-    assert!(std::panic::catch_unwind(|| Lch14ReedSolomon::new(2, 1, &f, &subfield)).is_err());
-    assert!(std::panic::catch_unwind(|| {
-        Lch14ReedSolomon::new(capacity, capacity + 1, &f, &subfield)
-    })
-    .is_err());
+    for (source, destination) in [(0..0, 0..1), (0..2, 0..capacity + 1)] {
+        assert!(!factory.can_interpolate(source.clone(), destination.clone()));
+        assert!(std::panic::catch_unwind(|| factory.make_range(source, destination)).is_err());
+    }
+    assert!(factory.can_interpolate(0..1, 0..1));
+    assert!(factory.can_interpolate(0..capacity, 0..capacity));
+    assert!(factory.can_interpolate(0..2, 0..1));
 }
 
 #[test]
-fn test_lch14_interpolator_rejects_wrong_buffer_length() {
+fn test_binary_range_rejects_wrong_source_length() {
     let f = Gf2_128RuntimeField::new();
     let subfield = BinarySubfield::new(&crate::core::algebra::proto::GF2_16_BASIS_V1);
-    let interpolator = Lch14ReedSolomon::new(2, 4, &f, &subfield);
+    let plan = BinaryInterpolatorFactory::new(&f, &subfield).make_range(0..2, 2..4);
+    for input in [1, 3] {
+        assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            plan.apply(&vec![f.zero(); input]);
+        }))
+        .is_err());
+    }
+}
 
-    for len in [3, 5] {
-        let mut y = vec![f.zero(); len];
-        assert!(
-            std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-                interpolator.interpolate(&mut y);
-            }))
-            .is_err(),
-            "accepted an interpolation buffer of length {len}"
-        );
+#[test]
+fn test_bidirectional_suffix_fft_buffer_contract() {
+    let f = Gf2_128RuntimeField::new();
+    let subfield = BinarySubfield::new(&crate::core::algebra::proto::GF2_16_BASIS_V1);
+    let fft = Lch14::new(&f, &subfield);
+    for log in 0..=6 {
+        let size = 1 << log;
+        let coefficients: Vec<_> = (0..size)
+            .map(|i| Gf2_128::from((i as u128 + 1) * 0x123456789abcdef123456789u128))
+            .collect();
+        for coset in [0, 1, 7, 128] {
+            let mut evaluations = coefficients.clone();
+            fft.fft(log, coset, &mut evaluations);
+            for count in 0..=size {
+                let mut mixed = evaluations[size - count..].to_vec();
+                mixed.extend_from_slice(&coefficients[count..]);
+                mixed.push(f.one()); // The entry point must preserve excess buffer space.
+                fft.bidirectional_fft_suffix_on_coset(log, coset, count, &mut mixed);
+                assert_eq!(mixed[..count], coefficients[..count]);
+                assert_eq!(mixed[count..size], evaluations[..size - count]);
+                assert_eq!(mixed[size], f.one());
+            }
+        }
+    }
+    for (log, coset, count, len) in [
+        (3, 0, 9, 8),
+        (3, 0, 4, 7),
+        (17, 0, 0, 8),
+        (3, 1 << 16, 4, 8),
+    ] {
+        let mut buffer = vec![f.one(); len];
+        let saved = buffer.clone();
+        assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            fft.bidirectional_fft_suffix_on_coset(log, coset, count, &mut buffer);
+        }))
+        .is_err());
+        assert_eq!(buffer, saved);
     }
 }

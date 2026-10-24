@@ -12,22 +12,41 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::core::algebra::ElementOf;
-use crate::runtime::algebra::{
-    blas, Interpolator, InterpolatorFactory, RuntimeField, Subfield, SupportsSampling,
-};
-use crate::runtime::merkle::{commit, open, MerkleCommitment};
-use crate::runtime::proto::LigeroProof;
-use crate::runtime::random::{RandomEngine, Transcript};
+//! Encode and commit the v1 tableau, then produce its three masked responses.
+//!
+//! Ordinary rows interpolate a prefix of `block` samples. Product responses need
+//! `dblock=2*block-1` samples; committed oracle columns start at dblock. The first
+//! three rows mask the low-degree, dot-product and quadratic checks. Witness
+//! rows follow, then separate groups of x, y and z product-copy rows.
+//!
+//! `prove` combines rows using transcript challenges, writes all response samples,
+//! and only then samples the columns to open. BLAS handles dense combinations;
+//! interpolation plans and work buffers are local to each response or layout
+//! helper. The random sampling and row order follow the legacy wire convention.
 use sha2::digest::Update;
 
-use crate::runtime::ligero::{
-    common::{inner_product_vector, layout_aext_into},
-    param::{LigeroCommitment, LigeroLinearConstraint, LigeroParam, LigeroQuadraticConstraint},
-    tableau::Tableau,
-    transcript::TranscriptLigero,
+use crate::{
+    core::algebra::ElementOf,
+    runtime::{
+        algebra::{
+            blas, InterpolationPlan, RangeInterpolatorFactory, RuntimeField, Subfield,
+            SupportsSampling,
+        },
+        ligero::{
+            common::{inner_product_vector, layout_aext_into},
+            param::{
+                LigeroCommitment, LigeroLinearConstraint, LigeroParam, LigeroQuadraticConstraint,
+            },
+            tableau::Tableau,
+            transcript::TranscriptLigero,
+        },
+        merkle::{commit, open, MerkleCommitment},
+        proto::LigeroProof,
+        random::{RandomEngine, Transcript},
+    },
 };
 
+/// Encoded witness rows and the Merkle state needed to open their columns.
 pub struct LigeroProver<const W: usize, F: RuntimeField<W>> {
     param: LigeroParam,
     mc: MerkleCommitment,
@@ -39,25 +58,13 @@ impl<
         F: RuntimeField<W> + crate::core::algebra::SerializableField + SupportsSampling<W>,
     > LigeroProver<W, F>
 {
-    /// The `subfield_boundary` parameter is kind of a hack.
-    ///
-    /// Most, but not all, witnesses in witness[] are known statically to be in
-    /// the subfield of Field, for example because they are bits or
-    /// bit-plucked values in the subfield. For zero-knowledge, for
-    /// these witnesses, it suffices to choose blinding randomness in the
-    /// subfield, which yields a shorter proof since most column openings
-    /// are fully in the subfield. The problem is now to distinguish
-    /// subfield witnesses from field witnesses.
-    ///
-    /// In the fullness of time we should have a compiler with typing
-    /// information (field vs subfield) of all input wires. For now
-    /// we implement the following hack: witness[i] is in the subfield for
-    /// i < `subfield_boundary`, and in the full field otherwise.
-    /// If you don't know better, set `subfield_boundary` = 0 which
-    /// trivially works for any input.
+    /// Encode the witness and product copies, commit their columns, and bind the root.
+    /// The caller declares witness[0..subfield_boundary] to be in the subfield.
+    /// Only complete witness rows inside that prefix use subfield masks; other
+    /// rows use full-field randomness. Boundary zero admits any witness values.
     #[allow(clippy::too_many_arguments)]
     pub fn commit<
-        IF: InterpolatorFactory<W, F>,
+        IF: RangeInterpolatorFactory<W, F>,
         R: RandomEngine,
         SF: Subfield<E = ElementOf<F>>,
     >(
@@ -113,6 +120,69 @@ impl<
         &self.param
     }
 
+    /// Bind the statement digest, form all responses, then open the sampled columns.
+    #[allow(clippy::too_many_arguments)]
+    pub fn prove<IF: RangeInterpolatorFactory<W, F>>(
+        &self,
+        linear_evals: &[ElementOf<F>],
+        ts: &mut Transcript,
+        linear_constraints: &[LigeroLinearConstraint<W, F>],
+        hash_of_ligero_statement: &crate::runtime::merkle::Digest,
+        quadratic_constraints: &[LigeroQuadraticConstraint],
+        make_interpolator: &IF,
+        f: &F,
+    ) -> LigeroProof<W, F> {
+        // P -> V theorem statement
+        ts.write_ligero_statement(hash_of_ligero_statement);
+
+        // V -> P
+        let y_ldt = self.low_degree_proof(&ts.gen_uldt(&self.param, f), f);
+
+        // V -> P
+        let y_dot = {
+            let nl = linear_evals.len();
+            let alphal = ts.gen_alphal(nl, f);
+            let alphaq = ts.gen_alphaq(&self.param, f);
+            let a = inner_product_vector(
+                &self.param,
+                linear_constraints,
+                &alphal,
+                quadratic_constraints,
+                &alphaq,
+                f,
+            );
+            self.dot_proof(&a, make_interpolator, f)
+        };
+
+        // V -> P
+        let (y_quad_0, y_quad_2) = self.quadratic_proof(&ts.gen_uquad(&self.param, f), f);
+
+        // P -> V
+        ts.write_elt_field_slice(&y_ldt, f);
+        ts.write_elt_field_slice(&y_dot, f);
+        ts.write_elt_field_slice(&y_quad_0, f);
+        ts.write_elt_field_slice(&y_quad_2, f);
+
+        // V -> P
+        let idx = ts.gen_idx(&self.param);
+
+        let req = self.gather_opened_columns(&idx);
+
+        let merkle = open(&self.mc, &idx);
+
+        // P -> V (final message) - Omitted to match C++ behavior
+
+        LigeroProof {
+            y_ldt,
+            y_dot,
+            y_quad_0,
+            y_quad_2,
+            req,
+            merkle,
+        }
+    }
+
+    /// Return the logical samples of mask_ldt + sum_i u_ldt[i]*W_i.
     fn low_degree_proof(&self, u_ldt: &[ElementOf<F>], f: &F) -> Vec<ElementOf<F>> {
         let mut y = self.tableau.row(self.param.ildt)[..self.param.block].to_vec();
         // All witness and quadratic rows with coefficient u_ldt[]
@@ -127,19 +197,22 @@ impl<
         y
     }
 
-    fn dot_proof<IF: InterpolatorFactory<W, F>>(
+    /// Form mask_dot + sum_i A_i*W_i on 0..dblock. Each A_i has zeros in
+    /// mask slots and the batched constraint coefficients in witness slots.
+    fn dot_proof<IF: RangeInterpolatorFactory<W, F>>(
         &self,
         a: &[ElementOf<F>],
         make_interpolator: &IF,
         f: &F,
     ) -> Vec<ElementOf<F>> {
-        let interp_a = make_interpolator.make(self.param.block, self.param.dblock);
+        let interp_a =
+            make_interpolator.make_range(0..self.param.block, self.param.block..self.param.dblock);
         let mut y = self.tableau.row(self.param.idot)[..self.param.dblock].to_vec();
         let mut a_ext = vec![f.zero(); self.param.dblock];
 
         for i in 0..self.param.nwqrow {
             layout_aext_into(&self.param, i, a, &mut a_ext, f);
-            interp_a.interpolate(&mut a_ext);
+            extend_row::<W, F>(&mut a_ext, self.param.block, &interp_a);
 
             // Accumulate y += A \otimes W.
             blas::vaxpy(
@@ -152,6 +225,8 @@ impl<
         y
     }
 
+    /// Form mask_quad + sum_i u_quad[i]*(Z_i-X_i*Y_i). Its witness slots
+    /// vanish; transmit the prefix and suffix around that implicit zero interval.
     fn quadratic_proof(
         &self,
         u_quad: &[ElementOf<F>],
@@ -191,6 +266,8 @@ impl<
         (y0, y2)
     }
 
+    /// Gather each tableau row at the requested oracle columns. The legacy proof
+    /// stores row-major opened values, with query order retained within each row.
     fn gather_opened_columns(&self, idx: &[usize]) -> Vec<ElementOf<F>> {
         let mut req = Vec::with_capacity(self.param.nrow * self.param.nreq);
         for i in 0..self.param.nrow {
@@ -198,67 +275,6 @@ impl<
             req.extend(row_req);
         }
         req
-    }
-
-    /// `hash_of_ligero_statement` is the binding digest of the Ligero statement.
-    #[allow(clippy::too_many_arguments)]
-    pub fn prove<IF: InterpolatorFactory<W, F>>(
-        &self,
-        linear_evals: &[ElementOf<F>],
-        ts: &mut Transcript,
-        linear_constraints: &[LigeroLinearConstraint<W, F>],
-        hash_of_ligero_statement: &crate::runtime::merkle::Digest,
-        quadratic_constraints: &[LigeroQuadraticConstraint],
-        make_interpolator: &IF,
-        f: &F,
-    ) -> LigeroProof<W, F> {
-        // P -> V theorem statement
-        ts.write_ligero_statement(hash_of_ligero_statement);
-
-        // V -> P
-        let y_ldt = self.low_degree_proof(&ts.gen_uldt(&self.param, f), f);
-
-        // V -> P
-        let nl = linear_evals.len();
-        let alphal = ts.gen_alphal(nl, f);
-        let alphaq = ts.gen_alphaq(&self.param, f);
-
-        let a = inner_product_vector(
-            &self.param,
-            linear_constraints,
-            &alphal,
-            quadratic_constraints,
-            &alphaq,
-            f,
-        );
-        let y_dot = self.dot_proof(&a, make_interpolator, f);
-
-        // V -> P
-        let (y_quad_0, y_quad_2) = self.quadratic_proof(&ts.gen_uquad(&self.param, f), f);
-
-        // P -> V
-        ts.write_elt_field_slice(&y_ldt, f);
-        ts.write_elt_field_slice(&y_dot, f);
-        ts.write_elt_field_slice(&y_quad_0, f);
-        ts.write_elt_field_slice(&y_quad_2, f);
-
-        // V -> P
-        let idx = ts.gen_idx(&self.param);
-
-        let req = self.gather_opened_columns(&idx);
-
-        let merkle = open(&self.mc, &idx);
-
-        // P -> V (final message) - Omitted to match C++ behavior
-
-        LigeroProof {
-            y_ldt,
-            y_dot,
-            y_quad_0,
-            y_quad_2,
-            req,
-            merkle,
-        }
     }
 }
 
@@ -275,6 +291,7 @@ fn random_row<const W: usize, F: SupportsSampling<W>, R: RandomEngine>(
     }
 }
 
+/// Fill a declared subfield prefix in the existing tableau allocation.
 fn random_subfield_row<SF: Subfield, R: RandomEngine>(
     i: usize,
     n: usize,
@@ -287,28 +304,39 @@ fn random_subfield_row<SF: Subfield, R: RandomEngine>(
     }
 }
 
+/// Preserve the systematic samples and write only their missing suffix.
+fn extend_row<const W: usize, F: RuntimeField<W>>(
+    row: &mut [F::E],
+    samples: usize,
+    encoder: &impl InterpolationPlan<W, F>,
+) {
+    let (source, destination) = row.split_at_mut(samples);
+    destination.clone_from_slice(&encoder.apply(source));
+}
+
+/// Sample the three dedicated masks in legacy order. The dot mask has zero
+/// witness-slot sum; the quadratic mask is zero at every witness slot.
 fn layout_blinding_rows<
     const W: usize,
     F: SupportsSampling<W>,
-    IF: InterpolatorFactory<W, F>,
+    IF: RangeInterpolatorFactory<W, F>,
     R: RandomEngine,
 >(
     param: &LigeroParam,
     tableau: &mut Tableau<ElementOf<F>>,
+    interp_block: &impl InterpolationPlan<W, F>,
     make_interpolator: &IF,
     rng: &mut R,
     f: &F,
 ) {
-    // Blinds of size [BLOCK]
-    let interp_block = make_interpolator.make(param.block, param.block_enc);
-
     // Low-degree blinding row
     random_row(param.ildt, param.block, tableau, rng, f);
 
-    interp_block.interpolate(tableau.row_mut(param.ildt));
+    extend_row::<W, F>(tableau.row_mut(param.ildt), param.block, interp_block);
 
     // Blinds of size [DBLOCK]
-    let interp_dblock = make_interpolator.make(param.dblock, param.block_enc);
+    let interp_dblock =
+        make_interpolator.make_range(0..param.dblock, param.dblock..param.block_enc);
 
     // Dot-product blinding row constrained to SUM(W) = 0. First
     // randomize the dblock:
@@ -319,7 +347,7 @@ fn layout_blinding_rows<
     let sum = blas::dot1(&tableau.row(idot)[r..r + w], f);
     f.sub(&mut tableau[(idot, r)], &sum);
 
-    interp_dblock.interpolate(tableau.row_mut(idot));
+    extend_row::<W, F>(tableau.row_mut(idot), param.dblock, &interp_dblock);
 
     // Quadratic-test blinding row constrained to W = 0. First randomize
     // the entire dblock:
@@ -328,14 +356,14 @@ fn layout_blinding_rows<
     // Then constrain to W = 0
     blas::clear(&mut tableau.row_mut(param.iquad)[r..r + w], f);
 
-    interp_dblock.interpolate(tableau.row_mut(param.iquad));
+    extend_row::<W, F>(tableau.row_mut(param.iquad), param.dblock, &interp_dblock);
 }
 
 #[allow(clippy::too_many_arguments)]
+/// Place each witness block after its random prefix, then extend that row.
 fn layout_witness_rows<
     const W: usize,
     F: SupportsSampling<W>,
-    IF: InterpolatorFactory<W, F>,
     R: RandomEngine,
     SF: Subfield<E = ElementOf<F>>,
 >(
@@ -343,12 +371,11 @@ fn layout_witness_rows<
     witness: &[ElementOf<F>],
     param: &LigeroParam,
     tableau: &mut Tableau<ElementOf<F>>,
-    make_interpolator: &IF,
+    interp: &impl InterpolationPlan<W, F>,
     rng: &mut R,
     f: &F,
     sf: &SF,
 ) {
-    let interp = make_interpolator.make(param.block, param.block_enc);
     let (r, w, iw, nw) = (param.r, param.w, param.iw, param.nw);
     // Witness row EXTEND([RANDOM[R], WITNESS[W]], BLOCK)
     for i in 0..param.nwrow {
@@ -368,25 +395,26 @@ fn layout_witness_rows<
         if max_col < w {
             blas::clear(&mut row_slice[max_col..w], f);
         }
-        interp.interpolate(tableau.row_mut(row_idx));
+        if subfield_only {
+            let (source, destination) = tableau.row_mut(row_idx).split_at_mut(param.block);
+            destination.clone_from_slice(&interp.apply_subfield(source, sf));
+        } else {
+            extend_row::<W, F>(tableau.row_mut(row_idx), param.block, interp);
+        }
     }
 }
 
-fn layout_quadratic_rows<
-    const W: usize,
-    F: SupportsSampling<W>,
-    IF: InterpolatorFactory<W, F>,
-    R: RandomEngine,
->(
+/// Copy product operands/results into separate x/y/z row groups. Their random
+/// prefixes are sampled independently; equality to the originals is batched later.
+fn layout_quadratic_rows<const W: usize, F: SupportsSampling<W>, R: RandomEngine>(
     witness: &[ElementOf<F>],
     param: &LigeroParam,
     tableau: &mut Tableau<ElementOf<F>>,
     quadratic_constraints: &[LigeroQuadraticConstraint],
-    make_interpolator: &IF,
+    interp: &impl InterpolationPlan<W, F>,
     rng: &mut R,
     f: &F,
 ) {
-    let interp = make_interpolator.make(param.block, param.block_enc);
     let iqx = param.iq;
     let iqy = iqx + param.nqtriples;
     let iqz = param.iq + 2 * param.nqtriples;
@@ -416,17 +444,18 @@ fn layout_quadratic_rows<
             blas::clear(&mut tableau.row_mut(iqy + i)[r + max_j..r + w], f);
             blas::clear(&mut tableau.row_mut(iqz + i)[r + max_j..r + w], f);
         }
-        interp.interpolate(tableau.row_mut(iqx + i));
-        interp.interpolate(tableau.row_mut(iqy + i));
-        interp.interpolate(tableau.row_mut(iqz + i));
+        extend_row::<W, F>(tableau.row_mut(iqx + i), param.block, interp);
+        extend_row::<W, F>(tableau.row_mut(iqy + i), param.block, interp);
+        extend_row::<W, F>(tableau.row_mut(iqz + i), param.block, interp);
     }
 }
 
 #[allow(clippy::too_many_arguments)]
+/// Construct all rows in their committed order using one ordinary-row encoder.
 fn layout<
     const W: usize,
     F: SupportsSampling<W>,
-    IF: InterpolatorFactory<W, F>,
+    IF: RangeInterpolatorFactory<W, F>,
     R: RandomEngine,
     SF: Subfield<E = ElementOf<F>>,
 >(
@@ -440,13 +469,14 @@ fn layout<
     sf: &SF,
 ) -> Tableau<ElementOf<F>> {
     let mut tableau = Tableau::new(param.nrow, param.block_enc, f.zero());
-    layout_blinding_rows(param, &mut tableau, make_interpolator, rng, f);
+    let encoder = make_interpolator.make_range(0..param.block, param.block..param.block_enc);
+    layout_blinding_rows(param, &mut tableau, &encoder, make_interpolator, rng, f);
     layout_witness_rows(
         subfield_boundary,
         witness,
         param,
         &mut tableau,
-        make_interpolator,
+        &encoder,
         rng,
         f,
         sf,
@@ -456,7 +486,7 @@ fn layout<
         param,
         &mut tableau,
         quadratic_constraints,
-        make_interpolator,
+        &encoder,
         rng,
         f,
     );

@@ -4,7 +4,7 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//      https://www.apache.org/licenses/LICENSE-2.0
+//     http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -22,7 +22,7 @@ use crate::runtime::algebra::p256::P256Field as RuntimeP256Field;
 #[test]
 fn test_direct_input_assertion_has_one_layer() {
     let f = P256Field::new();
-    let (circuit, geometry, symbols) = crate::compile::compiler::compile(&f, |logic| {
+    let (circuit, geometry, symbols) = super::compile(&f, |logic| {
         let x = logic.input(1);
         let assertion = logic.assert0("input", &x);
         (assertion, 1, 0)

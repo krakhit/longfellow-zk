@@ -50,7 +50,7 @@ fn test_compile_gf2_128_mul_for_field<
     field_id: FieldID,
     expected_stats: crate::compile::eval::CircuitGeometry,
 ) {
-    let (circuit, stats, symbols) = crate::compile::compiler::compile(fc, |iologic| {
+    let (circuit, stats, symbols) = compile(fc, |iologic| {
         let bv = BitvecLogic::new(&iologic);
 
         let mut pos = crate::compile::logic::K_FIRST_WIRE_POSITION;

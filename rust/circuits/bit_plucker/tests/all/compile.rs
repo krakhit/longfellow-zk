@@ -29,7 +29,7 @@ fn test_compile_bit_plucker_for_field_n<
     fc: &FC,
     name: &str,
 ) {
-    let (circuit, stats, _symbols) = crate::compile::compiler::compile(fc, |iologic| {
+    let (circuit, stats, _symbols) = super::compile(fc, |iologic| {
         let mut pos = crate::compile::logic::K_FIRST_WIRE_POSITION;
         let input_elt = iologic.next(&mut pos);
 

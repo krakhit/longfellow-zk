@@ -12,6 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//! Batch v1 linear and product-copy constraints into logical row coefficients.
+//!
+//! Both roles form the same dense vector a: each sparse linear term contributes
+//! alphal[c]*k to its original witness slot; each product-copy equality contributes
+//! a positive weight at the copy and its negative at the original. The row helper
+//! surrounds those coefficients with zero mask slots before interpolation.
 use crate::runtime::{
     algebra::RuntimeField,
     ligero::param::{LigeroLinearConstraint, LigeroParam, LigeroQuadraticConstraint},
@@ -92,6 +98,8 @@ pub fn inner_product_vector<const W: usize, F: RuntimeField<W>>(
     a
 }
 
+/// Write logical samples for coefficient row i into an existing buffer. Mask
+/// slots and any extension workspace are zero; witness slots receive row i of a.
 pub fn layout_aext_into<const W: usize, F: RuntimeField<W>>(
     param: &LigeroParam,
     i: usize,

@@ -22,7 +22,7 @@ use crate::compile::logic::{Logic, LogicIO};
 #[test]
 fn test_compile_lookup() {
     let f = P256Field::new();
-    let (circuit, stats, _symbols) = crate::compile::compiler::compile(&f, |iologic| {
+    let (circuit, stats, _symbols) = compile(&f, |iologic| {
         let l = Lookup::new(&iologic);
 
         let n = 5;

@@ -28,8 +28,10 @@ pub fn compile_attribute_circuit<const W: usize, FC>(
     crate::compile::eval::CircuitGeometry,
     crate::compile::compiler::debug::CircuitDebugSymbols,
 )
-where FC: crate::mdoc::circuits::MdocHashCompileField {
-    let (circuit, stats, symbols) = crate::compile::compiler::compile(fc, |iologic| {
+where
+    FC: crate::mdoc::circuits::MdocHashCompileField,
+{
+    let (circuit, stats, symbols) = super::compile(fc, |iologic| {
         let mut pos = crate::compile::logic::K_FIRST_WIRE_POSITION;
 
         let verifier = AttributeVerifier::new(&iologic);

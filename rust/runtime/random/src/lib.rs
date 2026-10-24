@@ -45,6 +45,15 @@ pub trait RandomEngine {
         v
     }
 
+    /// Generates a slice of subfield elements with random values.
+    fn elt_subfield_slice<SF: Subfield>(&mut self, len: usize, sf: &SF) -> Vec<SF::E> {
+        let mut v = Vec::with_capacity(len);
+        for _ in 0..len {
+            v.push(self.elt_subfield(sf));
+        }
+        v
+    }
+
     /// Generates a random u128.
     fn u128(&mut self) -> u128 {
         let buf = self.bytes(16);

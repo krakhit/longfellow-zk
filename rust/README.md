@@ -53,72 +53,281 @@ workspace does not contain a separate C++ runtime for its new circuits.
 
 ---
 
-## Feature Profiles (`cfg`)
+## Longfellow v1 and v2
 
-The `longfellow-zk` crate uses Cargo features to support minimal builds tailored to specific deployment environments (such as a lightweight mobile verifier, a client prover, or an offline circuit compiler). By default, `default = ["verifier", "prover", "compiler", "mdoc"]` is enabled.
+**Longfellow v1 is the deployed version.** It uses sumcheck and Ligero.
+The Rust v1 implementation is 100% compatible with the C++ code. It supports
+the same frozen mdoc circuits and preserves their circuit IDs, transcript
+behavior, and proof encoding.
 
-### Cargo Features
+**Longfellow v2 is an evolution of v1, currently under development.**
+It introduces projective sumcheck and replaces Ligero with nonrecursive
+Polygero. V1 remains supported alongside this development.
 
-| Feature | Purpose | Included Modules & Capabilities |
-| :--- | :--- | :--- |
-| `verifier` | Proof verification runtime | Verifies Sumcheck, Ligero, and ZK proofs (`runtime::*::verifier`) and mDoc presentations (`mdoc::runtime::verifier`) against pre-compiled circuits. |
-| `prover` | Witness generation & proving runtime | Generates witnesses and produces Ligero + Sumcheck ZK proofs (`runtime::*::prover`, `mdoc::runtime::prover`), plus the `concrete` witness generators in `circuits::{ec, ecdsa2, mac, sha256, sha256msg}`. |
-| `compiler` | Symbolic circuit synthesis & serialization | Enables `compile::*` (`algebra`, `logic`, `compiler`, `proto`), all symbolic circuit definitions (`circuits::*`), and `mdoc::{compile, artifacts}`. Pulls in compiler-only dependencies (`bumpalo`, `num-bigint`, `num-traits`, `rustc-hash`). |
-| `mdoc` | ISO 18013-5 mDoc application layer | Enables `mdoc::{proto, circuits, runtime}` (and `mdoc::{compile, artifacts}` when combined with `compiler`), plus `zstd` circuit archive decompression. |
-| `testonly` | Shared test/benchmark support | Enables deterministic RNG (`DeterministicRng`), in-memory circuit evaluation (`compile::eval` and `evaluate` submodules), and static mDoc test vectors (`mdoc::testcases`). Automatically enables `verifier`, `prover`, and `compiler`. |
+Polygero is described in
+[Polygero: Proximity Testing From Polynomial Challenges](https://eprint.iacr.org/2026/2481)
+by Matteo Frigo and abhi shelat.
 
-### Internal `cfg_*!` Block Macros
+| | Longfellow v1 | Longfellow v2 |
+|---|---|---|
+| Status | Deployed | Under development |
+| Commitment protocol | Ligero | Nonrecursive Polygero |
+| Combined proof implementation | `runtime::zk_v1` | `runtime::zk_v2` |
+| mdoc application API | `mdoc::v1` | `mdoc::v2` |
+| mdoc circuits | Frozen versions 5–7 | NEXT, currently version 8 |
 
-Inside [`src/lib.rs`](src/lib.rs), five crate-wide declarative macros group conditional items cleanly without repeating `#[cfg(...)]` attributes:
+Circuit versions have their own numbering: circuit v7 uses Longfellow v1,
+while NEXT circuit v8 uses Longfellow v2.
 
-- `cfg_verifier! { ... }` — `#[cfg(any(test, feature = "verifier"))]`
-- `cfg_prover! { ... }` — `#[cfg(any(test, feature = "prover"))]`
-- `cfg_compiler! { ... }` — `#[cfg(any(test, feature = "compiler"))]`
-- `cfg_prover_or_compiler! { ... }` — `#[cfg(any(test, feature = "prover", feature = "compiler"))]`
-- `cfg_testonly! { ... }` — `#[cfg(any(test, feature = "testonly"))]`
+Tests reproduce all twelve saved v1 proofs bit for bit using the same
+inputs and prover randomness. V2 circuits, parameters, and proof encoding
+remain subject to change. There are currently no frozen v2 mdoc circuits.
 
-Feature gates are hoisted as high as possible in the module tree (`src/lib.rs` and `applications/mdoc_zk/circuits/src/lib.rs`) so that submodules that are exclusively compiler-only or test-only do not need redundant inner `cfg_*!` blocks. Within each module file, unconditional declarations (`mod`, `use` / `pub use`, types, and functions) are listed first, followed by conditional declarations grouped into single `cfg_*! { ... }` blocks, and finally `#[cfg(test)]` unit-test modules at the bottom.
+## Performance
 
----
+The [formal v1 analysis](../formal/lfzk/README.md) establishes **115-bit
+Fiat–Shamir T-security** for the modeled v7 composition, under its documented
+assumptions. The **expected total soundness of v2 is about 117 bits**; a proof
+of the full composition is still pending. For the current Polygero parameters,
+the [checked component certificates](../formal/parameters/polygero/PolygeroRustHahn.lean)
+establish **at least 125 bits** in the ideal-binding, uniform-sampler
+Fiat–Shamir model. This component bound excludes the Merkle binding reduction
+and the rest of the Longfellow v2 composition.
 
-## Building and Testing
+The following measurements cover a complete mdoc presentation disclosing
+two attributes, including both the hash and signature proofs.
 
-### Requirements
-A current stable Rust toolchain.
+| Version | Circuit | Proving | Verification | Complete proof | Prover peak heap | Verifier peak heap |
+|---|---|---:|---:|---:|---:|---:|
+| Longfellow v1 | v7 | 468 ms | 201 ms | 360,428 bytes | 104.1 MiB | 45.1 MiB |
+| Longfellow v2 | NEXT v8 | 270 ms | 134 ms | 213,204 bytes | 74.8 MiB | 38.3 MiB |
 
-### Build Profiles
-```bash
-# Default build (verifier + prover + compiler + mdoc)
+These are indicative numbers, not a controlled benchmark. Measurements used
+release builds, compressed LFA2 archives, and an AMD Ryzen 9 9950X. V1 timings
+are Criterion estimates from ten samples; v2 timings are medians of three runs.
+
+Peak heap is the additional live Rust heap allocation during each operation,
+measured in separate runs with `bench-memory` enabled. It excludes allocations
+already present at entry, allocator overhead, and stack memory; it is not
+total process RSS. One MiB is 1,048,576 bytes.
+
+Online timings include circuit decoding, native input preparation,
+commitment, proof encoding or decoding, and cleanup. Inputs are already
+memory-resident. Offline circuit compilation and parameter selection are
+excluded.
+
+The comparison includes changes to both the circuit and the proof protocol.
+
+## Architecture
+
+The ZK implementation coordinates commitment and sumcheck. Sumcheck reduces
+circuit satisfaction to constraints on committed witnesses and masking
+values. A runtime constraint compiler translates those results into the
+equations checked by Ligero or Polygero.
+
+The runtime constraint compiler is separate from the offline circuit
+compiler. Proving and verification do not require the `compiler` feature.
+
+V1 and v2 implementations occupy separate directories and have their own
+application types, specifications, transcripts, and proof codecs. They share
+basic infrastructure such as arithmetic, interpolation, randomness, and
+Merkle trees.
+
+Sumcheck does not depend on Ligero, Polygero, or the combined ZK
+implementation. The top-level dependency checker enforces these boundaries,
+including code behind inactive feature gates.
+
+### Source layout
+
+This is one Cargo crate, `longfellow-zk`. The directories organize modules;
+they are not separate crates.
+
+| Directory | Contents |
+|---|---|
+| `core/` | Basic algebra interfaces, circuit representations, and circuit serialization |
+| `compile/` | Symbolic arithmetic, circuit compilation, and offline parameter selection |
+| `runtime/` | Concrete arithmetic, interpolation, proof protocols, and proof serialization |
+| `circuits/` | Reusable circuit components and native witness generation |
+| `applications/mdoc_zk/` | mdoc circuits, application APIs, specifications, providers, and artifacts |
+| `tools/` | Rust commands for parameter auditing and specification generation |
+| `src/lib.rs` | Module assembly and feature gates |
+| `src/dependency_tests.rs` | Dependency and source-organization checks |
+
+Compile-time and runtime code occupy separate directories. Prover and
+verifier implementations also remain separate within each protocol.
+
+The circuit compiler has v1 and v2 backends. The v1 backend preserves
+historical Morton ordering and circuit IDs.
+
+Formal proofs and parameter certificates live in [`../formal`](../formal),
+including `../formal/parameters`. There are no Lean source files in the
+Rust directory.
+
+## Circuits, specifications, and providers
+
+Applications select `mdoc::v1` or `mdoc::v2`. Each provides
+`run_mdoc_prover`, `run_mdoc_verifier`, and its own `ZkSpecStruct`.
+
+A specification identifies a circuit and fixes its commitment parameters.
+The prover and verifier use the same specification and matching archive.
+
+For v2, the hash and signature components each have independent
+`(K, N, s, T)` parameters:
+
+| Parameter | Meaning |
+|---|---|
+| `K` | Polynomial dimension: K samples represent degree strictly below K |
+| `N` | Number of oracle columns |
+| `s` | Batching-polynomial degree bound |
+| `T` | Number of opened columns and random prefix samples per row |
+
+Offline parameter selection lives in `compile::polygero`. The selected
+parameters are saved in the specification. Provers and verifiers derive
+the remaining geometry deterministically; they do not tune parameters.
+
+### Frozen circuits and NEXT
+
+The runtime providers load registered frozen circuits without invoking
+a compiler. Unknown specifications and missing artifacts are errors.
+
+`mdoc::development_provider` handles development use. It delegates frozen
+requests to the runtime providers and compiles only an explicit NEXT
+request. The result contains the circuit archive and its matching v2
+specification.
+
+NEXT currently denotes circuit version 8. It is under development and is
+not in the frozen registry. Saving a NEXT bundle preserves both its circuit
+and its selected parameters.
+
+Freezing a circuit requires publishing its archive, complete specification,
+and compatibility fixtures. Frozen artifacts and parameters remain
+unchanged. Further circuit development requires advancing NEXT.
+
+Circuit archives are trusted inputs. The v2 loader supports optional
+circuit-ID recomputation through `enforce_circuit_id`.
+
+## Cargo features
+
+Features support builds tailored to the prover, verifier, or offline
+compiler. The default features are `verifier`, `prover`, `compiler`, and
+`mdoc`.
+
+| Feature | Purpose |
+|---|---|
+| `verifier` | Runtime proof verification |
+| `prover` | Witness generation and runtime proving |
+| `compiler` | Symbolic construction, circuit compilation, and parameter selection |
+| `mdoc` | mdoc application and circuit-archive support |
+| `experimental` | Additional arithmetic and circuits under development |
+| `testonly` | Test fixtures and deterministic randomness; also enables both proof roles and the compiler |
+| `tooling` | Offline Rust tools, including compiler and experimental-arithmetic dependencies |
+| `bench-memory` | Benchmark allocation tracking |
+
+V2 itself does not require `experimental`. Neither `experimental` nor
+`tooling` is enabled by default. The `tooling` feature does not enable
+proving or verification.
+
+Feature gates are placed high in the module tree. The `cfg_compiler!`,
+`cfg_prover!`, `cfg_verifier!`, `cfg_prover_or_compiler!`, and
+`cfg_testonly!` macros in `src/lib.rs` group conditional declarations.
+
+## Building and testing
+
+Run commands from this directory. Normal builds use stable Rust.
+Repository formatting uses nightly Rust.
+
+```sh
+# Default build.
 cargo build --release
 
-# Prover-only demo: proves the embedded test mDoc against the precompiled *legacy* v7
-# circuit (ZK_SPECS[0]; v8 circuits are only synthesised in `compiler` builds) and writes
-# ./mdoc_zk_proof.bin. Use `--circuit <path>` or LONGFELLOW_MDOC_CIRCUIT to override the
-# checked-in .lfa2 archive; see `--help`.
-cargo run --release --bin prover_only --no-default-features --features "prover,mdoc"
+# Application verifier without the prover or compiler.
+cargo build --release --no-default-features --features verifier,mdoc
 
-# Verifier-only demo: verifies ./mdoc_zk_proof.bin (same circuit/override rules as above)
-cargo run --release --bin verifier_only --no-default-features --features "verifier,mdoc"
+# Application prover without the verifier or compiler.
+cargo build --release --no-default-features --features prover,mdoc
 
-# Offline circuit compiler build
-cargo build --release --no-default-features --features "compiler,mdoc"
+# Offline application compiler.
+cargo build --release --no-default-features --features compiler,mdoc
+
+# Standard test suites.
+cargo test --release --features testonly
+
+# Include experimental components.
+cargo test --release --features testonly,experimental
+
+# Offline-tool tests without proof-role features.
+cargo test --no-default-features --features tooling --bin zk_tool
 ```
 
-### Run Tests
-To run all unit and integration tests in release mode:
-```bash
-cargo test -r
+Shared compiler and circuit suites exercise both compiler backends.
+V1 tests verify saved proofs and reproduce their exact bytes. V2 tests
+cover successful proofs, rejected statements, and malformed proofs.
+
+Standalone `prover_only` and `verifier_only` programs demonstrate v1 mdoc
+execution with separate feature builds. Run either with `--help` for
+circuit-file options.
+
+## Benchmarks
+
+```sh
+# V1 with circuit v7 and two attributes, using an LFA2 archive.
+MDOC_BENCH_ATTRIBUTES=2 \
+  cargo bench --bench mdoc_zk_bench_v1 --features testonly -- lfa2
+
+# V2 with NEXT v8 and two attributes.
+cargo bench --bench mdoc_zk_bench_next --features testonly
 ```
 
-### Run Benchmarks
-To run the end-to-end mDoc ZK performance benchmarks:
-```bash
-cargo bench --features testonly
+The NEXT benchmark can save a specification/archive bundle using
+`MDOC_BENCH_SAVE_ARCHIVE`, or load one using `MDOC_BENCH_ARCHIVE`.
+Loading a bundle preserves its saved parameters.
+
+Timing and allocation tracking run separately. Add `bench-memory` for
+memory measurements. It reports peak additional Rust heap, excluding
+already-resident input buffers; it does not measure process RSS.
+Keep allocation tracking disabled for timing comparisons.
+
+## Offline tools
+
+Parameter selection belongs to the compiler. The standalone `zk_tool`
+provides:
+
+| Command | Purpose |
+|---|---|
+| `check-profiles` | Check parameter budgets with exact arithmetic, optionally using Lean |
+| `certify-hahn` | Check Hahn packing certificates with Lean |
+| `generate-v2-specs` | Compile NEXT and print candidate specifications for review |
+
+Formal checking reads proof sources from the selected formal project,
+normally `../formal`. Normal Rust builds, parameter selection, proving,
+and verification do not require the Lean toolchain.
+
+Parameter certificates establish mathematical bounds under their stated
+assumptions; they do not certify the complete Rust implementation.
+
+The tools are written in Rust. Python is not required.
+
+## Development conventions
+
+Keep compiler, prover, and verifier responsibilities explicit. Preserve
+v1 compatibility while developing v2.
+
+Tests belong outside production source files. Register new files in the
+top-level dependency checks.
+
+Before every commit, run:
+
+```sh
+cargo +nightly fmt
 ```
 
----
+## Known limitation
+
+NEXT mdoc checks that requested namespace IDs agree with each other,
+but the circuit does not authenticate those namespace IDs. Changing all
+requested namespace IDs can leave a proof valid. This remains unresolved.
 
 ## License
 
-Licensed under the Apache License, Version 2.0. See [LICENSE](../LICENSE) for details.
-
+Licensed under the Apache License, Version 2.0.
+See [LICENSE](../LICENSE) for details.

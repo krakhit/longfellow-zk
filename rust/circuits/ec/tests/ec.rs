@@ -39,7 +39,7 @@ fn test_compile_ec_generic<
     curve_r: &CR,
     fr: &FR,
 ) {
-    let (circuit, stats, symbols) = crate::compile::compiler::compile(fc, |iologic| {
+    let (circuit, stats, symbols) = compile(fc, |iologic| {
         let ec_circuit = EcCircuit::new(&iologic, curve_c);
 
         let mut pos = crate::compile::logic::K_FIRST_WIRE_POSITION;

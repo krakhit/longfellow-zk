@@ -23,7 +23,5 @@ cfg_compiler! {
     pub use circuit::{iter_pt2, iter_pt3, pt2_wires, pt3_wires, EcCircuit};
 }
 
-
 #[cfg(test)]
-#[path = "../tests/ec.rs"]
-mod tests_ec;
+test_compilers!("../tests/ec.rs");

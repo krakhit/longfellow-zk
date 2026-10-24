@@ -17,7 +17,7 @@ use crate::compile::algebra::{field::CompileField, gf2_128::Gf2_128Field};
 use crate::core::algebra::SerializableField;
 
 fn test_compile_mac_gf128_for_field<FC: CompileField + SerializableField>(fc: &FC, name: &str) {
-    let (circuit, stats, _symbols) = crate::compile::compiler::compile(fc, |iologic| {
+    let (circuit, stats, _symbols) = compile(fc, |iologic| {
         let mut pos = crate::compile::logic::K_FIRST_WIRE_POSITION;
 
         let mac_circuit = MAC::new(&iologic);

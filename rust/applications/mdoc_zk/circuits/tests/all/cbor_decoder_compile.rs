@@ -35,7 +35,7 @@ fn test_compile_cbor_decoder_for_field<
     name: &str,
     field_id: FieldID,
 ) {
-    let (circuit, stats, symbols) = crate::compile::compiler::compile(fc, |iologic| {
+    let (circuit, stats, symbols) = super::compile(fc, |iologic| {
         let mut pos = crate::compile::logic::K_FIRST_WIRE_POSITION;
 
         let bv = BitvecLogic::new(&iologic);

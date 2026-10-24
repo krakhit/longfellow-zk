@@ -12,14 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-pub mod allocate;
-pub mod circuit;
-pub mod concrete;
 pub mod constants;
-pub mod evaluate;
 
-pub use allocate::{allocate_derived, allocate_given};
-pub use circuit::{Derived, Given, Sha3, State};
-pub use concrete::{derived, keccak_f_1600_trajectory, ConcreteDerived, ConcreteGiven};
-pub use evaluate::{evaluate_derived, evaluate_given};
+cfg_prover! {
+    pub mod concrete;
+    pub use concrete::{derived, keccak_f_1600_trajectory, ConcreteDerived, ConcreteGiven};
+}
 
+cfg_compiler! {
+    pub mod allocate;
+    pub mod circuit;
+    pub use allocate::{allocate_derived, allocate_given};
+    pub use circuit::{Derived, Given, Sha3, State};
+}
+cfg_testonly! {
+    pub mod evaluate;
+    pub use evaluate::{evaluate_derived, evaluate_given};
+}

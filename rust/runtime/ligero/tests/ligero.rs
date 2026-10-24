@@ -14,8 +14,9 @@ use std::cell::Cell;
 // See the License for the specific language governing permissions and
 // limitations under the License.
 use crate::runtime::algebra::{
-    gf2_128::Gf2_128RuntimeField, lch14_reed_solomon::Lch14InterpolatorFactory,
-    subfield::BinarySubfield, ElementOf, Interpolator, RuntimeField, Subfield, SupportsSampling,
+    gf2_128::Gf2_128RuntimeField, range_interpolation::BinaryInterpolatorFactory,
+    subfield::BinarySubfield, ElementOf, InterpolationPlan, RangeInterpolatorFactory, RuntimeField,
+    Subfield, SupportsSampling,
 };
 use crate::{
     core::algebra::SerializableField,
@@ -49,128 +50,67 @@ impl RandomEngine for SimpleRng {
 struct BadInterpolator<I> {
     real: I,
     should_fail: bool,
-    n: usize,
-    m: usize,
+    fail_on_apply: usize,
+    applications: Cell<usize>,
 }
 
-impl<const W: usize, F: RuntimeField<W>, I: Interpolator<W, F>> Interpolator<W, F>
+impl<const W: usize, F: RuntimeField<W>, I: InterpolationPlan<W, F>> InterpolationPlan<W, F>
     for BadInterpolator<I>
 {
-    fn interpolate(&self, y: &mut [F::E]) {
-        self.real.interpolate(y);
-        if self.should_fail && self.m > self.n {
-            let first = y[self.n].clone();
-            for i in self.n..self.m - 1 {
-                y[i] = y[i + 1].clone();
-            }
-            y[self.m - 1] = first;
+    fn apply(&self, source: &[F::E]) -> Vec<F::E> {
+        let mut destination = self.real.apply(source);
+        self.applications.set(self.applications.get() + 1);
+        if self.should_fail && self.applications.get() == self.fail_on_apply {
+            destination.rotate_left(1);
         }
+        destination
     }
 }
 struct BadInterpolatorFactory<'a, IF> {
     real: &'a IF,
-    calls: std::cell::Cell<usize>,
+    calls: Cell<usize>,
     should_fail_at: usize,
+    fail_on_apply: usize,
 }
 
-impl<
-        const W: usize,
-        F: RuntimeField<W>,
-        IF: crate::runtime::algebra::interpolator::InterpolatorFactory<W, F>,
-    > crate::runtime::algebra::interpolator::InterpolatorFactory<W, F>
-    for BadInterpolatorFactory<'_, IF>
+impl<const W: usize, F: RuntimeField<W>, IF: RangeInterpolatorFactory<W, F>>
+    RangeInterpolatorFactory<W, F> for BadInterpolatorFactory<'_, IF>
 {
-    type Interpolator = BadInterpolator<IF::Interpolator>;
+    type Plan = BadInterpolator<IF::Plan>;
 
-    fn make(&self, n: usize, m: usize) -> Self::Interpolator {
-        let real = self.real.make(n, m);
+    fn make_range(
+        &self,
+        source: std::ops::Range<usize>,
+        destination: std::ops::Range<usize>,
+    ) -> Self::Plan {
+        let real = self.real.make_range(source, destination);
         self.calls.set(self.calls.get() + 1);
-        let should_fail = self.calls.get() == self.should_fail_at;
         BadInterpolator {
             real,
-            should_fail,
-            n,
-            m,
+            should_fail: self.calls.get() == self.should_fail_at,
+            fail_on_apply: self.fail_on_apply,
+            applications: Cell::new(0),
         }
     }
 
-    fn can_encode(&self, ylen: usize, block_enc: usize) -> bool {
-        self.real.can_encode(ylen, block_enc)
+    fn can_interpolate(
+        &self,
+        source: std::ops::Range<usize>,
+        destination: std::ops::Range<usize>,
+    ) -> bool {
+        self.real.can_interpolate(source, destination)
     }
-}
-struct SlowMiddleProduct<'a, const W: usize, F: RuntimeField<W>> {
-    f: &'a F,
-    y: Vec<F::E>,
-}
 
-impl<const W: usize, F: RuntimeField<W>>
-    crate::runtime::algebra::middle_product::MiddleProduct<W, F> for SlowMiddleProduct<'_, W, F>
-{
-    fn middle_product(&self, x: &[F::E], z: &mut [F::E]) {
-        let n = x.len();
-        for (k, z_val) in z.iter_mut().enumerate().skip(n - 1) {
-            let s = (0..n).fold(self.f.zero(), |acc, i| {
-                if k >= i && (k - i) < self.y.len() {
-                    let term = self.f.mulf(&x[i], &self.y[k - i]);
-                    self.f.addf(&acc, &term)
-                } else {
-                    acc
-                }
-            });
-            *z_val = s;
-        }
+    fn point(&self, index: usize) -> F::E {
+        self.real.point(index)
     }
 }
 
-struct SlowInterpolator<
-    'a,
-    const W: usize,
-    F: RuntimeField<W> + crate::core::algebra::SupportsU64Conversions,
-> {
-    rs: crate::runtime::algebra::reed_solomon::ReedSolomon<'a, W, F, SlowMiddleProduct<'a, W, F>>,
-}
-
-impl<const W: usize, F: RuntimeField<W> + crate::core::algebra::SupportsU64Conversions>
-    Interpolator<W, F> for SlowInterpolator<'_, W, F>
-{
-    fn interpolate(&self, y: &mut [F::E]) {
-        self.rs.interpolate(y);
-    }
-}
-struct SlowInterpolatorFactory<
-    'a,
-    const W: usize,
-    F: RuntimeField<W> + crate::core::algebra::SupportsU64Conversions,
-> {
-    f: &'a F,
-}
-
-impl<'a, const W: usize, F: RuntimeField<W> + crate::core::algebra::SupportsU64Conversions>
-    crate::runtime::algebra::interpolator::InterpolatorFactory<W, F>
-    for SlowInterpolatorFactory<'a, W, F>
-{
-    type Interpolator = SlowInterpolator<'a, W, F>;
-
-    fn make(&self, n: usize, m: usize) -> Self::Interpolator {
-        let rs =
-            crate::runtime::algebra::reed_solomon::ReedSolomon::new(n, m, self.f, |inverses| {
-                SlowMiddleProduct {
-                    f: self.f,
-                    y: inverses.to_vec(),
-                }
-            });
-        SlowInterpolator { rs }
-    }
-
-    fn can_encode(&self, _ylen: usize, _block_enc: usize) -> bool {
-        true
-    }
-}
 #[allow(clippy::too_many_arguments)]
 fn ligero_test<
     const W: usize,
     F: RuntimeField<W> + SerializableField + SupportsSampling<W>,
-    IF: crate::runtime::algebra::interpolator::InterpolatorFactory<W, F>,
+    IF: RangeInterpolatorFactory<W, F>,
     SF: Subfield<E = ElementOf<F>>,
 >(
     make_interpolator: &IF,
@@ -243,6 +183,7 @@ fn ligero_test<
             0, 0, 0, 0, 0, 0, 0,
         ],
     };
+    let mut ts_with_zero = ts_prover.clone();
     let proof = prover.prove(
         &b,
         &mut ts_prover,
@@ -278,6 +219,30 @@ fn ligero_test<
     let serialized = proof
         .write(&param.geom, f, sf)
         .expect("Failed to serialize LigeroProof");
+
+    // Ligero samples one weight per equation and does not bind the term list.
+    // Adding a zero term must preserve both the proof bytes and the transcript.
+    let mut with_zero = llterm.clone();
+    with_zero.push(LigeroLinearConstraint {
+        c: 0,
+        w: 0,
+        k: f.zero(),
+    });
+    let proof_with_zero = prover.prove(
+        &b,
+        &mut ts_with_zero,
+        &with_zero,
+        &hash_of_ligero_statement,
+        &lqc,
+        &make_interpolator,
+        f,
+    );
+    assert_eq!(
+        proof_with_zero.write(&param.geom, f, sf).unwrap(),
+        serialized
+    );
+    assert_eq!(ts_with_zero.bytes(256), buf_prover);
+
     let mut r_slice = serialized.as_slice();
     let proof_back = LigeroProof::read(&mut r_slice, &param.geom, f, sf)
         .expect("Failed to deserialize LigeroProof");
@@ -308,7 +273,7 @@ fn ligero_test<
 fn test_ligero_verifier_failures_generic<
     const W: usize,
     F: RuntimeField<W> + SerializableField + SupportsSampling<W>,
-    IF: crate::runtime::algebra::interpolator::InterpolatorFactory<W, F>,
+    IF: RangeInterpolatorFactory<W, F>,
     SF: Subfield<E = ElementOf<F>>,
 >(
     make_interpolator: &IF,
@@ -473,6 +438,7 @@ fn test_ligero_verifier_failures_generic<
             real: make_interpolator,
             calls: Cell::new(0),
             should_fail_at: 1,
+            fail_on_apply: 1,
         };
         let verify_res = verifier.verify(
             &b,
@@ -495,7 +461,8 @@ fn test_ligero_verifier_failures_generic<
         let bad_interpolator = BadInterpolatorFactory {
             real: make_interpolator,
             calls: Cell::new(0),
-            should_fail_at: 4,
+            should_fail_at: 2,
+            fail_on_apply: 2,
         };
         let verify_res = verifier.verify(
             &b,
@@ -562,7 +529,7 @@ fn test_ligero_verifier_failures_generic<
 }
 
 #[test]
-fn test_debug_try_new() {
+fn test_rejects_insufficient_blinding_capacity() {
     let nw_hash = 77998;
     let nq_hash = 20;
     let config_hash = crate::runtime::ligero::param::LigeroConfig {
@@ -572,7 +539,7 @@ fn test_debug_try_new() {
     };
     let gf2_runtime = Gf2_128RuntimeField::new();
     let subfield = BinarySubfield::new(&crate::core::algebra::proto::GF2_16_BASIS_V1);
-    let factory = crate::runtime::algebra::lch14_reed_solomon::Lch14InterpolatorFactory::new(
+    let factory = crate::runtime::algebra::range_interpolation::BinaryInterpolatorFactory::new(
         &gf2_runtime,
         &subfield,
     );
@@ -582,7 +549,7 @@ fn test_debug_try_new() {
         config_hash,
         &factory,
     );
-    println!("DEBUG TEST RES: {res:?}");
+    assert!(res.is_none());
 }
 
 #[test]
@@ -591,18 +558,189 @@ fn test_ligero_gf2_128() {
     let sf = crate::runtime::algebra::subfield::BinarySubfield::new(
         &crate::core::algebra::proto::GF2_16_BASIS_V1,
     );
-    let make_interpolator = Lch14InterpolatorFactory::new(&f, &sf);
+    let make_interpolator = BinaryInterpolatorFactory::new(&f, &sf);
     ligero_test(&make_interpolator, &f, &sf, 3000, 300, 189, 7, 4096);
     test_ligero_verifier_failures_generic(&make_interpolator, &f, &sf);
 }
 
 #[test]
-fn test_ligero_p256() {
-    let f = crate::runtime::algebra::p256::P256Field::new();
-    let sf = crate::runtime::algebra::p256::P256Subfield::new(&f);
-    let make_slow_rs = SlowInterpolatorFactory { f: &f };
-    ligero_test(&make_slow_rs, &f, &sf, 300, 30, 18, 7, 256);
-    test_ligero_verifier_failures_generic(&make_slow_rs, &f, &sf);
+fn test_ligero_p256_fft_range() {
+    use crate::runtime::algebra::{
+        fp2::Fp2Field,
+        p256::{P256Field, P256Subfield},
+        range_interpolation::QuadraticExtensionFftInterpolatorFactory,
+        SupportsFFT,
+    };
+    let f = P256Field::new();
+    let f2 = Fp2Field::new(&f);
+    let domain =
+        QuadraticExtensionFftInterpolatorFactory::new(&f, &f2, f2.omega(), f2.omega_order());
+    let sf = P256Subfield::new(&f);
+    ligero_test(&domain, &f, &sf, 300, 30, 18, 7, 256);
+    test_ligero_verifier_failures_generic(&domain, &f, &sf);
+}
+
+#[test]
+fn test_ligero_scalar_range_only() {
+    use crate::runtime::algebra::{
+        p256::{P256Field, P256Subfield},
+        range_interpolation::ScalarInterpolatorFactory,
+    };
+    let f = P256Field::new();
+    let domain = ScalarInterpolatorFactory::new(&f, 256);
+    let sf = P256Subfield::new(&f);
+    ligero_test(&domain, &f, &sf, 300, 30, 18, 7, 256);
+    test_ligero_verifier_failures_generic(&domain, &f, &sf);
+}
+
+#[test]
+fn test_range_capacity_includes_response_source() {
+    struct LimitedSource<D> {
+        inner: D,
+        maximum: usize,
+    }
+    impl<const W: usize, F: RuntimeField<W>, D: RangeInterpolatorFactory<W, F>>
+        RangeInterpolatorFactory<W, F> for LimitedSource<D>
+    {
+        type Plan = D::Plan;
+        fn can_interpolate(
+            &self,
+            source: std::ops::Range<usize>,
+            destination: std::ops::Range<usize>,
+        ) -> bool {
+            source.len() <= self.maximum && self.inner.can_interpolate(source, destination)
+        }
+        fn make_range(
+            &self,
+            source: std::ops::Range<usize>,
+            destination: std::ops::Range<usize>,
+        ) -> Self::Plan {
+            assert!(self.can_interpolate(source.clone(), destination.clone()));
+            self.inner.make_range(source, destination)
+        }
+        fn point(&self, index: usize) -> F::E {
+            self.inner.point(index)
+        }
+    }
+    let f = Gf2_128RuntimeField::new();
+    let sf = BinarySubfield::new(&crate::core::algebra::proto::GF2_16_BASIS_V1);
+    let domain = BinaryInterpolatorFactory::new(&f, &sf);
+    let config = LigeroConfig {
+        rateinv: 4,
+        nreq: 18,
+        block_enc: 256,
+    };
+    let block = (config.block_enc + 1) / (config.rateinv + 2);
+    let mut limited = LimitedSource {
+        inner: domain,
+        maximum: block,
+    };
+    assert!(limited.can_interpolate(0..block, block..config.block_enc));
+    assert!(LigeroParam::try_new(300, 30, config, &limited).is_none());
+    limited.maximum = 2 * block - 1;
+    ligero_test(&limited, &f, &sf, 300, 30, 18, 7, 256);
+}
+
+#[cfg(feature = "experimental")]
+#[test]
+fn test_ligero_sextic_subfield_matches_full_field_reference() {
+    use crate::{
+        core::algebra::AlgebraicField,
+        runtime::algebra::{
+            fp24_ext6::{RuntimeElement, RuntimeFp24Ext6, RuntimeFp24Subfield},
+            range_interpolation::CrtInterpolatorFactory,
+            RangeInterpolatorFactory,
+        },
+    };
+
+    fn encode<IF: RangeInterpolatorFactory<3, RuntimeFp24Ext6>>(
+        factory: &IF,
+        f: &RuntimeFp24Ext6,
+        witness: &[RuntimeElement],
+        boundary: usize,
+        products: &[LigeroQuadraticConstraint],
+    ) -> (Digest, Vec<u8>) {
+        let sf = RuntimeFp24Subfield;
+        let param = LigeroParam::new(
+            witness.len(),
+            products.len(),
+            LigeroConfig {
+                rateinv: 4,
+                nreq: 2,
+                block_enc: 96,
+            },
+            factory,
+        );
+        let terms: Vec<_> = (0..witness.len())
+            .map(|w| LigeroLinearConstraint {
+                c: 0,
+                w,
+                k: f.one(),
+            })
+            .collect();
+        let b = [witness.iter().fold(f.zero(), |sum, x| f.subf(&sum, x))];
+        let statement = Digest { data: [0x42; 32] };
+        let mut tp = Transcript::new(b"ligero/subfield-equivalence");
+        let (prover, commitment) = LigeroProver::commit(
+            boundary,
+            witness,
+            param,
+            &mut tp,
+            products,
+            factory,
+            &mut SimpleRng { state: 42 },
+            f,
+            &sf,
+        );
+        let proof = prover.prove(&b, &mut tp, &terms, &statement, products, factory, f);
+        let mut tv = Transcript::new(b"ligero/subfield-equivalence");
+        let mut verifier = LigeroVerifier::new(&mut tv, &param);
+        verifier.receive_commitment(&commitment);
+        verifier
+            .verify(
+                &b,
+                &commitment,
+                &proof,
+                &terms,
+                &statement,
+                products,
+                factory,
+                f,
+            )
+            .unwrap();
+        (commitment.root, proof.write(&param.geom, f, &sf).unwrap())
+    }
+
+    let f = RuntimeFp24Ext6::new();
+    let sf = RuntimeFp24Subfield;
+    let mut rng = SimpleRng { state: 314159 };
+    for boundary in [0, 40, 80] {
+        let mut witness: Vec<_> = (0..80)
+            .map(|i| {
+                if i < boundary {
+                    sf.sample(|n| rng.bytes(n))
+                } else {
+                    f.sample(|n| rng.bytes(n))
+                }
+            })
+            .collect();
+        witness[2] = f.mulf(&witness[0], &witness[1]);
+        let products = [LigeroQuadraticConstraint { x: 0, y: 1, z: 2 }];
+        // The independent Newton scalar backend uses full-field interpolation.
+        // Roots and serialized proofs must agree byte for byte.
+        assert_eq!(
+            encode(&CrtInterpolatorFactory, &f, &witness, boundary, &products),
+            encode(
+                &crate::runtime::algebra::range_interpolation::ScalarInterpolatorFactory::new(
+                    &f, 96
+                ),
+                &f,
+                &witness,
+                boundary,
+                &products
+            ),
+        );
+    }
 }
 
 #[test]
@@ -694,7 +832,7 @@ fn test_cpp_roundtrip_gf2_128() {
     // Read proof
     let proof_len = read_u64(data, &mut offset);
     let cpp_proof_bytes = &data[offset..offset + proof_len];
-    let make_interpolator = Lch14InterpolatorFactory::new(&f, &subfield);
+    let make_interpolator = BinaryInterpolatorFactory::new(&f, &subfield);
     let param = LigeroParam::new(
         nw,
         nq,

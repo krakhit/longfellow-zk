@@ -20,7 +20,7 @@ pub use traits::*;
 
 pub use crate::mdoc::proto::config;
 
-pub const CURRENT_VERSION: usize = 8;
+pub const NEXT_VERSION: usize = 8;
 
 cfg_compiler! {
     pub mod cbor_decoder;
@@ -34,5 +34,4 @@ cfg_testonly! {
 }
 
 #[cfg(test)]
-#[path = "../tests/all/mod.rs"]
-mod tests_all;
+test_compilers!("../tests/all/mod.rs");

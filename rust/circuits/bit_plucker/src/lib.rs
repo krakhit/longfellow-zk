@@ -22,5 +22,4 @@ cfg_compiler! {
 }
 
 #[cfg(test)]
-#[path = "../tests/all/mod.rs"]
-mod tests_all;
+test_compilers!("../tests/all/mod.rs");

@@ -15,14 +15,21 @@
 mod blas;
 mod cantor_basis;
 mod fft;
+mod field;
 mod fp2;
 mod fp_generic;
 mod gf2_128;
 mod lch14;
-mod middle_product;
 mod p256;
 mod poly;
 mod q256;
-mod reed_solomon;
+mod quadratic_extension_fft_interpolation;
+mod range_interpolation;
 mod rfft;
 mod subfield;
+
+#[cfg(feature = "experimental")]
+mod crt_interpolation;
+
+#[cfg(feature = "experimental")]
+mod fp24_ext6;

@@ -21,82 +21,40 @@ pub mod generate_sig;
 pub use allocate_hash::*;
 pub use allocate_sig::*;
 pub use allocator::*;
-use crate::compile::algebra::{gf2_128::Gf2_128Field, p256::P256Field};
 pub use generate_hash::*;
 pub use generate_sig::*;
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct LigeroProfile {
-    pub rateinv: usize,
-    pub nreq: usize,
-}
+use crate::compile::algebra::{gf2_128::Gf2_128Field, p256::P256Field};
 
-pub fn compile_circuits(
-    num_attrs: usize,
-    hash_profile: LigeroProfile,
-    sig_profile: LigeroProfile,
-) -> Result<
-    (
-        Vec<u8>,
-        crate::runtime::ligero::param::LigeroConfig,
-        crate::runtime::ligero::param::LigeroConfig,
-    ),
-    String,
-> {
-    let f128_compile = Gf2_128Field::new();
-    let p256_compile = P256Field::new();
-    let (seg_sig, config_sig) = generate_sig_circuit(&p256_compile, sig_profile)?;
-    let (seg_hash, config_hash) = generate_hash_circuit(&f128_compile, num_attrs, hash_profile)?;
-
-    let writer_sig =
-        crate::core::proto::writer::CircuitWriter::new(&p256_compile, crate::core::proto::FieldID::P256);
-    let sig_bytes = writer_sig.to_bytes_lfc2(&seg_sig);
-
-    let writer_hash =
-        crate::core::proto::writer::CircuitWriter::new(&f128_compile, crate::core::proto::FieldID::Gf2_128);
-    let hash_bytes = writer_hash.to_bytes_lfc2(&seg_hash);
-
+/// Generate NEXT circuits independently of the runtime proof system.
+pub fn compile_circuits(num_attrs: usize) -> Result<Vec<u8>, String> {
+    let f = Gf2_128Field::new();
+    let p = P256Field::new();
+    let sig = generate_sig_circuit(&p)?;
+    let hash = generate_hash_circuit(&f, num_attrs)?;
+    let sig_bytes =
+        crate::core::proto::writer::CircuitWriter::new(&p, crate::core::proto::FieldID::P256)
+            .to_bytes_lfc2(&sig);
+    let hash_bytes =
+        crate::core::proto::writer::CircuitWriter::new(&f, crate::core::proto::FieldID::Gf2_128)
+            .to_bytes_lfc2(&hash);
     let mut builder = crate::core::proto::archive::CircuitArchiveBuilder::new();
-    builder.set_circuit_version(crate::mdoc::circuits::CURRENT_VERSION as u32);
-    builder.add_entry("sig", seg_sig.id, sig_bytes);
-    builder.add_entry("hash", seg_hash.id, hash_bytes);
-
-    let archive = builder.build();
-    Ok((archive.to_bytes(), config_sig, config_hash))
+    builder.set_circuit_version(crate::mdoc::circuits::NEXT_VERSION as u32);
+    builder.add_entry("sig", sig.id, sig_bytes);
+    builder.add_entry("hash", hash.id, hash_bytes);
+    Ok(builder.build().to_bytes())
 }
-
 pub use compile_circuits as generate_circuits;
 
-pub fn compile_all_circuits(
-    hash_profile: LigeroProfile,
-    sig_profile: LigeroProfile,
-) -> Vec<
-    Result<
-        (
-            Vec<u8>,
-            crate::runtime::ligero::param::LigeroConfig,
-            crate::runtime::ligero::param::LigeroConfig,
-        ),
-        String,
-    >,
-> {
-    let (tx, rx) = std::sync::mpsc::channel();
-    std::thread::scope(|s| {
-        for num_attrs in 1..=4 {
-            let tx_thread = tx.clone();
-            s.spawn(move || {
-                let res = compile_circuits(num_attrs, hash_profile, sig_profile);
-                tx_thread.send((num_attrs, res)).unwrap();
-            });
-        }
-    });
-    drop(tx);
-
-    let mut results = vec![Err(String::new()); 4];
-    for (num_attrs, res) in rx {
-        results[num_attrs - 1] = res;
-    }
-    results
+pub fn compile_all_circuits() -> Vec<Result<Vec<u8>, String>> {
+    std::thread::scope(|scope| {
+        let tasks: Vec<_> = (1..=4)
+            .map(|n| scope.spawn(move || compile_circuits(n)))
+            .collect();
+        tasks
+            .into_iter()
+            .map(|task| task.join().expect("circuit compiler panicked"))
+            .collect()
+    })
 }
-
 pub use compile_all_circuits as generate_all_circuits;

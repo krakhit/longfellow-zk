@@ -16,5 +16,4 @@ pub mod circuit;
 pub use circuit::Routing;
 
 #[cfg(test)]
-#[path = "../tests/routing.rs"]
-mod tests_routing;
+test_compilers!("../tests/routing.rs");

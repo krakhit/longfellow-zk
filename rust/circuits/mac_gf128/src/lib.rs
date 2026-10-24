@@ -23,6 +23,4 @@ cfg_testonly! {
 }
 
 #[cfg(test)]
-#[path = "../tests/mac_gf128.rs"]
-mod tests_mac_gf128;
-
+test_compilers!("../tests/mac_gf128.rs");

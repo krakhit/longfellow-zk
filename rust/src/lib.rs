@@ -12,6 +12,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+/// Run shared compiler/circuit tests with each compiler entry point.
+#[cfg(test)]
+macro_rules! test_compilers {
+    ($path:literal) => {
+        #[allow(clippy::duplicate_mod)] // Intentionally instantiate each test module twice.
+        mod v1_tests {
+            #[allow(dead_code)]
+            const V2: bool = false;
+            #[allow(unused_imports)]
+            use crate::compile::compiler::compile_v1 as compile;
+            include!($path);
+        }
+        #[allow(clippy::duplicate_mod)]
+        mod v2_tests {
+            #[allow(dead_code)]
+            const V2: bool = true;
+            #[allow(unused_imports)]
+            use crate::compile::compiler::compile_v2 as compile;
+            include!($path);
+        }
+    };
+}
+
 /// Conditionally includes items when `feature = "compiler"` (or `test`) is active.
 macro_rules! cfg_compiler {
     ($($item:item)*) => {
@@ -82,14 +105,20 @@ pub mod runtime {
     pub mod ligero;
     #[path = "merkle/src/lib.rs"]
     pub mod merkle;
+    #[path = "polygero/src/lib.rs"]
+    pub mod polygero;
     #[path = "proto/src/lib.rs"]
     pub mod proto;
     #[path = "random/src/lib.rs"]
     pub mod random;
-    #[path = "sumcheck/src/lib.rs"]
-    pub mod sumcheck;
-    #[path = "zk/src/lib.rs"]
-    pub mod zk;
+    #[path = "sumcheck-v1/src/lib.rs"]
+    pub mod sumcheck_v1;
+    #[path = "sumcheck-v2/src/lib.rs"]
+    pub mod sumcheck_v2;
+    #[path = "zk-v1/src/lib.rs"]
+    pub mod zk_v1;
+    #[path = "zk-v2/src/lib.rs"]
+    pub mod zk_v2;
 }
 
 cfg_compiler! {
@@ -103,6 +132,8 @@ cfg_compiler! {
         pub mod logic;
         #[path = "proto/src/lib.rs"]
         pub mod proto;
+        #[path = "polygero/src/lib.rs"]
+        pub mod polygero;
 
         cfg_testonly! {
             #[path = "eval/src/lib.rs"]
@@ -158,10 +189,16 @@ pub mod circuits {
         pub mod routing;
     }
 
-    cfg_testonly! {
-        #[path = "experimental/src/lib.rs"]
-        pub mod experimental;
-    }
+    #[cfg(any(
+        test,
+        feature = "testonly",
+        all(
+            feature = "experimental",
+            any(feature = "compiler", feature = "prover")
+        )
+    ))]
+    #[path = "experimental/src/lib.rs"]
+    pub mod experimental;
 }
 
 #[cfg(feature = "mdoc")]
@@ -174,29 +211,15 @@ pub mod mdoc {
     #[path = "runtime/src/lib.rs"]
     pub mod runtime;
 
-    /// Curated top-level mdoc API. Everything else stays reachable through the sub-modules
-    /// (`mdoc::runtime`, `mdoc::circuits`, `mdoc::proto`, ...).
-    pub use runtime::{
-        circuit_supports, decompress_circuits, find_zk_spec, find_zk_spec_by_hex,
-        is_supported_version, ligero_configs, req_attr, same_namespace, MdocProof,
-        MdocProofGeometry, MdocProverErrorCode, MdocVerifierErrorCode, RequestedAttribute,
-        ZkSpecStruct, CURRENT_VERSION, CURRENT_ZK_SPECS, NUM_CURRENT_ZK_SPECS, NUM_ZK_SPECS,
-        ZK_SPECS,
-    };
-
-    cfg_prover! {
-        pub use runtime::{run_mdoc_prover, run_mdoc_prover_inner};
-    }
-
-    cfg_verifier! {
-        pub use runtime::{run_mdoc_verifier, run_mdoc_verifier_inner};
-    }
+    pub use runtime::{find_zk_spec, find_zk_spec_by_hex, v1, v2, ZkSpecRef};
 
     cfg_compiler! {
         #[path = "artifacts/src/lib.rs"]
         pub mod artifacts;
         #[path = "compile/src/lib.rs"]
         pub mod compile;
+        #[path = "development_provider/src/lib.rs"]
+        pub mod development_provider;
     }
 
     cfg_testonly! {
@@ -205,272 +228,7 @@ pub mod mdoc {
     }
 }
 
-/// Enforces the internal module dependency DAG and architectural layer boundaries across the
-/// single `longfellow-zk` crate.
-///
-/// Because Rust allows modules within the same crate to mutually reference each other (`crate::*`),
-/// consolidating multiple workspace sub-crates into a single crate removes Cargo's automatic
-/// crate-level cycle and layer enforcement. This test module restores that guarantee at `cargo
-/// test` time by statically scanning every library source file (`src/**/*.rs`, excluding
-/// `#[cfg(test)]` tails and standalone `bin/` targets) and verifying two invariants:
-///
-/// 1. **Strict Architectural Layering**: Every sub-module belongs to one of six ordered
-///    architectural layers:
-///    - Layer 0 (`util`): Low-level bit/array/Morton helpers with zero internal dependencies.
-///    - Layer 1 (`core::*`): Core algebraic traits, field/curve definitions, and circuit/archive
-///      formats.
-///    - Layer 2 (`runtime::*`): Prover and verifier runtime protocols (algebra, transcript, Merkle,
-///      Sumcheck, Ligero, ZK).
-///    - Layer 3 (`compile::*`): Circuit synthesis backend, wire allocation, and compile-time logic.
-///    - Layer 4 (`circuits::*`): Reusable cryptographic sub-circuits (SHA-256, ECDSA, MAC,
-///      BitPlucker, etc.).
-///    - Layer 5 (`mdoc::*`): ISO 18013-5 mDoc application circuits, runtime, and artifacts.
-///
-///    A module in layer $L$ may only import modules in layer $L' \le L$. Any upward import
-///    (for example, `core::proto` importing `compile::algebra`, or `runtime::zk` importing
-///    `circuits::*`) causes an immediate test failure identifying the offending file and import.
-///
-/// 2. **Acyclic Module Dependency Graph (DAG)**: Even within the same layer (e.g., among
-///    `circuits::*` or `runtime::*` sub-modules), the directed graph of
-///    `crate::<layer>::<submodule>` references must be a strict DAG with no cycles. Depth-first
-///    cycle detection (`has_cycle`) reports the exact cycle path if one is introduced.
+/// Checks module dependencies across all source files and inactive feature paths.
 #[cfg(test)]
-mod module_dag_tests {
-    use std::{
-        collections::{BTreeMap, BTreeSet},
-        fs,
-        path::{Path, PathBuf},
-    };
-
-    /// Recursively collects all `.rs` source files under `dir`, skipping standalone binary targets
-    /// (`bin/`).
-    fn collect_rs_files(dir: &Path, out: &mut Vec<PathBuf>) {
-        let Ok(entries) = fs::read_dir(dir) else {
-            return;
-        };
-        for entry in entries.flatten() {
-            let path = entry.path();
-            if path.is_dir() {
-                if path.file_name().and_then(|n| n.to_str()) == Some("bin") {
-                    continue;
-                }
-                collect_rs_files(&path, out);
-            } else if path.extension().and_then(|e| e.to_str()) == Some("rs") {
-                out.push(path);
-            }
-        }
-    }
-
-    /// Recursively parses a path or braced `use` tree following `crate::` (e.g.,
-    /// `crate::runtime::proto`, `crate::runtime::{merkle::..., proto::...}`, or
-    /// `crate::{circuits::ec::..., compile::{algebra::..., logic::...}}`) and records every
-    /// referenced `<layer>::<submodule>` (or `util`) into `deps`.
-    fn parse_crate_tree(raw: &str, layer_prefix: Option<&str>, deps: &mut BTreeSet<String>) {
-        let s = raw.trim_start();
-        if let Some(inner) = s.strip_prefix('{') {
-            let mut depth = 1usize;
-            let mut item_start = 0;
-            for (idx, ch) in inner.char_indices() {
-                match ch {
-                    '{' => depth += 1,
-                    '}' => {
-                        depth -= 1;
-                        if depth == 0 {
-                            parse_crate_tree(&inner[item_start..idx], layer_prefix, deps);
-                            break;
-                        }
-                    }
-                    ',' if depth == 1 => {
-                        parse_crate_tree(&inner[item_start..idx], layer_prefix, deps);
-                        item_start = idx + 1;
-                    }
-                    _ => {}
-                }
-            }
-            return;
-        }
-
-        let ident: String = s
-            .chars()
-            .take_while(|c| c.is_ascii_alphanumeric() || *c == '_')
-            .collect();
-        if ident.is_empty() {
-            return;
-        }
-        let rest = &s[ident.len()..];
-        match layer_prefix {
-            None => {
-                if ident == "util" {
-                    deps.insert("util".to_string());
-                } else if matches!(
-                    ident.as_str(),
-                    "core" | "runtime" | "compile" | "circuits" | "mdoc"
-                ) {
-                    if let Some(after_colons) = rest.strip_prefix("::") {
-                        parse_crate_tree(after_colons, Some(&ident), deps);
-                    }
-                }
-            }
-            Some(layer) => {
-                if ident != "self" {
-                    deps.insert(format!("{layer}::{ident}"));
-                }
-            }
-        }
-    }
-
-    /// Scans Rust source text for `crate::<layer>::<submodule>` paths (including braced
-    /// `use crate::{...}` trees) and returns the set of top-level sub-modules referenced by `src`.
-    fn extract_crate_deps(src: &str) -> BTreeSet<String> {
-        let mut deps = BTreeSet::new();
-        let bytes = src.as_bytes();
-        let needle = b"crate::";
-        let mut i = 0;
-        while i + needle.len() <= bytes.len() {
-            if &bytes[i..i + needle.len()] == needle
-                && (i == 0 || !(bytes[i - 1].is_ascii_alphanumeric() || bytes[i - 1] == b'_'))
-            {
-                let rest = &src[i + needle.len()..];
-                parse_crate_tree(rest, None, &mut deps);
-                i += needle.len();
-            } else {
-                i += 1;
-            }
-        }
-        deps
-    }
-
-    /// Performs depth-first cycle detection starting from `node` in `graph`.
-    /// Returns `Some(cycle_path)` if a directed cycle is found, or `None` if the subgraph is
-    /// acyclic.
-    fn has_cycle(
-        node: &str,
-        graph: &BTreeMap<String, BTreeSet<String>>,
-        visiting: &mut BTreeSet<String>,
-        visited: &mut BTreeSet<String>,
-        path: &mut Vec<String>,
-    ) -> Option<Vec<String>> {
-        if visiting.contains(node) {
-            path.push(node.to_string());
-            return Some(path.clone());
-        }
-        if visited.contains(node) {
-            return None;
-        }
-        visiting.insert(node.to_string());
-        path.push(node.to_string());
-        if let Some(neighbors) = graph.get(node) {
-            for next in neighbors {
-                if let Some(cycle) = has_cycle(next, graph, visiting, visited, path) {
-                    return Some(cycle);
-                }
-            }
-        }
-        path.pop();
-        visiting.remove(node);
-        visited.insert(node.to_string());
-        None
-    }
-
-    /// Verifies that:
-    /// 1. No production source file in any module imports a module from a higher architectural
-    ///    layer (`util` < `core` < `runtime` < `compile` < `circuits` < `mdoc`).
-    /// 2. The full directed dependency graph across all 41 sub-modules contains no cycles.
-    #[test]
-    fn test_module_dependency_dag_and_layer_boundaries() {
-        let root = Path::new(env!("CARGO_MANIFEST_DIR"));
-        let modules = [
-            ("util", "util/src"),
-            ("core::algebra", "core/algebra/src"),
-            ("core::proto", "core/proto/src"),
-            ("runtime::algebra", "runtime/algebra/src"),
-            ("runtime::proto", "runtime/proto/src"),
-            ("runtime::random", "runtime/random/src"),
-            ("runtime::merkle", "runtime/merkle/src"),
-            ("runtime::sumcheck", "runtime/sumcheck/src"),
-            ("runtime::ligero", "runtime/ligero/src"),
-            ("runtime::zk", "runtime/zk/src"),
-            ("compile::algebra", "compile/algebra/src"),
-            ("compile::proto", "compile/proto/src"),
-            ("compile::logic", "compile/logic/src"),
-            ("compile::compiler", "compile/compiler/src"),
-            ("compile::eval", "compile/eval/src"),
-            ("circuits::analog_adder", "circuits/analog_adder/src"),
-            ("circuits::analog_decoder", "circuits/analog_decoder/src"),
-            ("circuits::arithmetic", "circuits/arithmetic/src"),
-            ("circuits::bitvec", "circuits/bitvec/src"),
-            ("circuits::bit_plucker", "circuits/bit_plucker/src"),
-            ("circuits::bignum", "circuits/bignum/src"),
-            ("circuits::big_bitvec", "circuits/big_bitvec/src"),
-            ("circuits::boolean", "circuits/boolean/src"),
-            ("circuits::ec", "circuits/ec/src"),
-            ("circuits::ecdsa2", "circuits/ecdsa2/src"),
-            ("circuits::gf2_128", "circuits/gf2_128/src"),
-            ("circuits::lookup", "circuits/lookup/src"),
-            ("circuits::mac", "circuits/mac/src"),
-            ("circuits::mac_gf128", "circuits/mac_gf128/src"),
-            ("circuits::memcmp", "circuits/memcmp/src"),
-            ("circuits::polynomial", "circuits/polynomial/src"),
-            ("circuits::routing", "circuits/routing/src"),
-            ("circuits::sha256", "circuits/sha256/src"),
-            ("circuits::sha256msg", "circuits/sha256msg/src"),
-            ("circuits::experimental", "circuits/experimental/src"),
-            ("mdoc::proto", "applications/mdoc_zk/proto/src"),
-            ("mdoc::circuits", "applications/mdoc_zk/circuits/src"),
-            ("mdoc::compile", "applications/mdoc_zk/compile/src"),
-            ("mdoc::runtime", "applications/mdoc_zk/runtime/src"),
-            ("mdoc::testcases", "applications/mdoc_zk/testcases/src"),
-            ("mdoc::artifacts", "applications/mdoc_zk/artifacts/src"),
-        ];
-
-        let layer_rank = |mod_name: &str| -> u8 {
-            if mod_name == "util" {
-                0
-            } else if mod_name.starts_with("core::") {
-                1
-            } else if mod_name.starts_with("runtime::") {
-                2
-            } else if mod_name.starts_with("compile::") {
-                3
-            } else if mod_name.starts_with("circuits::") {
-                4
-            } else if mod_name.starts_with("mdoc::") {
-                5
-            } else {
-                panic!("Unknown module {mod_name}")
-            }
-        };
-
-        let mut graph: BTreeMap<String, BTreeSet<String>> = BTreeMap::new();
-        for (mod_name, rel_dir) in modules {
-            let mut files = Vec::new();
-            collect_rs_files(&root.join(rel_dir), &mut files);
-            let mut deps = BTreeSet::new();
-            for f in files {
-                let content = fs::read_to_string(&f).expect("read rs file");
-                // Strip inline #[cfg(test)] tail before checking library module DAG
-                let prod_content = content.split("#[cfg(test)]").next().unwrap_or(&content);
-                for dep in extract_crate_deps(prod_content) {
-                    if dep != mod_name {
-                        assert!(
-                            layer_rank(&dep) <= layer_rank(mod_name),
-                            "Layer violation: {mod_name} ({}) imports higher-layer module {dep}",
-                            f.display()
-                        );
-                        deps.insert(dep);
-                    }
-                }
-            }
-            graph.insert(mod_name.to_string(), deps);
-        }
-
-        let mut visiting = BTreeSet::new();
-        let mut visited = BTreeSet::new();
-        let mut path = Vec::new();
-        for node in graph.keys() {
-            if let Some(cycle) = has_cycle(node, &graph, &mut visiting, &mut visited, &mut path) {
-                panic!("Module dependency cycle detected: {}", cycle.join(" -> "));
-            }
-        }
-    }
-}
+#[path = "dependency_tests.rs"]
+mod module_dag_tests;

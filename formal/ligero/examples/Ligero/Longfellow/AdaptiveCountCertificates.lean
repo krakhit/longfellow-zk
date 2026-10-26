@@ -164,17 +164,5 @@ def v7Sig_v3_adaptiveCounts : CountCertificate v7Sig_v3 :=
   ⟨0, 909, 191, by native_decide, by native_decide,
     by native_decide, by native_decide⟩
 
-def v8Sig_v1_adaptiveCounts : CountCertificate v8Sig_v1 :=
-  ⟨0, 1807, 127, by native_decide, by native_decide,
-    by native_decide, by native_decide⟩
-
-def v8Sig_v2_adaptiveCounts : CountCertificate v8Sig_v2 :=
-  ⟨0, 987, 191, by native_decide, by native_decide,
-    by native_decide, by native_decide⟩
-
-def v8Sig_v3_adaptiveCounts : CountCertificate v8Sig_v3 :=
-  ⟨0, 987, 191, by native_decide, by native_decide,
-    by native_decide, by native_decide⟩
-
 end Optimized
 end Ligero.Examples.Grid.LongfellowProfiledExtraction

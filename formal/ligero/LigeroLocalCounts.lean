@@ -1,3 +1,3 @@
 import examples.Ligero.Longfellow.AdaptiveOptimizedCertificates
 
-/-! Separate build target for the improved Ligero local-count certificates. -/
+/-! Improved v7 Ligero local-count certificates, included in the default build. -/

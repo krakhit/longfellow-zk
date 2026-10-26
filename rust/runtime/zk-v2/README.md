@@ -5,6 +5,13 @@ legacy two-hand entry point. V2 exports `ZkProver`, `ZkVerifier`, `ZkContext`
 and the owned `ZkProverCommitment`; its implementation modules are private.
 The context borrows the field `f` and ordered interpolation `domain`.
 The V2 proof types and codec are in `runtime::proto::zk_v2`.
+
+The [Lean model](../../../formal/lfzk-v2/README.md) proves an authenticated
+two-field extraction bound of `(1+N+tA)/2^117` for all query budgets, under
+its explicit circuit, MAC, and ideal-sampler premises.
+The [audit](../../../formal/AUDIT.md) describes
+the correspondence boundary and the remaining joint-view privacy work.
+
 `ZkVerifier::new(circuit, config, context)` prepares and validates public parameters
 once. `geometry()` returns the prepared proof shape; commitment reception and
 verification reuse those parameters. The verifier owns an immutable circuit.

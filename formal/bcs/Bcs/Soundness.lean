@@ -117,7 +117,7 @@ open scoped Classical in
 space asks for, the `ExtractionExplains` conjunct may be removed for `merkleNumerator · |D|^(T-1)`
 per coin pair.
 
-This is the form a *composed* development consumes: `lfzk` counts a Longfellow bad event alongside
+This is the form a *composed* development consumes: `lfzk-v1` counts a Longfellow bad event alongside
 the Ligero one, and needs to know what its own theorem costs once the oracle is a Merkle root. -/
 theorem drop_explains_card_le
     [Fintype D] [DecidableEq D] [Inhabited D] [DecidableEq Enc] [Inhabited Salt] [Inhabited M]

@@ -1,4 +1,4 @@
-import Lfzk.LigeroV1Rbr
+import LfzkV1.LigeroV1Rbr
 import LigeroFamily.Protocol.FiniteResponse
 
 /-!

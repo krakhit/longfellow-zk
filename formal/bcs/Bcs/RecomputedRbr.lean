@@ -248,7 +248,7 @@ theorem exists_bad_slot (hfuel : L + N ≤ T) (tape : Fin T → C) (hacc : G.Acc
   set ch := G.challenges tape
   obtain ⟨k, hdoom, hesc⟩ := (G.seqRbr out).exists_escape ch
     (G.doomed_start hfail out _) (G.accepts_undoomed out ch hacc)
-  obtain ⟨hdq, hesq⟩ := G.link out k.val (Sumcheck.extract_prefix ch k) (ch k) k.isLt hdoom hesc
+  obtain ⟨hdq, hesq⟩ := G.link out k.val (SumcheckV1.extract_prefix ch k) (ch k) k.isLt hdoom hesc
   -- the verifier's round-`k` entry, and where it sits on the tape
   have hmem := G.verifier_entry_mem tape k.val k.isLt
   obtain ⟨hseen, hval⟩ := lazyRun_trace_slot tape G.dflt G.exec [] _ hmem
@@ -297,7 +297,7 @@ end TranscriptGrinding
 
 `RbrCore` carries one budget per slot.  Under grinding the point a slot holds is a function of the
 prefix, and so is its budget: a slot holding a sumcheck point pays `2/|F|`, one holding a Ligero
-point pays a cover ratio.  `weighted_tape_card_le` is `Sumcheck.tape_bad_card_le` with the budget
+point pays a cover ratio.  `weighted_tape_card_le` is `SumcheckV1.tape_bad_card_le` with the budget
 allowed to read the prefix, and the price of that is that the total is bounded *per tape*
 (`htotal`) rather than summed over slots up front.
 -/
@@ -309,14 +309,14 @@ variable {C : Type} [Fintype C] [DecidableEq C]
 /-- Summing a function of the slot-`i` prefix over all tapes: every prefix extends to
 `|C|^(T-1-i) · |C|` tapes. -/
 theorem sum_tape_prefix {T : ℕ} (i : Fin T) (f : (Fin i.val → C) → ℕ) :
-    ∑ tape : Fin T → C, f (Sumcheck.extract_prefix tape i)
+    ∑ tape : Fin T → C, f (SumcheckV1.extract_prefix tape i)
       = Fintype.card C ^ (T - 1 - i.val) * Fintype.card C * ∑ pref : Fin i.val → C, f pref := by
   classical
   rw [← Finset.sum_fiberwise univ
-    (fun tape : Fin T → C => (Sumcheck.extract_prefix tape i, tape i))]
+    (fun tape : Fin T → C => (SumcheckV1.extract_prefix tape i, tape i))]
   have hfib : ∀ y : (Fin i.val → C) × C,
       ∑ tape ∈ univ.filter (fun tape : Fin T → C =>
-          (Sumcheck.extract_prefix tape i, tape i) = y), f (Sumcheck.extract_prefix tape i)
+          (SumcheckV1.extract_prefix tape i, tape i) = y), f (SumcheckV1.extract_prefix tape i)
         = Fintype.card C ^ (T - 1 - i.val) * f y.1 := by
     intro y
     rw [Finset.sum_congr rfl (g := fun _ => f y.1) (by
@@ -325,7 +325,7 @@ theorem sum_tape_prefix {T : ℕ} (i : Fin T) (f : (Fin i.val → C) → ℕ) :
       rw [← htape])]
     rw [sum_const, smul_eq_mul]
     congr 1
-    have h := Sumcheck.card_fiber_eq T i y
+    have h := SumcheckV1.card_fiber_eq T i y
     convert h using 2
     ext tape
     simp [Prod.ext_iff]
@@ -338,17 +338,17 @@ most the total budget over tapes. -/
 theorem slot_weighted_card_le {T : ℕ} (i : Fin T) (P : (Fin i.val → C) → C → Prop)
     (wt : (Fin i.val → C) → ℕ)
     (hlocal : ∀ pref, (univ.filter fun c : C => P pref c).card ≤ wt pref) :
-    (univ.filter fun tape : Fin T → C => P (Sumcheck.extract_prefix tape i) (tape i)).card
+    (univ.filter fun tape : Fin T → C => P (SumcheckV1.extract_prefix tape i) (tape i)).card
         * Fintype.card C
-      ≤ ∑ tape : Fin T → C, wt (Sumcheck.extract_prefix tape i) := by
+      ≤ ∑ tape : Fin T → C, wt (SumcheckV1.extract_prefix tape i) := by
   classical
   rw [sum_tape_prefix]
-  have hcount := Sumcheck.card_filter_prefix_r T i P
+  have hcount := SumcheckV1.card_filter_prefix_r T i P
   have hpairs : (univ.filter fun pr : (Fin i.val → C) × C => P pr.1 pr.2).card
       ≤ ∑ pref, wt pref := by
     rw [card_filter_prod_fst]
     exact Finset.sum_le_sum fun pref _ => hlocal pref
-  calc (univ.filter fun tape : Fin T → C => P (Sumcheck.extract_prefix tape i) (tape i)).card
+  calc (univ.filter fun tape : Fin T → C => P (SumcheckV1.extract_prefix tape i) (tape i)).card
         * Fintype.card C
       = (univ.filter fun pr : (Fin i.val → C) × C => P pr.1 pr.2).card
           * Fintype.card C ^ (T - 1 - i.val) * Fintype.card C := by
@@ -367,30 +367,30 @@ most `wt i pref`, and every tape's slot budgets sum to at most `B`, then
 theorem weighted_tape_card_le {T : ℕ} (P : ∀ i : Fin T, (Fin i.val → C) → C → Prop)
     (wt : ∀ i : Fin T, (Fin i.val → C) → ℕ)
     (hlocal : ∀ i pref, (univ.filter fun c : C => P i pref c).card ≤ wt i pref) (B : ℕ)
-    (htotal : ∀ tape : Fin T → C, ∑ i, wt i (Sumcheck.extract_prefix tape i) ≤ B) :
+    (htotal : ∀ tape : Fin T → C, ∑ i, wt i (SumcheckV1.extract_prefix tape i) ≤ B) :
     (univ.filter fun tape : Fin T → C =>
-        ∃ i, P i (Sumcheck.extract_prefix tape i) (tape i)).card * Fintype.card C
+        ∃ i, P i (SumcheckV1.extract_prefix tape i) (tape i)).card * Fintype.card C
       ≤ B * Fintype.card C ^ T := by
   classical
   have hunion : (univ.filter fun tape : Fin T → C =>
-        ∃ i, P i (Sumcheck.extract_prefix tape i) (tape i))
+        ∃ i, P i (SumcheckV1.extract_prefix tape i) (tape i))
       = univ.biUnion fun i : Fin T =>
-          univ.filter fun tape : Fin T → C => P i (Sumcheck.extract_prefix tape i) (tape i) := by
+          univ.filter fun tape : Fin T → C => P i (SumcheckV1.extract_prefix tape i) (tape i) := by
     ext tape
     simp
   rw [hunion]
   calc (univ.biUnion fun i : Fin T =>
           univ.filter fun tape : Fin T → C =>
-            P i (Sumcheck.extract_prefix tape i) (tape i)).card * Fintype.card C
+            P i (SumcheckV1.extract_prefix tape i) (tape i)).card * Fintype.card C
       ≤ (∑ i : Fin T, (univ.filter fun tape : Fin T → C =>
-          P i (Sumcheck.extract_prefix tape i) (tape i)).card) * Fintype.card C :=
+          P i (SumcheckV1.extract_prefix tape i) (tape i)).card) * Fintype.card C :=
         Nat.mul_le_mul_right _ card_biUnion_le
     _ = ∑ i : Fin T, (univ.filter fun tape : Fin T → C =>
-          P i (Sumcheck.extract_prefix tape i) (tape i)).card * Fintype.card C := by
+          P i (SumcheckV1.extract_prefix tape i) (tape i)).card * Fintype.card C := by
         rw [Finset.sum_mul]
-    _ ≤ ∑ i : Fin T, ∑ tape : Fin T → C, wt i (Sumcheck.extract_prefix tape i) :=
+    _ ≤ ∑ i : Fin T, ∑ tape : Fin T → C, wt i (SumcheckV1.extract_prefix tape i) :=
         Finset.sum_le_sum fun i _ => slot_weighted_card_le i (P i) (wt i) (hlocal i)
-    _ = ∑ tape : Fin T → C, ∑ i : Fin T, wt i (Sumcheck.extract_prefix tape i) :=
+    _ = ∑ tape : Fin T → C, ∑ i : Fin T, wt i (SumcheckV1.extract_prefix tape i) :=
         Finset.sum_comm
     _ ≤ ∑ _tape : Fin T → C, B := Finset.sum_le_sum fun tape _ => htotal tape
     _ = B * Fintype.card C ^ T := by
@@ -399,15 +399,15 @@ theorem weighted_tape_card_le {T : ℕ} (P : ∀ i : Fin T, (Fin i.val → C) �
 /-- **The weighted count as a probability**: `B / |C|`. -/
 theorem weighted_tape_ratio_le [Nonempty C] {T : ℕ} (E : (Fin T → C) → Prop)
     [DecidablePred E] (P : ∀ i : Fin T, (Fin i.val → C) → C → Prop)
-    (hE : ∀ tape, E tape → ∃ i, P i (Sumcheck.extract_prefix tape i) (tape i))
+    (hE : ∀ tape, E tape → ∃ i, P i (SumcheckV1.extract_prefix tape i) (tape i))
     (wt : ∀ i : Fin T, (Fin i.val → C) → ℕ)
     (hlocal : ∀ i pref, (univ.filter fun c : C => P i pref c).card ≤ wt i pref) (B : ℕ)
-    (htotal : ∀ tape : Fin T → C, ∑ i, wt i (Sumcheck.extract_prefix tape i) ≤ B) :
+    (htotal : ∀ tape : Fin T → C, ∑ i, wt i (SumcheckV1.extract_prefix tape i) ≤ B) :
     ((univ.filter E).card : ℚ) / (Fintype.card C : ℚ) ^ T ≤ (B : ℚ) / (Fintype.card C : ℚ) := by
   classical
   have hC : (0 : ℚ) < (Fintype.card C : ℚ) := by exact_mod_cast Fintype.card_pos
   have hsub : (univ.filter E).card ≤ (univ.filter fun tape : Fin T → C =>
-      ∃ i, P i (Sumcheck.extract_prefix tape i) (tape i)).card := by
+      ∃ i, P i (SumcheckV1.extract_prefix tape i) (tape i)).card := by
     apply Finset.card_le_card
     intro tape htape
     simp only [mem_filter, mem_univ, true_and] at htape ⊢
@@ -493,9 +493,9 @@ theorem slotBad_card (j : Fin T) (pref : Fin j.val → C) :
 
 /-- `slotQuery` at a slot of a real tape is that slot's entry in the run's seen-list. -/
 theorem slotQuery_at (tape : Fin T → C) (j : Fin T) :
-    slotQuery (T := T) G.dflt G.exec (Sumcheck.extract_prefix tape j)
+    slotQuery (T := T) G.dflt G.exec (SumcheckV1.extract_prefix tape j)
       = (lazyRun tape G.dflt G.exec []).2.1[j.val]? := by
-  rw [show Sumcheck.extract_prefix tape j
+  rw [show SumcheckV1.extract_prefix tape j
       = (fun l : Fin j.val => tape ⟨l.val, lt_trans l.isLt j.isLt⟩) from rfl]
   exact slotQuery_eq G.dflt G.exec (le_of_lt j.isLt) tape
 
@@ -509,7 +509,7 @@ theorem total_weight_le (betaMax : ℕ) (hmax : ∀ q : Q, G.beta q ≤ betaMax)
     (hslot : ∀ (out : Out) (i : Fin L) (cp : Fin i.val → C),
       G.beta (G.hashInput out i.val cp) ≤ slotBeta i)
     (hfuel : L + N ≤ T) (tape : Fin T → C) :
-    ∑ j : Fin T, G.slotWeight j (Sumcheck.extract_prefix tape j)
+    ∑ j : Fin T, G.slotWeight j (SumcheckV1.extract_prefix tape j)
       ≤ N * betaMax + ∑ i, slotBeta i := by
   classical
   -- the two phases' seen-lists
@@ -534,7 +534,7 @@ theorem total_weight_le (betaMax : ℕ) (hmax : ∀ q : Q, G.beta q ≤ betaMax)
   rw [← hrest] at hnodup
   obtain ⟨-, hnodupR, hdisj⟩ := List.nodup_append.mp hnodup
   -- rewrite the slot sum as a list sum over the final seen-list
-  have hsum : ∑ j : Fin T, G.slotWeight j (Sumcheck.extract_prefix tape j)
+  have hsum : ∑ j : Fin T, G.slotWeight j (SumcheckV1.extract_prefix tape j)
       = (verif.2.1.map G.beta).sum := by
     rw [← sum_slots_eq_list_sum verif.2.1 hlenF G.beta]
     refine Finset.sum_congr rfl fun j _ => ?_
@@ -613,7 +613,7 @@ theorem card_mul_le_weighted [DecidableEq C] (betaMax : ℕ)
       ≤ (N * betaMax + ∑ i, slotBeta i) * Fintype.card C ^ T := by
   classical
   refine le_trans (Nat.mul_le_mul_right _ (Finset.card_le_card (t := univ.filter fun tape =>
-      ∃ j, G.slotBad j (Sumcheck.extract_prefix tape j) (tape j)) ?_))
+      ∃ j, G.slotBad j (SumcheckV1.extract_prefix tape j) (tape j)) ?_))
     (weighted_tape_card_le G.slotBad G.slotWeight G.slotBad_card _
       (G.total_weight_le betaMax hmax slotBeta hslot hfuel))
   intro tape htape

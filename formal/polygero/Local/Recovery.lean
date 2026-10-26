@@ -98,4 +98,55 @@ theorem large_response (I : Instance F)
     convert! hdecode using 1
   exact ⟨hfull,hscan⟩
 
+/-- A response assigned to a reduced system is decoded to that system's fixed
+label unless its coin is a system exception. No false-statement premise is used. -/
+theorem recover_of_assigned_system (I : Instance F) (hk : 1 ≤ I.r+I.w)
+    (σ : I.layer.Statement) (W : I.layer.Oracle)
+    (d : systems I.domain I.primary_le W) (coin : I.layer.Coin)
+    (payload : I.layer.Payload)
+    (hp : (coin.2,payload.primary) ∈ ConsistencyClosure.solutions
+      (PolynomialClosure.jointMap (primaryCode I.domain I.primary_le) (oracleWords W.ordinary))
+      W.proximityMask d.1)
+    (hnot : coin ∉ systemExceptions hk I.layout σ d)
+    (hglobal : globalCheck I.domain I.layout σ coin.1 payload)
+    (hlarge : max (I.r+I.w+2*I.s+1) (2*(I.r+I.w)+I.s) ≤
+      (goodColumns I.domain (by have := I.primary_le; omega) I.primary_le I.layout σ W coin payload).card)
+    (herr : ((goodColumns I.domain (by have := I.primary_le; omega) I.primary_le
+      I.layout σ W coin payload) \ d.1).card ≤ I.s) :
+    ∃ hfull, scanRecoverAt I σ W coin payload = some (systemLabel I hk W d hfull) := by
+  let G := goodColumns I.domain (by have := I.primary_le; omega) I.primary_le I.layout σ W coin payload
+  change max (I.r+I.w+2*I.s+1) (2*(I.r+I.w)+I.s) ≤ G.card at hlarge
+  obtain ⟨hfull,hsat,hrows⟩ := certify hk I.layout σ d coin payload hp hnot hglobal
+    ((le_max_right _ _).trans hlarge) herr
+  let f := rows hk d hfull
+  let g := I.coreProjection f
+  let S := rowAgreement (primaryCode I.domain I.primary_le) (I.coreWords W) g
+  have hDS : d.1 ⊆ S := by
+    apply Subset.trans _ (I.agreement_subset_core W f)
+    intro j hj
+    simp only [rowAgreement,mem_filter,mem_univ,true_and]
+    exact fun i => hrows i j hj
+  have hsat' : I.layer.satisfies σ ((tupleCounts I).witness g) := by
+    simpa only [tupleCounts,g,Instance.coreWitness_projection,Instance.layer] using hsat
+  have hjoint : (G \ S).card ≤ I.s :=
+    (card_le_card (show G \ S ⊆ G \ d.1 from fun j hj =>
+      mem_sdiff.mpr ⟨(mem_sdiff.mp hj).1, fun hd => (mem_sdiff.mp hj).2 (hDS hd)⟩)).trans herr
+  have hnear : ∀ i, (rowErrors (primaryCode I.domain I.primary_le)
+      (I.coreWords W i) G (g i)).card ≤ I.s := by
+    intro i
+    apply (card_le_card (show rowErrors (primaryCode I.domain I.primary_le)
+      (I.coreWords W i) G (g i) ⊆ G \ S from ?_)).trans hjoint
+    intro j hj
+    simp only [rowErrors,puncturedErrors,mem_filter] at hj
+    refine mem_sdiff.mpr ⟨hj.1,?_⟩
+    intro hjS
+    simp only [S,rowAgreement,mem_filter,mem_univ,true_and] at hjS
+    exact hj.2 (hjS i)
+  have hdecode := recoverOnAt_eq_some I σ W G I.s
+    (by omega) g hsat' hjoint hnear
+  refine ⟨hfull,?_⟩
+  dsimp only [G] at hlarge hdecode
+  simp only [scanRecoverAt,if_pos hglobal,if_pos hlarge]
+  convert! hdecode using 1
+
 end RecursivePolygero.ProfileAnalysis

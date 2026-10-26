@@ -1,30 +1,25 @@
-# Ligero V1/V2/V3 extraction and soundness
+# Ligero V1 extraction and soundness
 
 This development proves scalar Ligero IOP extraction and false-statement
-soundness. It includes exact v7/v8 component certificates for all three
-variants and separate local challenge/query count certificates.
+soundness. It includes exact v7 component certificates and separate local
+challenge/query count certificates.
 
-**V1 is the shipped protocol. V2 and V3 are alternative protocols under
-development.**
+Version 8 uses Polygero; its certificates are in
+[`parameters/polygero`](../parameters/polygero).
 
-## Certified v7/v8 bounds
+## Certified v7 bounds
 
 At 132 distinct column openings, the IOP error is at most `2^-s`, with the
 following integer exponents:
 
-| Component | V1 | V2 | V3 |
-|---|---:|---:|---:|
-| v7 signature (all attribute counts) | 127 | 191 | 191 |
-| v7 hash (1–4 attributes) | 125 | 126 | 126 |
-| v8 signature (all attribute counts) | 127 | 191 | 191 |
-| v8 hash (1–4 attributes) | 125 | 126 | 126 |
+| Component | V1 |
+|---|---:|
+| v7 signature (all attribute counts) | 127 |
+| v7 hash (1–4 attributes) | 125 |
 
 The V1 entries use Hahn/Delsarte certificates for the unchecked-mask list
-below the Johnson threshold. The degree 9–17 certificates improve the
-previous V1 bounds from 125/124/125/123 to 127/125/127/125 bits.
-The V2/V3 hash entries use the integer three-set packing bound to certify
-a shared decoded-witness list of at most two candidates, improving 125 to
-126 bits. The list bound applies to the complete proximity-tested matrix.
+below the Johnson threshold. These certificates improve the previous V1
+signature/hash bounds from 125/124 to 127/125 bits.
 
 [OptimizedIOPCertificates](examples/Ligero/Longfellow/OptimizedIOPCertificates.lean)
 checks all geometry, field-order, clique/Johnson, Hahn/Delsarte, and
@@ -35,21 +30,6 @@ records exact parameters and theorem names.
 Each signature geometry covers one through four attributes. Hash components
 have separate records for each attribute count. The signature field is the
 P-256 base field; the hash field has order `2^128`.
-
-The v8 instance dimensions are:
-
-| Component | openings r | payload w | block k | encoded length | tested n | witness rows | total rows |
-|---|---:|---:|---:|---:|---:|---:|---:|
-| Signature | 132 | 362 | 494 | 4445 | 3458 | 12 | 18 |
-| Hash, 1 attribute | 132 | 452 | 584 | 5255 | 4088 | 165 | 171 |
-| Hash, 2 attributes | 132 | 451 | 583 | 5246 | 4081 | 173 | 179 |
-| Hash, 3 attributes | 132 | 451 | 583 | 5246 | 4081 | 181 | 187 |
-| Hash, 4 attributes | 132 | 451 | 583 | 5246 | 4081 | 189 | 195 |
-
-All use `rateinv = 7`, `k = r+w`, and
-`n = encoded length - (2*k-1)`. The
-[parameter records](examples/Ligero/Longfellow/v8-extracted-parameters.json)
-retain the current Rust source provenance and generated circuit identifiers.
 
 ## Major proved results
 
@@ -62,29 +42,27 @@ retain the current Rust source provenance and generated circuit identifiers.
 | Integer one- and two-candidate packing bounds, and an independent packing interface for the shared decoded-witness list | `CodingTheory.uniformFamilyBound_one_of_two_mul_gt`, `uniformFamilyBound_two_of_three_mul_gt`, `SchemeLiftCandidate.univ_card_le_uniformFamilyBound` | [UniformFamily](CodingTheory/ListDecoding/UniformFamily.lean), [SchemeFixedLiftList](LigeroFamily/Soundness/SchemeFixedLiftList.lean) |
 | V1 unchecked-mask list bounded by any uniform-family bound (Johnson above, Hahn/Delsarte below the Johnson threshold) | `Ligero.V1.responseWordsAgreeingAtLeast_card_le_of_bound`, `Ligero.V1.V1MaskRange` | [MaskAgreement](Ligero/V1/Soundness/MaskAgreement.lean), [V1Profile](Ligero/V1/Soundness/V1Profile.lean), [HahnMaskCertificates](examples/Ligero/Longfellow/HahnMaskCertificates.lean) |
 | Validity and agreement guarantees for the response-assisted extractor | `LigeroFamily.ScalarGapExtraction.extract_valid`, `extract_agreement_errors` | [ScalarGapExtraction](LigeroFamily/Soundness/ScalarGapExtraction.lean) |
-| Scalar IOP extraction for V1, V2, and V3 | `Ligero.V1/V2/V3.scalarGap_extraction_failure`, `scalarGap_iop_extraction_failure` | [V1](Ligero/V1/ScalarGapExtraction.lean), [V2](Ligero/V2/ScalarGapExtraction.lean), [V3](Ligero/V3/ScalarGapExtraction.lean) |
-| Refined IOP extraction with a single response-uniform envelope | `Ligero.V1/V2/V3.scalarGap_profiled_extraction_failure`, `ScalarGapExtraction.profiledUniformEnvelope_mean_of_strategies` | [V1](Ligero/V1/ScalarGapProfiled.lean), [V2](Ligero/V2/ScalarGapProfiled.lean), [V3](Ligero/V3/ScalarGapProfiled.lean), [Shared proof](LigeroFamily/Soundness/ScalarGapProfiled.lean) |
-| False-statement soundness from extractor validity | `ScalarGapExtraction.Certificate.false_statement`, `CertifiedResult.v1/v2/v3_interactive` | [ScalarGapExtraction](LigeroFamily/Soundness/ScalarGapExtraction.lean), [ProfiledExtraction](examples/Ligero/Longfellow/ProfiledExtraction.lean) |
+| Scalar IOP extraction for V1 | `Ligero.V1.scalarGap_extraction_failure`, `scalarGap_iop_extraction_failure` | [V1](Ligero/V1/ScalarGapExtraction.lean) |
+| Refined IOP extraction with a single response-uniform envelope | `Ligero.V1.scalarGap_profiled_extraction_failure`, `ScalarGapExtraction.profiledUniformEnvelope_mean_of_strategies` | [V1](Ligero/V1/ScalarGapProfiled.lean), [Shared proof](LigeroFamily/Soundness/ScalarGapProfiled.lean) |
+| False-statement soundness from extractor validity | `ScalarGapExtraction.Certificate.false_statement`, `CertifiedResult.v1_interactive` | [ScalarGapExtraction](LigeroFamily/Soundness/ScalarGapExtraction.lean), [ProfiledExtraction](examples/Ligero/Longfellow/ProfiledExtraction.lean) |
 | Merkle prefix binding and consistency of accepted openings | `Merkle.MH.PrefixBindingGame.bad_ratio_le`, `PrefixBindingFamily.boundMessage_game_eq` | [PrefixBinding](../merkle/Merkle/PrefixBinding.lean) |
-| Exact IOP instances and local count certificates for v7/v8 geometries | `Optimized.v7*/v8*` extraction and interactive endpoints; `CountCertificate` | [IOP certificates](examples/Ligero/Longfellow/OptimizedIOPCertificates.lean), [count certificates](examples/Ligero/Longfellow/AdaptiveOptimizedCertificates.lean) |
+| Exact IOP instances and local count certificates for v7 geometries | `Optimized.v7*` extraction and interactive endpoints; `CountCertificate` | [IOP certificates](examples/Ligero/Longfellow/OptimizedIOPCertificates.lean), [count certificates](examples/Ligero/Longfellow/AdaptiveOptimizedCertificates.lean) |
 
 Example theorem names in the table abbreviate the shared namespace
 `Ligero.Examples.Grid`. `CertifiedResult` is in
 `Ligero.Examples.Grid.LongfellowProfiledExtraction`; component endpoints are
 in its `Optimized` namespace.
 
-## Protocol variants and extraction
+## Protocol and extraction
 
-V1 uses the original unchecked arithmetic masks. V2 uses four checked
-base-code mask rows. V3 checks quadratic rows directly in opened columns and
-retains the full witness layout. Scalar batching is used throughout.
+V1 uses the original unchecked arithmetic masks and scalar batching.
 
 For V1, the arithmetic profile charges probability one only below the mask
 threshold. Above it, the response-code words agreeing with an unchecked mask on
 at least `a` columns form `a`-subsets meeting pairwise in at most `2k-1`
 columns, so any uniform-family bound limits them. The Johnson count gives a
 finite bound only for `a² > n(2k-1)`. One Hahn/Delsarte certificate of degree
-9–17 extends the bound 38–68 agreement levels further down. Its cutoff is
+at least nine extends the bound below that threshold. Its cutoff is
 selected against the complete extraction budget. By size monotonicity it
 covers every level up to the Johnson threshold. Each certificate is an
 integer nonnegative combination of Hahn kernels, checked against every
@@ -105,12 +83,12 @@ Its challenge mean supplies the error coefficient used in the Longfellow analysi
 
 ## Local count certificates
 
-The local V1, V2, and V3 challenge/query counts come from their profiled
-agreement proofs, uniformly over the response fixed before the query draw.
+The local V1 challenge/query counts come from its profiled agreement
+proofs, uniformly over the response fixed before the query draw.
 The count certificates below are checked arithmetic statements for those
 local budgets.
 
-Exact v7/v8 profile thresholds give the following **per-round count**
+Exact v7 profile thresholds give the following **per-round count**
 exponents. For each entry, both the escape-challenge fraction and the
 doomed-challenge accepting-query fraction are at most `2^-b`. The optimized
 hash geometries and their validity and count proofs are checked in
@@ -118,32 +96,25 @@ hash geometries and their validity and count proofs are checked in
 Here "optimized" records improved certified choices; the development does not
 prove that no other parameters or certificates give a stronger bound.
 [AdaptiveCountCertificates](examples/Ligero/Longfellow/AdaptiveCountCertificates.lean)
-supplies the integer counts and V1/V2/V3 escape-budget adapters. V2 and V3
-use the same checked-mask counts.
+supplies the integer counts and V1 escape-budget adapters.
 The V1 signature rows are in
 [AdaptiveSignatureCertificates](examples/Ligero/Longfellow/AdaptiveSignatureCertificates.lean).
 They use separate, checked
 [Hahn mask certificates](examples/Ligero/Longfellow/HahnMaskFSSignature.lean)
 with the Johnson line geometry; their verifier and mask policy remain V1.
 
-| Geometry | V1 `b` | V2 `b` | V3 `b` |
-|---|---:|---:|---:|
-| v7 signature | 132 | — | — |
-| v7 hashes 1–4 | 117 | 120 | 120 |
-| v8 signature | 131 | — | — |
-| v8 hashes 1–4 | 117 | 120 | 120 |
-
-The V2/V3 signature entries at 191 bits in the IOP table above are certified
-flat IOP bounds, not local challenge/query count certificates. No local count
-record for those signature rows is asserted here.
+| Geometry | V1 `b` |
+|---|---:|
+| v7 signature | 132 |
+| v7 hashes 1–4 | 117 |
 
 The exact integer escape count has a rounding cost strictly below one
 challenge point, as proved by `CountCertificate.escape_ratio_lt`.
 
 ## Organization and checking
 
-The common protocol and extraction proofs are in `LigeroFamily`. Variant
-bridges are in `Ligero/V1`, `Ligero/V2`, and `Ligero/V3`.
+The common protocol and extraction proofs are in `LigeroFamily`. The V1
+bridge is in `Ligero/V1`.
 [FiniteResponse](LigeroFamily/Protocol/FiniteResponse.lean) supplies finite
 response instances, while
 [FirstOccurrenceTrace](../bcs/Bcs/FirstOccurrenceTrace.lean) supplies query-slot
@@ -154,29 +125,28 @@ example arithmetic. `Ligero.API` exposes the extraction surface, and
 From `formal/`, build the ordinary Longfellow development with:
 
 ```sh
-lake build Lfzk
+lake build LfzkV1
 ```
 
-The improved Ligero local-count certificates, including the V1
-signature Hahn checks above, have a separate target. Its script builds the
-independent v7/v8 radius ranges two at a time before assembling the public
-certificate theorems; the assembly does not repeat the polynomial checks.
+The improved Ligero local-count certificates, including the V1 signature Hahn
+checks above, are included in the default build. `LigeroLocalCounts` also builds
+them on their own. Exact integer polynomial checks replace the former radius
+range checks, and the public certificate theorems reuse the checked results.
 The aggregate
 [AdaptiveOptimizedCertificates](examples/Ligero/Longfellow/AdaptiveOptimizedCertificates.lean)
 module preserves the existing import path. Hash-only users can build
 `examples.Ligero.Longfellow.AdaptiveHashCertificates` without importing the
-signature range checks.
+signature certificate.
 
 ```sh
-ligero/examples/Ligero/scripts/build_ligero_local_counts.sh
+scripts/build.sh LigeroLocalCounts
 ```
 
-To regenerate the V1 Hahn/Delsarte mask certificates (stdlib-only Python,
-with exact polynomial generation and independent Gram-kernel checks), run:
+To regenerate the polynomial proposals from the committed certificate coefficients, run:
 
 ```sh
-python3 ligero/examples/Ligero/scripts/hahn_mask_certificates.py \
-  --lean-module ligero/examples/Ligero/Longfellow/HahnMaskCertificates.lean
+cargo run --manifest-path parameters/hahn/generator/Cargo.toml -- .
 ```
 
-The exact concrete certificates use native arithmetic checks.
+Lean checks every generated Hahn identity, sign and list bound in its kernel.
+The surrounding protocol budget records retain their native arithmetic checks.

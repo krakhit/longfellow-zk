@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Exact Delsarte certificates for the V1 unchecked-mask list (stdlib only).
 
-The default generates one targeted higher-degree certificate per v7/v8
+The default generates one targeted higher-degree certificate per v7
 geometry. Its cutoff is selected against the complete extraction budget,
 not by minimizing the list bound alone. The optional --frontier mode retains
 the degree-five exact rational simplex search.
@@ -31,24 +31,20 @@ from math import comb, floor, gcd, isqrt, lcm, prod
 from functools import lru_cache
 from pathlib import Path
 
-# (name, n, k) of every distinct v7/v8 V1 geometry.
+# (name, n, k) of every distinct v7 V1 geometry.
 GEOMETRIES = (
     ("v7Sig", 3187, 455),
     ("v7Hash1", 3230, 461),
     ("v7Hash2", 3318, 474),
     ("v7Hash3", 3352, 478),
     ("v7Hash4", 3436, 490),
-    ("v8Sig", 3458, 494),
-    ("v8Hash1", 4088, 584),
-    ("v8Hash2", 4081, 583),
 )
 
 # Cutoffs certified against the concrete extraction theorems. These minimize
 # degree among the tested cutoffs reaching 127 signature / 125 hash bits.
 TARGET_CUTOFFS = {
     "v7Sig": 1665, "v7Hash1": 1681, "v7Hash2": 1728,
-    "v7Hash3": 1744, "v7Hash4": 1788, "v8Sig": 1808,
-    "v8Hash1": 2122, "v8Hash2": 2113,
+    "v7Hash3": 1744, "v7Hash4": 1788,
 }
 
 DEGREE = 5        # Maximum Hahn degree searched; no global optimality claim.

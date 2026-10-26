@@ -79,4 +79,4 @@ example : CodingTheory.HahnDelsarte.certifiedBound 6 2 [6, 1] = 3 := by decide +
 
 #guard_msgs (drop info) in #check Ligero.Examples.Grid.LongfellowProfiledExtraction.CountCertificate
 #guard_msgs (drop info) in #check Ligero.Examples.Grid.LongfellowProfiledExtraction.Optimized.v7Sig_v1_adaptiveCounts
-#guard_msgs (drop info) in #check Ligero.Examples.Grid.LongfellowProfiledExtraction.Optimized.v8Sig_v3_adaptiveCounts
+#guard_msgs (drop info) in #check Ligero.Examples.Grid.LongfellowProfiledExtraction.Optimized.v7Sig_v3_adaptiveCounts

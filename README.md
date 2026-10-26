@@ -17,6 +17,16 @@ It is named after the bridge outside the Google Cambridge office.
 
 This project has completed several independent security reviews by panels of academic and industry experts in the field. Their reports are available in the [Project documentation/Reviews](https://longfellow-zk.github.io/longfellow-zk/docs/reviews/) page.
 
+The [Lean development](formal/README.md) proves conditional security bounds
+for mathematical models of both protocol versions: 116-bit T-security for
+V1 and a 117-bit extraction bound for V2, including the two-field
+MAC and Merkle reduction. For all query budgets the V2 bound is
+`Pr[accept ∧ extraction fails] ≤ (1+N+tA)/2^117`. The
+[formal audit](formal/AUDIT.md) states the assumptions, theorem chain, and
+verification commands. These results do not constitute source-level
+verification of the Rust or C++ implementation; full V2 joint-view zero
+knowledge remains open.
+
 # Specifications
 This repository contains [the working files](https://github.com/longfellow-zk/longfellow-zk/tree/main/docs/specs) for a specification of Longfellow and its components.
 If you are interested in contributing, please create an Issue or a Pull Request. Our discussions occur under Issues.

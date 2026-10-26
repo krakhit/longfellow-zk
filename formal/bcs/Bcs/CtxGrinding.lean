@@ -151,7 +151,7 @@ The verifier's round-`k` point sits at a tape slot whose answer is round `k`'s c
 the whole tape to the padded prefix below that slot.
 -/
 theorem exists_bad_slot (hfuel : L + N ≤ T) (tape : Fin T → C) (h : G.RoundBad tape) :
-    ∃ j : Fin T, G.slotBad j (Sumcheck.extract_prefix tape j) (tape j) := by
+    ∃ j : Fin T, G.slotBad j (SumcheckV1.extract_prefix tape j) (tape j) := by
   classical
   obtain ⟨k, hbad⟩ := h
   have hmem := G.toTranscript.verifier_entry_mem tape k.val k.isLt
@@ -168,13 +168,13 @@ theorem exists_bad_slot (hfuel : L + N ≤ T) (tape : Fin T → C) (h : G.RoundB
     have hval' : (G.output tape).2 k.val
         = tapeAt tape G.dflt ((lazyRun tape G.dflt G.exec []).2.1.idxOf q) := hval
     rw [hval', tapeAt, dif_pos hlt]
-  have hctx : G.ctxAt (pad (T := T) G.dflt (Sumcheck.extract_prefix tape j)) (G.key q)
+  have hctx : G.ctxAt (pad (T := T) G.dflt (SumcheckV1.extract_prefix tape j)) (G.key q)
       = G.ctxAt tape (G.key q) :=
     G.ctxAt_congr tape _ j q hget fun i hi => by
       rw [pad_agree G.dflt _ i hi]
       rfl
   refine ⟨j, q, ?_, ?_⟩
-  · rw [show Sumcheck.extract_prefix tape j
+  · rw [show SumcheckV1.extract_prefix tape j
         = (fun l : Fin j.val => tape ⟨l.val, lt_trans l.isLt j.isLt⟩) from rfl]
     rw [slotQuery_eq G.dflt G.exec (le_of_lt j.isLt) tape]
     exact hget
@@ -202,7 +202,7 @@ theorem card_mul_le [DecidableEq C] (betaMax : ℕ) (hmax : ∀ q : Q, G.beta q 
       ≤ (N * betaMax + ∑ i, slotBeta i) * Fintype.card C ^ T := by
   classical
   refine le_trans (Nat.mul_le_mul_right _ (Finset.card_le_card (t := univ.filter fun tape =>
-      ∃ j, G.slotBad j (Sumcheck.extract_prefix tape j) (tape j)) ?_))
+      ∃ j, G.slotBad j (SumcheckV1.extract_prefix tape j) (tape j)) ?_))
     (weighted_tape_card_le G.slotBad G.toTranscript.slotWeight G.slotBad_card _
       (G.toTranscript.total_weight_le betaMax hmax slotBeta hslot hfuel))
   intro tape htape

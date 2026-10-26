@@ -1,5 +1,5 @@
 import Bcs.Counting
-import Sumcheck.Grinding
+import SumcheckV1.Grinding
 import Mathlib.Algebra.Order.Field.Basic
 import Mathlib.Data.Rat.Cast.Order
 
@@ -16,7 +16,7 @@ A round-by-round argument needs three things: a marker saying whether a partial 
 already lost, a bound on how often a fresh challenge escapes that marker, and the fact that an
 accepting transcript is not lost.  None of the three needs a protocol *object* — they are all
 statements about the tape of challenges the run consumed.  So this file takes `Accepts` abstract,
-exactly as `lfzk`'s `accepts` is abstract, and indexes the state function by *how much of the tape
+exactly as `lfzk-v1`'s `accepts` is abstract, and indexes the state function by *how much of the tape
 it reads*: prefix-measurability is a typing fact rather than a hypothesis, since a predicate given
 only the first `j` answers cannot mention slot `j` or later.
 
@@ -109,15 +109,15 @@ def trunc {T : ℕ} (tape : Fin T → C) (j : ℕ) (hj : j ≤ T) : Fin j → C 
 def extend {j : ℕ} (pref : Fin j → C) (c : C) : Fin (j + 1) → C :=
   fun k => if h : k.val < j then pref ⟨k.val, h⟩ else c
 
-/-- Truncating to `i` is `Sumcheck`'s prefix extraction, so the counting lemmas apply on the
+/-- Truncating to `i` is `SumcheckV1`'s prefix extraction, so the counting lemmas apply on the
 nose. -/
 theorem trunc_eq_extract_prefix {T : ℕ} (tape : Fin T → C) (i : Fin T) :
-    trunc tape i.val (le_of_lt i.isLt) = Sumcheck.extract_prefix tape i := rfl
+    trunc tape i.val (le_of_lt i.isLt) = SumcheckV1.extract_prefix tape i := rfl
 
 /-- Truncating one slot further is the prefix extended by that slot. -/
 theorem trunc_succ {T : ℕ} (tape : Fin T → C) (i : Fin T) :
     trunc tape (i.val + 1) i.isLt
-      = extend (Sumcheck.extract_prefix tape i) (tape i) := by
+      = extend (SumcheckV1.extract_prefix tape i) (tape i) := by
   funext k
   rcases lt_or_ge k.val i.val with hk | hk
   · simp only [trunc, extend, dif_pos hk]
@@ -152,7 +152,7 @@ structure RbrCore (C : Type) [Fintype C] (T : ℕ) (Accepts : (Fin T → C) → 
     (univ.filter fun c : C => bad i pref c).card ≤ beta i
   /-- An accepting tape on which extraction failed is bad at some slot. -/
   escape_of_accepts : ∀ tape : Fin T → C, Accepts tape → Fails →
-    ∃ i : Fin T, bad i (Sumcheck.extract_prefix tape i) (tape i)
+    ∃ i : Fin T, bad i (SumcheckV1.extract_prefix tape i) (tape i)
 
 namespace RbrCore
 
@@ -162,7 +162,7 @@ variable {C : Type} [Fintype C] {T : ℕ} {Accepts : (Fin T → C) → Prop} {Fa
 **The count.**  At most `(∑ i, beta i) * |C|^(T-1)` of the `|C|^T` tapes both make the verifier
 accept and leave extraction failing.
 
-`Sumcheck.tape_bad_card_le` does all of it; the only content here is that the accepting-and-failing
+`SumcheckV1.tape_bad_card_le` does all of it; the only content here is that the accepting-and-failing
 tapes are a subset of the bad ones, which is `escape_of_accepts`.
 -/
 theorem rbr_card_le [DecidableEq C] (R : RbrCore C T Accepts Fails) :
@@ -170,7 +170,7 @@ theorem rbr_card_le [DecidableEq C] (R : RbrCore C T Accepts Fails) :
       ≤ (∑ i, R.beta i) * Fintype.card C ^ (T - 1) := by
   classical
   refine le_trans (Finset.card_le_card ?_)
-    (Sumcheck.tape_bad_card_le R.beta (fun i pref c => R.bad i pref c) R.bad_card)
+    (SumcheckV1.tape_bad_card_le R.beta (fun i pref c => R.bad i pref c) R.bad_card)
   intro tape htape
   simp only [mem_filter, mem_univ, true_and] at htape ⊢
   exact R.escape_of_accepts tape htape.1 htape.2
@@ -262,12 +262,12 @@ has been shed.
 theorem exists_escape (R : Rbr C T Accepts Fails) (tape : Fin T → C)
     (h0 : R.doomed 0 (trunc tape 0 (Nat.zero_le T)))
     (hend : ¬ R.doomed T (trunc tape T le_rfl)) :
-    ∃ i : Fin T, R.doomed i.val (Sumcheck.extract_prefix tape i) ∧
-      ¬ R.doomed (i.val + 1) (extend (Sumcheck.extract_prefix tape i) (tape i)) := by
+    ∃ i : Fin T, R.doomed i.val (SumcheckV1.extract_prefix tape i) ∧
+      ¬ R.doomed (i.val + 1) (extend (SumcheckV1.extract_prefix tape i) (tape i)) := by
   -- strong induction on the first length at which doom is gone
   have key : ∀ j : ℕ, ∀ hj : j ≤ T, ¬ R.doomed j (trunc tape j hj) →
-      ∃ i : Fin T, R.doomed i.val (Sumcheck.extract_prefix tape i) ∧
-        ¬ R.doomed (i.val + 1) (extend (Sumcheck.extract_prefix tape i) (tape i)) := by
+      ∃ i : Fin T, R.doomed i.val (SumcheckV1.extract_prefix tape i) ∧
+        ¬ R.doomed (i.val + 1) (extend (SumcheckV1.extract_prefix tape i) (tape i)) := by
     intro j
     induction j with
     | zero => exact fun hj hnot => absurd h0 hnot

@@ -1,6 +1,6 @@
 import LigeroFamily.Soundness.ScalarGapChecked
 import LigeroFamily.Protocol.FiniteResponse
-import Lfzk.LigeroRbr
+import LfzkV1.LigeroRbr
 
 /-! Response-uniform local challenge/query bounds for checked-mask Ligero policies. -/
 

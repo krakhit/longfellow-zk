@@ -1,6 +1,6 @@
 import Bcs.FirstOccurrenceTrace
 import Merkle.LazyTape
-import Sumcheck.Grinding
+import SumcheckV1.Grinding
 import LigeroFamily.Protocol.Finite
 import Mathlib.Algebra.Order.Field.Rat
 
@@ -555,7 +555,7 @@ noncomputable def canonicalCaseAFloorSubsetKey
       (Query AlphaKey (AlphaKey × Response)) (Answer Alpha Subset) Output N)
     (dflt : Answer Alpha Subset) (alphaKey : AlphaKey)
     (responseOf : Output → Response) (i : Fin (N + 2))
-    (pref : Sumcheck.Prefix (Answer Alpha Subset) i.val) :
+    (pref : SumcheckV1.Prefix (Answer Alpha Subset) i.val) :
     AlphaKey × Response :=
   let padded := Merkle.RandomOracle.pad (T := N + 2) dflt pref
   match Merkle.RandomOracle.slotQuery (T := N + 2) dflt adversary pref with
@@ -581,7 +581,7 @@ theorem canonicalCaseAFloorSubsetKey_eq
         listed win bindBreak i tape)
     (hunlisted : ¬listed tape) :
     canonicalCaseAFloorSubsetKey adversary dflt alphaKey responseOf i
-        (Sumcheck.extract_prefix tape i) =
+        (SumcheckV1.extract_prefix tape i) =
       (alphaKey,
         responseOf (Merkle.RandomOracle.lazyRun tape dflt adversary []).1) := by
   classical
@@ -633,19 +633,19 @@ theorem canonicalCaseAFloorSubsetKey_eq
       (T := N + 2) dflt adversary (j := i.val) (by omega) tape
     have hslotQuery' :
         Merkle.RandomOracle.slotQuery (T := N + 2) dflt adversary
-            (Sumcheck.extract_prefix tape i) = some target := by
+            (SumcheckV1.extract_prefix tape i) = some target := by
       convert hslotQuery.trans hget using 1
       congr 1
     simp only [canonicalCaseAFloorSubsetKey, hslotQuery', target, run]
   · have hseenLe : seen.length ≤ i.val := Nat.le_of_not_gt hi
     let padded := Merkle.RandomOracle.pad (T := N + 2) dflt
-      (Sumcheck.extract_prefix tape i)
+      (SumcheckV1.extract_prefix tape i)
     have hagree : ∀ j : Fin (N + 2), j.val < seen.length →
         tape j = padded j := by
       intro j hj
       symm
       exact Merkle.RandomOracle.pad_agree dflt
-        (Sumcheck.extract_prefix tape i) j (hj.trans_le hseenLe)
+        (SumcheckV1.extract_prefix tape i) j (hj.trans_le hseenLe)
     have hrun : Merkle.RandomOracle.lazyRun tape dflt adversary [] =
         Merkle.RandomOracle.lazyRun padded dflt adversary [] := by
       apply Merkle.RandomOracle.lazyRun_eq_of_agree_below_seen_length
@@ -656,7 +656,7 @@ theorem canonicalCaseAFloorSubsetKey_eq
       (T := N + 2) dflt adversary (j := i.val) (by omega) tape
     have hslotQuery' :
         Merkle.RandomOracle.slotQuery (T := N + 2) dflt adversary
-            (Sumcheck.extract_prefix tape i) = none := by
+            (SumcheckV1.extract_prefix tape i) = none := by
       convert hslotQuery.trans hnone using 1
       congr 1
     simp only [canonicalCaseAFloorSubsetKey, hslotQuery']

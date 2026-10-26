@@ -73,5 +73,18 @@ theorem mldsa_per_query {q : ℕ} (hq : minimumField .mldsa128 ≤ q) :
     norm_num [additiveBudget,threshold,rankBudget,rankDivisor,minimumField]
   linarith
 
+/-- Every retained runtime profile has a coefficient at most 2^-127 before
+the separate commitment-binding error is added. -/
+theorem per_query_le_127 (b : Budget) {q : ℕ} (hq : b.minimumField ≤ q) :
+    1/(q : ℚ)+b.additiveBudget ≤ 1/2^127 := by
+  cases b with
+  | universal =>
+    rw [additiveBudget_universal]
+    have hi : 1/(q : ℚ) ≤ 1/(2^128 : ℚ) :=
+      div_le_div_of_nonneg_left (by norm_num) (by norm_num) (by exact_mod_cast hq)
+    have hn : (1/(2^128 : ℚ)+1/2^129) ≤ 1/2^127 := by norm_num
+    linarith
+  | mldsa128 => exact (mldsa_per_query hq).trans (by norm_num)
+
 end Budget
 end RuntimeHahn

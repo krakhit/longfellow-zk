@@ -122,7 +122,7 @@ noncomputable def toRbrCore (G : Grinding C Q A t T Accepts Fails) :
   escape_of_accepts tape hacc hfail := by
     obtain ⟨j, q, hseen, hdoom, hesc⟩ := G.chain tape hacc hfail
     refine ⟨j, q, ?_, hdoom, hesc⟩
-    rw [show Sumcheck.extract_prefix tape j
+    rw [show SumcheckV1.extract_prefix tape j
         = (fun i : Fin j.val => tape ⟨i.val, lt_trans i.isLt j.isLt⟩) from rfl]
     rw [slotQuery_eq G.dflt G.adversary (le_of_lt j.isLt) tape]
     exact hseen

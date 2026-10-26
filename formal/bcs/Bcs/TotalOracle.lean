@@ -589,7 +589,7 @@ theorem roundBad_of_accepts (H : Q → C) (hacc : G.Accepts H) (hfail : Fails) :
   refine ⟨k, ?_⟩
   set p := G.hashInput out k.val with hp
   have hs : G.pts.slot p = k.val := G.hslot out k.val k.isLt
-  have hpre : (fun j : Fin k.val => H (G.pts.anc p j.val)) = Sumcheck.extract_prefix ch k := by
+  have hpre : (fun j : Fin k.val => H (G.pts.anc p j.val)) = SumcheckV1.extract_prefix ch k := by
     funext j
     show H (G.pts.anc p j.val) = H (G.hashInput out j.val)
     rw [hp, G.hanc out k.val j.val j.isLt k.isLt]

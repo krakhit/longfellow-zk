@@ -38,7 +38,7 @@ a candidate:
 * `wrong_init` — extraction failing means the initial claim is wrong for every candidate.  For
   Longfellow this is "no candidate satisfies the circuit", which is a function of the commitment and
   the circuit alone, hence available before any challenge;
-* `budget` — the per-round, **per-candidate** escape count.  `Lfzk.RbrBudgets` is exactly this list
+* `budget` — the per-round, **per-candidate** escape count.  `LfzkV1.RbrBudgets` is exactly this list
   for Longfellow's rounds;
 * `right_of_accepts` — an accepting run's final claim is right for some candidate.  This is the only
   place the verifier enters.

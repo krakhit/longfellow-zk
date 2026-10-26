@@ -1,4 +1,6 @@
 import polygero
+import polygero.FiatShamir.Nonrecursive
+import polygero.FiatShamir.OutsideList
 import Lean.Util.CollectAxioms
 import Lean.Util.FoldConsts
 
@@ -30,6 +32,9 @@ import Lean.Util.FoldConsts
 #guard_msgs (drop info) in #check RecursivePolygero.Protocol.ProfileProof.toHahnProfileProof_wireExtract
 #guard_msgs (drop info) in #check RecursivePolygero.Protocol.ProfileProof.toHahnProfileProof_error
 #guard_msgs (drop info) in #check RecursivePolygero.Protocol.HahnProfileProof.wireExtract_independent
+#guard_msgs (drop info) in #check RecursivePolygero.NonrecursiveFS.soundness_le
+#guard_msgs (drop info) in #check RecursivePolygero.NonrecursiveFS.extraction_failure_le
+#guard_msgs (drop info) in #check RecursivePolygero.NonrecursiveFS.decoded_outside_list_le
 
 open Lean Elab Command
 
@@ -48,6 +53,7 @@ private partial def proofDependencies (env : Environment) (todo : List Name)
 -- Check every owned declaration, including private proofs and legacy namespaces.
 run_cmd do
   let env ← getEnv
+  let moduleNames := env.header.moduleNames
   for required in #[
       ``RecursivePolygero.explosion,
       ``RecursivePolygero.ProximityGap.polynomial_error_threshold,
@@ -79,9 +85,9 @@ run_cmd do
       ``RecursivePolygero.Protocol.HahnProfileProof.wireExtract_independent] do
     unless RecursivePolygero.StableAPI.isPrecious env required do
       throwError "Analysis invariance declaration lost precious API protection: {required}"
-  for (name, info) in env.constants.toList do
+  for (name, info) in env.constants do
     let owner := match env.getModuleIdxFor? name with
-      | some idx => env.header.moduleNames[idx.toNat]!
+      | some idx => moduleNames[idx.toNat]!
       | none => env.mainModule
     unless owner == `polygero || owner.toString.startsWith "polygero." do continue
     if info.isAxiom then throwError "Unexpected imported axiom: {name}"
@@ -150,3 +156,30 @@ run_cmd do
   unless invariant.contains
       ``RecursivePolygero.Protocol.HahnProfileProof.runTranscript_independent do
     throwError "Hahn certificate independence does not reach the transcript extractor"
+  let fiatShamir := proofDependencies env [``RecursivePolygero.NonrecursiveFS.soundness_le]
+  for required in #[
+      ``Bcs.TotalOracle.tree_query_role_final_ratio_le,
+      ``RecursivePolygero.ProfileAnalysis.response_eq_of_assigned_system,
+      ``RecursivePolygero.ProfileAnalysis.arithmeticCoefficient_eval,
+      ``RecursivePolygero.NonrecursiveFS.high_mass_mean,
+      ``RecursivePolygero.ProfileAnalysis.systemCap_excess_of_hahn,
+      ``RecursivePolygero.ProfileAnalysis.systemExceptions_mean,
+      ``RecursivePolygero.Local.Polygero.verify_openOracle_iff] do
+    unless fiatShamir.contains required do
+      throwError "Fiat--Shamir omits its concrete proof dependency: {required}"
+  let fsExtraction := proofDependencies env [``RecursivePolygero.NonrecursiveFS.extraction_failure_le]
+  for required in #[
+      ``Bcs.TotalOracle.tree_query_role_final_ratio_le,
+      ``RecursivePolygero.ProfileAnalysis.recover_of_assigned_system,
+      ``RecursivePolygero.scanRecoverAt,
+      ``RecursivePolygero.NonrecursiveFS.extraction_high_mass_mean,
+      ``RecursivePolygero.ProfileAnalysis.systemCap_excess_of_hahn] do
+    unless fsExtraction.contains required do
+      throwError "Fiat--Shamir extraction omits its concrete proof dependency: {required}"
+  let outsideList := proofDependencies env [``RecursivePolygero.NonrecursiveFS.decoded_outside_list_le]
+  for required in #[
+      ``Bcs.TotalOracle.tree_final_event_ratio_le,
+      ``RecursivePolygero.Counting.fraction_le_of_decoded_not_mem,
+      ``RecursivePolygero.scanRecoverAt_columns] do
+    unless outsideList.contains required do
+      throwError "Committed-list query bound omits its concrete proof dependency: {required}"

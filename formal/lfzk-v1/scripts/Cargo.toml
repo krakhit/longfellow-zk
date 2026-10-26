@@ -1,0 +1,19 @@
+[package]
+name = "longfellow-v7-inspectors"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[workspace]
+
+[dependencies]
+longfellow-zk = { path = "../../../rust" }
+serde_json = "1.0"
+
+[[bin]]
+name = "inspect-v7-profile"
+path = "inspect_v7_circuit_profile.rs"
+
+[[bin]]
+name = "inspect-v7-assertions"
+path = "inspect_v7_assertions.rs"

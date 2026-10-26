@@ -17,6 +17,8 @@ mixed-field privacy, and Longfellow v2 composition are outside this certificate.
 Universal profiles retain the field-explicit coefficient 1/q + 2^-129.
 MLDSA uses its actual sextic field cardinality and proves a coefficient at most
 2^-128 per random-oracle query. The adaptive multiplier is explicit.
+The extraction endpoint also permits satisfiable statements depending on
+earlier transcript answers, provided its two backend hash answers are held out.
 No joint-farness premise is used.
 Check against Longfellow's built formal library using zk_tool check-profiles --protocol polygero.
 -/
@@ -112,6 +114,60 @@ private theorem profile_error {n k s t : ℕ} (p : Profile n k s t budget) (I : 
   unfold RuntimeHahn.Budget.additiveBudget
   nlinarith [hr.1]
 
+omit [Fintype F] [DecidableEq F] in
+/-- Runtime certificates supply both hypotheses of the adaptive extraction
+theorem, with a common 127-bit coefficient for every retained profile. -/
+theorem Profile.parameters_bounds {n k s t : ℕ} (p : Profile n k s t budget)
+    (I : Instance F) (hn : I.n = n) (hk : I.r+I.w = k)
+    (hs : I.s = s) (ht : I.t = t) (hq : budget.minimumField ≤ Nat.card F) :
+    (p.parameters I hn hk hs ht hq).rankError ≤ 1/(Nat.card F : ℚ) ∧
+      (p.parameters I hn hk hs ht hq).error ≤ 1/(2^127 : ℚ) := by
+  constructor
+  · simpa only [ProfileParameters.rankError, ProfileParameters.coreSize, hn, hk, hs,
+      rankError] using (rank_bounds p hq).2
+  · exact (profile_error p I hn hk hs ht hq).trans (budget.per_query_le_127 hq)
+
+/-- Acceptance without extraction for a transcript-dependent backend statement.
+Frontend query domains may be included in `Pt`; only the two backend answers
+must be excluded from its context. Merkle binding is a separate reduction. -/
+theorem Profile.fs_extraction_failure_127 {n k s t : ℕ} (p : Profile n k s t budget)
+    (I : Instance F) (hn : I.n = n) (hk : I.r+I.w = k)
+    (hs : I.s = s) (ht : I.t = t) (hq : budget.minimumField ≤ Nat.card F)
+    {C Pt Out Parent State : Type}
+    [Fintype C] [Nonempty C] [Fintype Pt] [DecidableEq Pt] [Fintype Parent]
+    {N : ℕ} (tree : Merkle.RandomOracle.Tree Pt C Out N)
+    (selected : Out → Parent × I.layer.Payload)
+    (parent : Parent → Pt) (child : Parent → I.layer.Payload → Pt)
+    (hparent : Function.Injective parent)
+    (hchild : Function.Injective (fun i : Parent × I.layer.Payload => child i.1 i.2))
+    (hdisjoint : ∀ j j' payload, parent j ≠ child j' payload)
+    (state : Parent → (Pt → C) → State)
+    (hstateOff : ∀ j payload H H',
+      (∀ z, z ≠ parent j → z ≠ child j payload → H z = H' z) → state j H = state j H')
+    (statement : State → Parent → I.layer.Statement)
+    (oracle : State → Parent → I.layer.Oracle)
+    [DecidableEq I.layer.Coin] [DecidableEq I.layer.Query]
+    (decodeCoin : C → I.layer.Coin) (decodeQuery : C → I.layer.Query)
+    (kCoin kQuery : ℕ)
+    (hcoin : ∀ coin, (univ.filter fun a : C => decodeCoin a = coin).card ≤ kCoin)
+    (hquery : ∀ Q, (univ.filter fun b : C => decodeQuery b = Q).card ≤ kQuery)
+    (hkCoin : kCoin*Fintype.card I.layer.Coin ≤ Fintype.card C)
+    (hkQuery : kQuery*Fintype.card I.layer.Query ≤ Fintype.card C) :
+    let failure := fun H : Pt → C =>
+      let i := selected (tree.run H).1
+      let σ := statement (state i.1 H) i.1
+      let W := oracle (state i.1 H) i.1
+      let coin := decodeCoin (H (parent i.1))
+      I.layer.verify σ W coin i.2 (decodeQuery (H (child i.1 i.2))) ∧
+        scanRecoverAt I σ W coin i.2 = none
+    ((univ.filter failure).card : ℚ)/(Fintype.card C : ℚ)^Fintype.card Pt ≤
+      (N+1 : ℕ)*(1/(2^127 : ℚ)) := by
+  have hb := p.parameters_bounds I hn hk hs ht hq
+  exact (NonrecursiveFS.extraction_failure_le I (p.parameters I hn hk hs ht hq) hb.1
+    tree selected parent child hparent hchild hdisjoint state hstateOff statement oracle
+    decodeCoin decodeQuery kCoin kQuery hcoin hquery hkCoin hkQuery).trans
+    (mul_le_mul_of_nonneg_left hb.2 (Nat.cast_nonneg _))
+
 abbrev Point (I : Instance F) (Commitment : Type) := Commitment ⊕ (Commitment × I.layer.Payload)
 abbrev Answer (I : Instance F) := I.layer.Coin × I.layer.Query
 
@@ -151,6 +207,21 @@ theorem Profile.fs_soundness {n k s t : ℕ} (p : Profile n k s t budget) (I : I
     (Fintype.card I.layer.Coin) hc hQ (by simp [Answer,mul_comm]) (by simp [Answer])).trans
     (mul_le_mul_of_nonneg_left (profile_error p I hn hk hs ht hq) (Nat.cast_nonneg _))
 
+
+/-- Common per-query FS bound for all retained runtime profiles. Commitment
+binding and concrete sampler errors are accounted for by their own reductions. -/
+theorem Profile.fs_soundness_127 {n k s t : ℕ} (p : Profile n k s t budget) (I : Instance F)
+    (hn : I.n = n) (hk : I.r+I.w = k) (hs : I.s = s) (ht : I.t = t)
+    (hq : budget.minimumField ≤ Nat.card F)
+    {Commitment : Type} [Fintype Commitment]
+    (σ : I.layer.Statement) (hfalse : ∀ w, ¬ I.layer.satisfies σ w)
+    (oracle : Commitment → I.layer.Oracle) {N : ℕ}
+    (tree : Merkle.RandomOracle.Tree (Point I Commitment) (Answer I) (Commitment × I.layer.Payload) N) :
+    ((univ.filter (accepts I σ oracle tree)).card : ℚ)/
+      (Fintype.card (Answer I) : ℚ)^Fintype.card (Point I Commitment) ≤
+      (N+1 : ℕ)*(1/(2^127 : ℚ)) := by
+  exact (p.fs_soundness I hn hk hs ht hq σ hfalse oracle tree).trans
+    (mul_le_mul_of_nonneg_left (budget.per_query_le_127 hq) (Nat.cast_nonneg _))
 
 namespace Hash
 def profile : Profile 3584 512 18 87 .universal where
@@ -342,7 +413,9 @@ end
 
 open Lean Elab Command
 run_cmd do
-  for endpoint in #[``Polygero.RustHahnProfiles.hash_fs_soundness, ``Polygero.RustHahnProfiles.signature_fs_soundness, ``Polygero.RustHahnProfiles.mldsa992_fs_soundness, ``Polygero.RustHahnProfiles.mldsa1024_fs_soundness, ``Polygero.RustHahnProfiles.mldsa960_fs_soundness] do
+  for endpoint in #[``Polygero.RustHahnProfiles.Profile.fs_extraction_failure_127,
+      ``Polygero.RustHahnProfiles.Profile.fs_soundness_127,
+      ``Polygero.RustHahnProfiles.hash_fs_soundness, ``Polygero.RustHahnProfiles.signature_fs_soundness, ``Polygero.RustHahnProfiles.mldsa992_fs_soundness, ``Polygero.RustHahnProfiles.mldsa1024_fs_soundness, ``Polygero.RustHahnProfiles.mldsa960_fs_soundness] do
     for ax in ← collectAxioms endpoint do
       unless #[``propext,``Classical.choice,``Quot.sound].contains ax do
         throwError "Unexpected axiom in Hahn verifier endpoint {endpoint}: {ax}"

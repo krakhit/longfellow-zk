@@ -60,9 +60,14 @@ The Rust v1 implementation is 100% compatible with the C++ code. It supports
 the same frozen mdoc circuits and preserves their circuit IDs, transcript
 behavior, and proof encoding.
 
-**Longfellow v2 is an evolution of v1, currently under development.**
+**Longfellow v2 is still evolving and is not final.**
 It introduces projective sumcheck and replaces Ligero with nonrecursive
 Polygero. V1 remains supported alongside this development.
+
+In particular, the Fiat–Shamir transcript will change to conform to the CFRG
+[Fiat-Shamir Transformation specification](https://datatracker.ietf.org/doc/draft-irtf-cfrg-fiat-shamir/),
+currently `draft-irtf-cfrg-fiat-shamir-03` (an Internet-Draft, not yet a published
+RFC).
 
 Polygero is described in
 [Polygero: Proximity Testing From Polynomial Challenges](https://eprint.iacr.org/2026/2481)
@@ -85,12 +90,16 @@ remain subject to change. There are currently no frozen v2 mdoc circuits.
 
 ## Performance
 
-The [formal v1 analysis](../formal/lfzk/README.md) establishes **115-bit
+The [formal v1 analysis](../formal/lfzk-v1/README.md) establishes **116-bit
 Fiat–Shamir T-security** for the modeled v7 composition, under its documented
-assumptions. The **expected total soundness of v2 is about 117 bits**; a proof
-of the full composition is still pending. For the current Polygero parameters,
+assumptions. The [formal v2 composition](../formal/lfzk-v2/README.md) proves
+**117-bit extraction security** for the modeled authenticated
+two-field verifier: `Pr[accept ∧ extraction fails] ≤ (1+N+tA)/2^117`.
+The bound holds for all query budgets, and the circuit/MAC correspondence and
+ideal-sampler premises are documented in the [audit](../formal/AUDIT.md).
+Complete V2 joint-view zero knowledge is not yet proved. For the current Polygero parameters,
 the [checked component certificates](../formal/parameters/polygero/PolygeroRustHahn.lean)
-establish **at least 125 bits** in the ideal-binding, uniform-sampler
+establish **127 bits** for the hash/signature profiles in the ideal-binding, uniform-sampler
 Fiat–Shamir model. This component bound excludes the Merkle binding reduction
 and the rest of the Longfellow v2 composition.
 
@@ -99,12 +108,25 @@ two attributes, including both the hash and signature proofs.
 
 | Version | Circuit | Proving | Verification | Complete proof | Prover peak heap | Verifier peak heap |
 |---|---|---:|---:|---:|---:|---:|
-| Longfellow v1 | v7 | 468 ms | 201 ms | 360,428 bytes | 104.1 MiB | 45.1 MiB |
-| Longfellow v2 | NEXT v8 | 270 ms | 134 ms | 213,204 bytes | 74.8 MiB | 38.3 MiB |
+| Longfellow v1 | v7 | 467 ms | 196 ms | 360,428 bytes | 104.1 MiB | 45.1 MiB |
+| Longfellow v2 | NEXT v8 | 269 ms | 131 ms | 213,204 bytes | 74.8 MiB | 38.3 MiB |
 
-These are indicative numbers, not a controlled benchmark. Measurements used
-release builds, compressed LFA2 archives, and an AMD Ryzen 9 9950X. V1 timings
-are Criterion estimates from ten samples; v2 timings are medians of three runs.
+The experimental ML-DSA verifier circuits use v2/Polygero separately from
+the mdoc application. These runs are outside the 117-bit two-field theorem
+above.
+
+| Circuit | Proving | Verification | Complete proof | Prover peak heap | Verifier peak heap |
+|---|---:|---:|---:|---:|---:|
+| ML-DSA-44 | 923 ms | 608 ms | 178,338 bytes | 114.8 MiB | 39.2 MiB |
+| ML-DSA-65 | 1,081 ms | 701 ms | 188,386 bytes | 121.9 MiB | 43.0 MiB |
+
+Measurements were rerun on 2026-10-26 using Rust 1.99.1 release builds
+with `target-cpu=native` on an AMD Ryzen 9 9950X with boost disabled.
+Benchmarks ran sequentially after builds and tests finished. The mdoc
+comparison uses compressed LFA2 archives. V1 timings are Criterion means
+from ten samples; v2 and ML-DSA timings are medians of three runs.
+The [run data](benches/results/2026-10-26.json) includes individual timings,
+exact heap counts, parameter profiles, and circuit/proof fingerprints.
 
 Peak heap is the additional live Rust heap allocation during each operation,
 measured in separate runs with `bench-memory` enabled. It excludes allocations
@@ -276,11 +298,17 @@ MDOC_BENCH_ATTRIBUTES=2 \
 
 # V2 with NEXT v8 and two attributes.
 cargo bench --bench mdoc_zk_bench_next --features testonly
+
+# Experimental ML-DSA-44 and ML-DSA-65, three runs per circuit.
+MLDSA_BENCH_REPEATS=3 \
+  cargo bench --bench mldsa_bench_v2 --features testonly,experimental
 ```
 
 The NEXT benchmark can save a specification/archive bundle using
 `MDOC_BENCH_SAVE_ARCHIVE`, or load one using `MDOC_BENCH_ARCHIVE`.
 Loading a bundle preserves its saved parameters.
+Repeat the NEXT run three times for the reported median; subsequent runs
+can load the bundle saved by the first run.
 
 Timing and allocation tracking run separately. Add `bench-memory` for
 memory measurements. It reports peak additional Rust heap, excluding

@@ -1251,15 +1251,34 @@ fn test_hahn_certificate_sources() {
         shared.join("RuntimeHahn/Packing.lean"),
         shared.join("RuntimeHahn/Budget.lean"),
         shared.join("RuntimeHahn/HahnPolynomial.lean"),
+        shared.join("RuntimeHahn/APITest.lean"),
+        shared.join("RuntimeHahn/CheckedPolynomial.lean"),
+        shared.join("RuntimeHahn/Coefficients.lean"),
+        shared.join("RuntimeHahn/IntegralKernel.lean"),
+        shared.join("RuntimeHahn/PolynomialIdentity.lean"),
     ]);
-    for (name, degrees, prefix) in [
-        ("Hash", 23, "RuntimeHahn/Kernels"),
-        ("Signature", 23, "RuntimeHahn/Kernels"),
-        ("Mldsa992", 3, "RuntimeHahn"),
-        ("Mldsa1024", 5, "RuntimeHahn"),
-        ("Mldsa960", 3, "RuntimeHahn"),
+    for (name, degrees, certificate) in [
+        ("Hash", 23, true),
+        ("Signature", 23, true),
+        ("Mldsa992", 3, true),
+        ("Mldsa1024", 5, true),
+        ("Mldsa960", 3, true),
+        ("LigeroV7Sig", 9, true),
+        ("LigeroV7SigFS", 25, true),
+        ("LigeroV7Hash1", 11, true),
+        ("LigeroV7Hash2", 11, true),
+        ("LigeroV7Hash3", 11, true),
+        ("LigeroV7Hash4", 11, true),
+        ("Benchmark2109", 23, false),
+        ("Benchmark2119", 21, false),
+        ("Benchmark2129", 19, false),
+        ("Benchmark2140", 17, false),
+        ("Benchmark2152", 15, false),
     ] {
-        expected.insert(shared.join(format!("RuntimeHahn/{name}.lean")));
+        if certificate {
+            expected.insert(shared.join(format!("RuntimeHahn/{name}.lean")));
+        }
+        let prefix = "RuntimeHahn/Kernels";
         expected.insert(shared.join(format!("{prefix}/Kernels{name}.lean")));
         for degree in 1..=degrees {
             expected.insert(shared.join(format!("{prefix}/{name}Kernels/Degree{degree:02}.lean")));
@@ -1277,7 +1296,10 @@ fn test_hahn_certificate_sources() {
             assert!(
                 imported.starts_with("Mathlib.")
                     || imported.starts_with("RuntimeHahn.")
-                    || imported.starts_with("CodingTheory."),
+                    || imported.starts_with("CodingTheory.")
+                    // The audit aggregates certificate checks from both libraries.
+                    || (file == shared.join("RuntimeHahn/APITest.lean")
+                        && imported == "polygero.Benchmarks.HahnRateSixteenth.Certificates"),
                 "protocol dependency in shared packing arithmetic {}: {imported}",
                 file.display()
             );

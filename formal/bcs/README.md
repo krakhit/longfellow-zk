@@ -54,14 +54,14 @@ Ligero commitments of the two-field proof. It costs `2 · adaptiveNumerator / |D
 
 **Where it is used.**
 
-- `Lfzk.NizkZkDeployedHash` → `Lfzk.CompiledZkDeployedHash` → the modeled v7
-  `Lfzk.CompiledZkProfileRows.v7P256Sha*_zk_circuit_tsec` bound
+- `LfzkV1.NizkZkDeployedHash` → `LfzkV1.CompiledZkDeployedHash` → the modeled v7
+  `LfzkV1.CompiledZkProfileRows.v7P256Sha*_zk_circuit_tsec` bound
   `(1 + tA + N) · 2^-115` under its shared-blind premise. The separate-private-MAC headline
   `v7P256Sha*_zk_circuit_tsec_sepMac` composes the same BCS result with a
   fixed-candidate MAC collision bound.
 - The Fiat–Shamir term becomes the row's field and Ligero densities plus
   `N · zkCoefficient`. The Merkle term keeps the exact query count.
-  `Lfzk.TSec.tsec_of_uncapped` folds both into T-security: its `tA²` birthday
+  `LfzkV1.TSec.tsec_of_uncapped` folds both into T-security: its `tA²` birthday
   part is at most `tA · 2^-115` for `tA ≤ 2^137`; beyond that the stated bound
   already exceeds 1.
 - The earlier `v7P256Sha*_zk_circuit_ratio_le` theorem gives a different

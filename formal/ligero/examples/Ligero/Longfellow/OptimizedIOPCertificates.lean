@@ -72,7 +72,7 @@ def v7Sig_v1 : Result :=
 
 theorem v7Sig_v1_parameters : v7Sig_v1.ParametersValid := by
   unfold Result.ParametersValid
-  refine ⟨by native_decide, by native_decide, by native_decide, by native_decide, by native_decide, ?_⟩
+  refine ⟨by native_decide, by native_decide, by native_decide, by native_decide, by change (decide (1665 ≤ Nat.sqrt (3187 * 909) + 1) && decide (909 < 1665) && (decide (Nat.sqrt (3187 * 909) + 1 ≤ 1665) || CodingTheory.HahnDelsarte.certificateValid 3187 1665 909 HahnMask.v7Sig)) = true; rw [HahnMask.v7Sig_valid]; decide +kernel, ?_⟩
   exact v7Sig_v1.certificate.conditions_of_checked
     (by native_decide) (by native_decide) (by native_decide)
     (by native_decide) (by native_decide)
@@ -154,7 +154,7 @@ def v7Hash1_v1 : Result :=
 
 theorem v7Hash1_v1_parameters : v7Hash1_v1.ParametersValid := by
   unfold Result.ParametersValid
-  refine ⟨by native_decide, by native_decide, by native_decide, by native_decide, by native_decide, ?_⟩
+  refine ⟨by native_decide, by native_decide, by native_decide, by native_decide, by change (decide (1681 ≤ Nat.sqrt (3230 * 921) + 1) && decide (921 < 1681) && (decide (Nat.sqrt (3230 * 921) + 1 ≤ 1681) || CodingTheory.HahnDelsarte.certificateValid 3230 1681 921 HahnMask.v7Hash1)) = true; rw [HahnMask.v7Hash1_valid]; decide +kernel, ?_⟩
   exact v7Hash1_v1.certificate.conditions_of_checked
     (by native_decide) (by native_decide) (by native_decide)
     (by native_decide) (by native_decide)
@@ -236,7 +236,7 @@ def v7Hash2_v1 : Result :=
 
 theorem v7Hash2_v1_parameters : v7Hash2_v1.ParametersValid := by
   unfold Result.ParametersValid
-  refine ⟨by native_decide, by native_decide, by native_decide, by native_decide, by native_decide, ?_⟩
+  refine ⟨by native_decide, by native_decide, by native_decide, by native_decide, by change (decide (1728 ≤ Nat.sqrt (3318 * 947) + 1) && decide (947 < 1728) && (decide (Nat.sqrt (3318 * 947) + 1 ≤ 1728) || CodingTheory.HahnDelsarte.certificateValid 3318 1728 947 HahnMask.v7Hash2)) = true; rw [HahnMask.v7Hash2_valid]; decide +kernel, ?_⟩
   exact v7Hash2_v1.certificate.conditions_of_checked
     (by native_decide) (by native_decide) (by native_decide)
     (by native_decide) (by native_decide)
@@ -318,7 +318,7 @@ def v7Hash3_v1 : Result :=
 
 theorem v7Hash3_v1_parameters : v7Hash3_v1.ParametersValid := by
   unfold Result.ParametersValid
-  refine ⟨by native_decide, by native_decide, by native_decide, by native_decide, by native_decide, ?_⟩
+  refine ⟨by native_decide, by native_decide, by native_decide, by native_decide, by change (decide (1744 ≤ Nat.sqrt (3352 * 955) + 1) && decide (955 < 1744) && (decide (Nat.sqrt (3352 * 955) + 1 ≤ 1744) || CodingTheory.HahnDelsarte.certificateValid 3352 1744 955 HahnMask.v7Hash3)) = true; rw [HahnMask.v7Hash3_valid]; decide +kernel, ?_⟩
   exact v7Hash3_v1.certificate.conditions_of_checked
     (by native_decide) (by native_decide) (by native_decide)
     (by native_decide) (by native_decide)
@@ -400,7 +400,7 @@ def v7Hash4_v1 : Result :=
 
 theorem v7Hash4_v1_parameters : v7Hash4_v1.ParametersValid := by
   unfold Result.ParametersValid
-  refine ⟨by native_decide, by native_decide, by native_decide, by native_decide, by native_decide, ?_⟩
+  refine ⟨by native_decide, by native_decide, by native_decide, by native_decide, by change (decide (1788 ≤ Nat.sqrt (3436 * 979) + 1) && decide (979 < 1788) && (decide (Nat.sqrt (3436 * 979) + 1 ≤ 1788) || CodingTheory.HahnDelsarte.certificateValid 3436 1788 979 HahnMask.v7Hash4)) = true; rw [HahnMask.v7Hash4_valid]; decide +kernel, ?_⟩
   exact v7Hash4_v1.certificate.conditions_of_checked
     (by native_decide) (by native_decide) (by native_decide)
     (by native_decide) (by native_decide)
@@ -429,393 +429,5 @@ theorem v7Hash_v1_flat_listSize_two :
     v7Hash3_v1.certificate.listSize ≤ 2 ∧
     v7Hash4_v1.certificate.listSize ≤ 2 := by
   native_decide
-
-def v8Sig_v2 : Result :=
-  { variant := .v2, route := .johnson, etaBits := 0, adaptiveEta := true
-    certificate :=
-      { n := 3458, k := 494, d := 2965, e := 2148, g := 0, m := 8690222498718353
-        fieldBits := 256, fieldOrder := 115792089210356248762697446949407573530086143415290314195533631308867097853951
-        openings := 132, targetBits := 191 } }
-
-theorem v8Sig_v2_parameters : v8Sig_v2.ParametersValid := by
-  unfold Result.ParametersValid
-  refine ⟨by native_decide, by native_decide, by native_decide, by native_decide, by trivial, ?_⟩
-  change v8Sig_v2.certificate.inverseJohnsonConditions
-    (v8Sig_v2.etaDenominators (v8Sig_v2.certificate.n - v8Sig_v2.certificate.e))
-    v8Sig_v2.etaDenominators = true
-  native_decide
-
-theorem v8Sig_v2_compressed_bound :
-    v8Sig_v2.compressedBound ≤ (1 : ℚ) / 2 ^ v8Sig_v2.certificate.targetBits := by native_decide
-
-theorem v8Sig_v2_bound :
-    v8Sig_v2.bound ≤ (1 : ℚ) / 2 ^ v8Sig_v2.certificate.targetBits := by
-  rw [← Result.compressedBound_eq]; exact v8Sig_v2_compressed_bound
-
-def v8Sig_v2_certified : CertifiedResult :=
-  ⟨v8Sig_v2, v8Sig_v2_parameters, v8Sig_v2_bound⟩
-
-def v8Sig_v2_extraction := @CertifiedResult.v2_extraction v8Sig_v2_certified rfl
-
-def v8Sig_v2_interactive := @CertifiedResult.v2_interactive v8Sig_v2_certified rfl
-
-def v8Sig_v2_uniform_envelope := @CertifiedResult.v2_uniform_envelope v8Sig_v2_certified rfl
-
-def v8Sig_v3 : Result := { v8Sig_v2 with variant := .v3 }
-
-theorem v8Sig_v3_parameters : v8Sig_v3.ParametersValid := v8Sig_v2_parameters
-
-theorem v8Sig_v3_compressed_bound :
-    v8Sig_v3.compressedBound ≤ (1 : ℚ) / 2 ^ v8Sig_v3.certificate.targetBits := v8Sig_v2_compressed_bound
-
-theorem v8Sig_v3_bound :
-    v8Sig_v3.bound ≤ (1 : ℚ) / 2 ^ v8Sig_v3.certificate.targetBits := by
-  rw [← Result.compressedBound_eq]; exact v8Sig_v3_compressed_bound
-
-def v8Sig_v3_certified : CertifiedResult :=
-  ⟨v8Sig_v3, v8Sig_v3_parameters, v8Sig_v3_bound⟩
-
-def v8Sig_v3_extraction := @CertifiedResult.v3_extraction v8Sig_v3_certified rfl
-
-def v8Sig_v3_interactive := @CertifiedResult.v3_interactive v8Sig_v3_certified rfl
-
-def v8Sig_v3_uniform_envelope := @CertifiedResult.v3_uniform_envelope v8Sig_v3_certified rfl
-
-def v8Sig_v1 : Result :=
-  { variant := .v1, route := .triples, etaBits := 0, adaptiveEta := false
-    certificate :=
-      { n := 3458, k := 494, d := 2965, e := 1651, g := 0, m := 10594014
-        fieldBits := 256, fieldOrder := 115792089210356248762697446949407573530086143415290314195533631308867097853951
-        openings := 132, targetBits := 127
-        maskThreshold := 1808, hahnMask := HahnMask.v8Sig } }
-
-theorem v8Sig_v1_parameters : v8Sig_v1.ParametersValid := by
-  unfold Result.ParametersValid
-  refine ⟨by native_decide, by native_decide, by native_decide, by native_decide, by native_decide, ?_⟩
-  exact v8Sig_v1.certificate.conditions_of_checked
-    (by native_decide) (by native_decide) (by native_decide)
-    (by native_decide) (by native_decide)
-
-theorem v8Sig_v1_compressed_bound :
-    v8Sig_v1.compressedBound ≤ (1 : ℚ) / 2 ^ v8Sig_v1.certificate.targetBits := by native_decide
-
-theorem v8Sig_v1_bound :
-    v8Sig_v1.bound ≤ (1 : ℚ) / 2 ^ v8Sig_v1.certificate.targetBits := by
-  rw [← Result.compressedBound_eq]; exact v8Sig_v1_compressed_bound
-
-def v8Sig_v1_certified : CertifiedResult :=
-  ⟨v8Sig_v1, v8Sig_v1_parameters, v8Sig_v1_bound⟩
-
-def v8Sig_v1_extraction := @CertifiedResult.v1_extraction v8Sig_v1_certified rfl
-
-def v8Sig_v1_interactive := @CertifiedResult.v1_interactive v8Sig_v1_certified rfl
-
-def v8Sig_v1_uniform_envelope := @CertifiedResult.v1_uniform_envelope v8Sig_v1_certified rfl
-
-def v8Hash1_v2 : Result :=
-  { variant := .v2, route := .johnson, etaBits := 0, adaptiveEta := true
-    certificate :=
-      { n := 4088, k := 584, d := 3505, e := 2113, g := 29, m := 11913618043
-        fieldBits := 128, fieldOrder := 0
-        openings := 132, targetBits := 126 } }
-
-theorem v8Hash1_v2_parameters : v8Hash1_v2.ParametersValid := by
-  unfold Result.ParametersValid
-  refine ⟨by native_decide, by native_decide, by native_decide, by native_decide, by trivial, ?_⟩
-  change v8Hash1_v2.certificate.inverseJohnsonConditions
-    (v8Hash1_v2.etaDenominators (v8Hash1_v2.certificate.n - v8Hash1_v2.certificate.e))
-    v8Hash1_v2.etaDenominators = true
-  native_decide
-
-theorem v8Hash1_v2_compressed_bound :
-    v8Hash1_v2.compressedBound ≤ (1 : ℚ) / 2 ^ v8Hash1_v2.certificate.targetBits := by native_decide
-
-theorem v8Hash1_v2_bound :
-    v8Hash1_v2.bound ≤ (1 : ℚ) / 2 ^ v8Hash1_v2.certificate.targetBits := by
-  rw [← Result.compressedBound_eq]; exact v8Hash1_v2_compressed_bound
-
-def v8Hash1_v2_certified : CertifiedResult :=
-  ⟨v8Hash1_v2, v8Hash1_v2_parameters, v8Hash1_v2_bound⟩
-
-def v8Hash1_v2_extraction := @CertifiedResult.v2_extraction v8Hash1_v2_certified rfl
-
-def v8Hash1_v2_interactive := @CertifiedResult.v2_interactive v8Hash1_v2_certified rfl
-
-def v8Hash1_v2_uniform_envelope := @CertifiedResult.v2_uniform_envelope v8Hash1_v2_certified rfl
-
-def v8Hash1_v3 : Result := { v8Hash1_v2 with variant := .v3 }
-
-theorem v8Hash1_v3_parameters : v8Hash1_v3.ParametersValid := v8Hash1_v2_parameters
-
-theorem v8Hash1_v3_compressed_bound :
-    v8Hash1_v3.compressedBound ≤ (1 : ℚ) / 2 ^ v8Hash1_v3.certificate.targetBits := v8Hash1_v2_compressed_bound
-
-theorem v8Hash1_v3_bound :
-    v8Hash1_v3.bound ≤ (1 : ℚ) / 2 ^ v8Hash1_v3.certificate.targetBits := by
-  rw [← Result.compressedBound_eq]; exact v8Hash1_v3_compressed_bound
-
-def v8Hash1_v3_certified : CertifiedResult :=
-  ⟨v8Hash1_v3, v8Hash1_v3_parameters, v8Hash1_v3_bound⟩
-
-def v8Hash1_v3_extraction := @CertifiedResult.v3_extraction v8Hash1_v3_certified rfl
-
-def v8Hash1_v3_interactive := @CertifiedResult.v3_interactive v8Hash1_v3_certified rfl
-
-def v8Hash1_v3_uniform_envelope := @CertifiedResult.v3_uniform_envelope v8Hash1_v3_certified rfl
-
-def v8Hash1_v1 : Result :=
-  { variant := .v1, route := .triples, etaBits := 0, adaptiveEta := false
-    certificate :=
-      { n := 4088, k := 584, d := 3505, e := 1952, g := 16, m := 2437855
-        fieldBits := 128, fieldOrder := 0
-        openings := 132, targetBits := 125
-        maskThreshold := 2122, hahnMask := HahnMask.v8Hash1 } }
-
-theorem v8Hash1_v1_parameters : v8Hash1_v1.ParametersValid := by
-  unfold Result.ParametersValid
-  refine ⟨by native_decide, by native_decide, by native_decide, by native_decide, by native_decide, ?_⟩
-  exact v8Hash1_v1.certificate.conditions_of_checked
-    (by native_decide) (by native_decide) (by native_decide)
-    (by native_decide) (by native_decide)
-
-theorem v8Hash1_v1_compressed_bound :
-    v8Hash1_v1.compressedBound ≤ (1 : ℚ) / 2 ^ v8Hash1_v1.certificate.targetBits := by native_decide
-
-theorem v8Hash1_v1_bound :
-    v8Hash1_v1.bound ≤ (1 : ℚ) / 2 ^ v8Hash1_v1.certificate.targetBits := by
-  rw [← Result.compressedBound_eq]; exact v8Hash1_v1_compressed_bound
-
-def v8Hash1_v1_certified : CertifiedResult :=
-  ⟨v8Hash1_v1, v8Hash1_v1_parameters, v8Hash1_v1_bound⟩
-
-def v8Hash1_v1_extraction := @CertifiedResult.v1_extraction v8Hash1_v1_certified rfl
-
-def v8Hash1_v1_interactive := @CertifiedResult.v1_interactive v8Hash1_v1_certified rfl
-
-def v8Hash1_v1_uniform_envelope := @CertifiedResult.v1_uniform_envelope v8Hash1_v1_certified rfl
-
-def v8Hash2_v2 : Result :=
-  { variant := .v2, route := .johnson, etaBits := 0, adaptiveEta := true
-    certificate :=
-      { n := 4081, k := 583, d := 3499, e := 2109, g := 29, m := 11890030538
-        fieldBits := 128, fieldOrder := 0
-        openings := 132, targetBits := 126 } }
-
-theorem v8Hash2_v2_parameters : v8Hash2_v2.ParametersValid := by
-  unfold Result.ParametersValid
-  refine ⟨by native_decide, by native_decide, by native_decide, by native_decide, by trivial, ?_⟩
-  change v8Hash2_v2.certificate.inverseJohnsonConditions
-    (v8Hash2_v2.etaDenominators (v8Hash2_v2.certificate.n - v8Hash2_v2.certificate.e))
-    v8Hash2_v2.etaDenominators = true
-  native_decide
-
-theorem v8Hash2_v2_compressed_bound :
-    v8Hash2_v2.compressedBound ≤ (1 : ℚ) / 2 ^ v8Hash2_v2.certificate.targetBits := by native_decide
-
-theorem v8Hash2_v2_bound :
-    v8Hash2_v2.bound ≤ (1 : ℚ) / 2 ^ v8Hash2_v2.certificate.targetBits := by
-  rw [← Result.compressedBound_eq]; exact v8Hash2_v2_compressed_bound
-
-def v8Hash2_v2_certified : CertifiedResult :=
-  ⟨v8Hash2_v2, v8Hash2_v2_parameters, v8Hash2_v2_bound⟩
-
-def v8Hash2_v2_extraction := @CertifiedResult.v2_extraction v8Hash2_v2_certified rfl
-
-def v8Hash2_v2_interactive := @CertifiedResult.v2_interactive v8Hash2_v2_certified rfl
-
-def v8Hash2_v2_uniform_envelope := @CertifiedResult.v2_uniform_envelope v8Hash2_v2_certified rfl
-
-def v8Hash2_v3 : Result := { v8Hash2_v2 with variant := .v3 }
-
-theorem v8Hash2_v3_parameters : v8Hash2_v3.ParametersValid := v8Hash2_v2_parameters
-
-theorem v8Hash2_v3_compressed_bound :
-    v8Hash2_v3.compressedBound ≤ (1 : ℚ) / 2 ^ v8Hash2_v3.certificate.targetBits := v8Hash2_v2_compressed_bound
-
-theorem v8Hash2_v3_bound :
-    v8Hash2_v3.bound ≤ (1 : ℚ) / 2 ^ v8Hash2_v3.certificate.targetBits := by
-  rw [← Result.compressedBound_eq]; exact v8Hash2_v3_compressed_bound
-
-def v8Hash2_v3_certified : CertifiedResult :=
-  ⟨v8Hash2_v3, v8Hash2_v3_parameters, v8Hash2_v3_bound⟩
-
-def v8Hash2_v3_extraction := @CertifiedResult.v3_extraction v8Hash2_v3_certified rfl
-
-def v8Hash2_v3_interactive := @CertifiedResult.v3_interactive v8Hash2_v3_certified rfl
-
-def v8Hash2_v3_uniform_envelope := @CertifiedResult.v3_uniform_envelope v8Hash2_v3_certified rfl
-
-def v8Hash2_v1 : Result :=
-  { variant := .v1, route := .triples, etaBits := 0, adaptiveEta := false
-    certificate :=
-      { n := 4081, k := 583, d := 3499, e := 1946, g := 24, m := 107858
-        fieldBits := 128, fieldOrder := 0
-        openings := 132, targetBits := 125
-        maskThreshold := 2113, hahnMask := HahnMask.v8Hash2 } }
-
-theorem v8Hash2_v1_parameters : v8Hash2_v1.ParametersValid := by
-  unfold Result.ParametersValid
-  refine ⟨by native_decide, by native_decide, by native_decide, by native_decide, by native_decide, ?_⟩
-  exact v8Hash2_v1.certificate.conditions_of_checked
-    (by native_decide) (by native_decide) (by native_decide)
-    (by native_decide) (by native_decide)
-
-theorem v8Hash2_v1_compressed_bound :
-    v8Hash2_v1.compressedBound ≤ (1 : ℚ) / 2 ^ v8Hash2_v1.certificate.targetBits := by native_decide
-
-theorem v8Hash2_v1_bound :
-    v8Hash2_v1.bound ≤ (1 : ℚ) / 2 ^ v8Hash2_v1.certificate.targetBits := by
-  rw [← Result.compressedBound_eq]; exact v8Hash2_v1_compressed_bound
-
-def v8Hash2_v1_certified : CertifiedResult :=
-  ⟨v8Hash2_v1, v8Hash2_v1_parameters, v8Hash2_v1_bound⟩
-
-def v8Hash2_v1_extraction := @CertifiedResult.v1_extraction v8Hash2_v1_certified rfl
-
-def v8Hash2_v1_interactive := @CertifiedResult.v1_interactive v8Hash2_v1_certified rfl
-
-def v8Hash2_v1_uniform_envelope := @CertifiedResult.v1_uniform_envelope v8Hash2_v1_certified rfl
-
-def v8Hash3_v2 : Result :=
-  { variant := .v2, route := .johnson, etaBits := 0, adaptiveEta := true
-    certificate :=
-      { n := 4081, k := 583, d := 3499, e := 2109, g := 29, m := 11890030538
-        fieldBits := 128, fieldOrder := 0
-        openings := 132, targetBits := 126 } }
-
-theorem v8Hash3_v2_parameters : v8Hash3_v2.ParametersValid := v8Hash2_v2_parameters
-
-theorem v8Hash3_v2_compressed_bound :
-    v8Hash3_v2.compressedBound ≤ (1 : ℚ) / 2 ^ v8Hash3_v2.certificate.targetBits := v8Hash2_v2_compressed_bound
-
-theorem v8Hash3_v2_bound :
-    v8Hash3_v2.bound ≤ (1 : ℚ) / 2 ^ v8Hash3_v2.certificate.targetBits := by
-  rw [← Result.compressedBound_eq]; exact v8Hash3_v2_compressed_bound
-
-def v8Hash3_v2_certified : CertifiedResult :=
-  ⟨v8Hash3_v2, v8Hash3_v2_parameters, v8Hash3_v2_bound⟩
-
-def v8Hash3_v2_extraction := @CertifiedResult.v2_extraction v8Hash3_v2_certified rfl
-
-def v8Hash3_v2_interactive := @CertifiedResult.v2_interactive v8Hash3_v2_certified rfl
-
-def v8Hash3_v2_uniform_envelope := @CertifiedResult.v2_uniform_envelope v8Hash3_v2_certified rfl
-
-def v8Hash3_v3 : Result := { v8Hash3_v2 with variant := .v3 }
-
-theorem v8Hash3_v3_parameters : v8Hash3_v3.ParametersValid := v8Hash3_v2_parameters
-
-theorem v8Hash3_v3_compressed_bound :
-    v8Hash3_v3.compressedBound ≤ (1 : ℚ) / 2 ^ v8Hash3_v3.certificate.targetBits := v8Hash3_v2_compressed_bound
-
-theorem v8Hash3_v3_bound :
-    v8Hash3_v3.bound ≤ (1 : ℚ) / 2 ^ v8Hash3_v3.certificate.targetBits := by
-  rw [← Result.compressedBound_eq]; exact v8Hash3_v3_compressed_bound
-
-def v8Hash3_v3_certified : CertifiedResult :=
-  ⟨v8Hash3_v3, v8Hash3_v3_parameters, v8Hash3_v3_bound⟩
-
-def v8Hash3_v3_extraction := @CertifiedResult.v3_extraction v8Hash3_v3_certified rfl
-
-def v8Hash3_v3_interactive := @CertifiedResult.v3_interactive v8Hash3_v3_certified rfl
-
-def v8Hash3_v3_uniform_envelope := @CertifiedResult.v3_uniform_envelope v8Hash3_v3_certified rfl
-
-def v8Hash3_v1 : Result :=
-  { variant := .v1, route := .triples, etaBits := 0, adaptiveEta := false
-    certificate :=
-      { n := 4081, k := 583, d := 3499, e := 1946, g := 24, m := 107858
-        fieldBits := 128, fieldOrder := 0
-        openings := 132, targetBits := 125
-        maskThreshold := 2113, hahnMask := HahnMask.v8Hash2 } }
-
-theorem v8Hash3_v1_parameters : v8Hash3_v1.ParametersValid := v8Hash2_v1_parameters
-
-theorem v8Hash3_v1_compressed_bound :
-    v8Hash3_v1.compressedBound ≤ (1 : ℚ) / 2 ^ v8Hash3_v1.certificate.targetBits := v8Hash2_v1_compressed_bound
-
-theorem v8Hash3_v1_bound :
-    v8Hash3_v1.bound ≤ (1 : ℚ) / 2 ^ v8Hash3_v1.certificate.targetBits := by
-  rw [← Result.compressedBound_eq]; exact v8Hash3_v1_compressed_bound
-
-def v8Hash3_v1_certified : CertifiedResult :=
-  ⟨v8Hash3_v1, v8Hash3_v1_parameters, v8Hash3_v1_bound⟩
-
-def v8Hash3_v1_extraction := @CertifiedResult.v1_extraction v8Hash3_v1_certified rfl
-
-def v8Hash3_v1_interactive := @CertifiedResult.v1_interactive v8Hash3_v1_certified rfl
-
-def v8Hash3_v1_uniform_envelope := @CertifiedResult.v1_uniform_envelope v8Hash3_v1_certified rfl
-
-def v8Hash4_v2 : Result :=
-  { variant := .v2, route := .johnson, etaBits := 0, adaptiveEta := true
-    certificate :=
-      { n := 4081, k := 583, d := 3499, e := 2109, g := 29, m := 11890030538
-        fieldBits := 128, fieldOrder := 0
-        openings := 132, targetBits := 126 } }
-
-theorem v8Hash4_v2_parameters : v8Hash4_v2.ParametersValid := v8Hash2_v2_parameters
-
-theorem v8Hash4_v2_compressed_bound :
-    v8Hash4_v2.compressedBound ≤ (1 : ℚ) / 2 ^ v8Hash4_v2.certificate.targetBits := v8Hash2_v2_compressed_bound
-
-theorem v8Hash4_v2_bound :
-    v8Hash4_v2.bound ≤ (1 : ℚ) / 2 ^ v8Hash4_v2.certificate.targetBits := by
-  rw [← Result.compressedBound_eq]; exact v8Hash4_v2_compressed_bound
-
-def v8Hash4_v2_certified : CertifiedResult :=
-  ⟨v8Hash4_v2, v8Hash4_v2_parameters, v8Hash4_v2_bound⟩
-
-def v8Hash4_v2_extraction := @CertifiedResult.v2_extraction v8Hash4_v2_certified rfl
-
-def v8Hash4_v2_interactive := @CertifiedResult.v2_interactive v8Hash4_v2_certified rfl
-
-def v8Hash4_v2_uniform_envelope := @CertifiedResult.v2_uniform_envelope v8Hash4_v2_certified rfl
-
-def v8Hash4_v3 : Result := { v8Hash4_v2 with variant := .v3 }
-
-theorem v8Hash4_v3_parameters : v8Hash4_v3.ParametersValid := v8Hash4_v2_parameters
-
-theorem v8Hash4_v3_compressed_bound :
-    v8Hash4_v3.compressedBound ≤ (1 : ℚ) / 2 ^ v8Hash4_v3.certificate.targetBits := v8Hash4_v2_compressed_bound
-
-theorem v8Hash4_v3_bound :
-    v8Hash4_v3.bound ≤ (1 : ℚ) / 2 ^ v8Hash4_v3.certificate.targetBits := by
-  rw [← Result.compressedBound_eq]; exact v8Hash4_v3_compressed_bound
-
-def v8Hash4_v3_certified : CertifiedResult :=
-  ⟨v8Hash4_v3, v8Hash4_v3_parameters, v8Hash4_v3_bound⟩
-
-def v8Hash4_v3_extraction := @CertifiedResult.v3_extraction v8Hash4_v3_certified rfl
-
-def v8Hash4_v3_interactive := @CertifiedResult.v3_interactive v8Hash4_v3_certified rfl
-
-def v8Hash4_v3_uniform_envelope := @CertifiedResult.v3_uniform_envelope v8Hash4_v3_certified rfl
-
-def v8Hash4_v1 : Result :=
-  { variant := .v1, route := .triples, etaBits := 0, adaptiveEta := false
-    certificate :=
-      { n := 4081, k := 583, d := 3499, e := 1946, g := 24, m := 107858
-        fieldBits := 128, fieldOrder := 0
-        openings := 132, targetBits := 125
-        maskThreshold := 2113, hahnMask := HahnMask.v8Hash2 } }
-
-theorem v8Hash4_v1_parameters : v8Hash4_v1.ParametersValid := v8Hash2_v1_parameters
-
-theorem v8Hash4_v1_compressed_bound :
-    v8Hash4_v1.compressedBound ≤ (1 : ℚ) / 2 ^ v8Hash4_v1.certificate.targetBits := v8Hash2_v1_compressed_bound
-
-theorem v8Hash4_v1_bound :
-    v8Hash4_v1.bound ≤ (1 : ℚ) / 2 ^ v8Hash4_v1.certificate.targetBits := by
-  rw [← Result.compressedBound_eq]; exact v8Hash4_v1_compressed_bound
-
-def v8Hash4_v1_certified : CertifiedResult :=
-  ⟨v8Hash4_v1, v8Hash4_v1_parameters, v8Hash4_v1_bound⟩
-
-def v8Hash4_v1_extraction := @CertifiedResult.v1_extraction v8Hash4_v1_certified rfl
-
-def v8Hash4_v1_interactive := @CertifiedResult.v1_interactive v8Hash4_v1_certified rfl
-
-def v8Hash4_v1_uniform_envelope := @CertifiedResult.v1_uniform_envelope v8Hash4_v1_certified rfl
 
 end Ligero.Examples.Grid.LongfellowProfiledExtraction.Optimized

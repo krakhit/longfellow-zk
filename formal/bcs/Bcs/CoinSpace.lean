@@ -23,7 +23,7 @@ and `Challenge := Unit` would make the prover's response blind to its own challe
 restrictions on the adversary rather than abstractions of it.  A coin space with two projections is
 the least change that avoids both.
 
-`drop_explains_ratio_le` is stated in exactly the shape `Lfzk.Nizk.nizk_ratio_le` takes as
+`drop_explains_ratio_le` is stated in exactly the shape `LfzkV1.Nizk.nizk_ratio_le` takes as
 `hmerkle`, so that hypothesis becomes a theorem at `Coins := Fin L → C`.
 -/
 
@@ -132,7 +132,7 @@ Pr[ the compiled verifier accepts ∧ P ]
        +  merkleNumerator(t₁, T) / |D|
 ```
 
-This is exactly the shape `Lfzk.Nizk.nizk_ratio_le` takes as `hmerkle`, with the second event being
+This is exactly the shape `LfzkV1.Nizk.nizk_ratio_le` takes as `hmerkle`, with the second event being
 the one the round-by-round argument bounds — the *oracle* protocol's acceptance — and the first the
 one a real verifier decides.
 -/
